@@ -1,9 +1,8 @@
 import Link from 'next/link';
 import { Sparkles } from 'lucide-react';
-import { buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { MobileMenu } from '@/components/layout/mobile-menu';
-import { cn } from '@/lib/utils/cn';
+import { UserMenu } from '@/components/layout/user-menu';
 import { SITE } from '@/lib/utils/site-config';
 
 const NAV_LINKS = [
@@ -42,18 +41,7 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <Link
-            href="/giris"
-            className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'hidden md:inline-flex')}
-          >
-            Giriş
-          </Link>
-          <Link
-            href="/kayit"
-            className={cn(buttonVariants({ variant: 'primary', size: 'sm' }), 'hidden md:inline-flex')}
-          >
-            Üye Ol
-          </Link>
+          <UserMenu />
           <MobileMenu />
         </div>
       </Container>

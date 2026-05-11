@@ -3,18 +3,18 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { Menu, Sparkles, X } from 'lucide-react';
+import { LogOut, Menu, Sparkles, User, X } from 'lucide-react';
+import { signOutAction } from '@/app/profil/actions';
 import { buttonVariants } from '@/components/ui/button';
+import { useUser } from '@/hooks/use-user';
 import { cn } from '@/lib/utils/cn';
 import { MAIN_CATEGORIES } from '@/lib/utils/constants';
 import { SITE } from '@/lib/utils/site-config';
 
 export function MobileMenu() {
   const [open, setOpen] = useState(false);
+  const { user, loading } = useUser();
 
-  // No mounted guard needed: `open` starts false on both server and client,
-  // so the portal renders `null` on first paint; portal mounts only after a
-  // client interaction sets `open` true.
   useEffect(() => {
     if (!open) return;
 
@@ -34,6 +34,11 @@ export function MobileMenu() {
 
   const close = () => setOpen(false);
 
+  const displayName =
+    (user?.user_metadata as Record<string, string> | null)?.display_name ??
+    user?.email?.split('@')[0] ??
+    'Profil';
+
   const sheet = (
     <div
       id="mobile-menu"
@@ -42,7 +47,6 @@ export function MobileMenu() {
       aria-label="Mobil menü"
       className="fixed inset-0 z-[100] md:hidden"
     >
-      {/* opaque backdrop — clicking closes */}
       <button
         type="button"
         aria-label="Menüyü kapat"
@@ -51,7 +55,6 @@ export function MobileMenu() {
         className="absolute inset-0 bg-black/60"
       />
 
-      {/* sliding panel — fully opaque background */}
       <div className="bg-background absolute inset-y-0 right-0 flex w-full max-w-sm flex-col shadow-2xl">
         <div className="border-border flex items-center justify-between border-b px-5 py-4">
           <span className="text-lg font-semibold tracking-tight">
@@ -100,20 +103,50 @@ export function MobileMenu() {
         </nav>
 
         <div className="border-border flex flex-col gap-2 border-t px-5 py-4">
-          <Link
-            href="/giris"
-            onClick={close}
-            className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}
-          >
-            Giriş
-          </Link>
-          <Link
-            href="/kayit"
-            onClick={close}
-            className={cn(buttonVariants({ variant: 'primary' }), 'w-full')}
-          >
-            Üye Ol
-          </Link>
+          {loading ? (
+            <div className="bg-muted h-10 w-full animate-pulse rounded-md" aria-hidden="true" />
+          ) : user ? (
+            <>
+              <Link
+                href="/profil"
+                onClick={close}
+                className={cn(buttonVariants({ variant: 'outline' }), 'w-full justify-start gap-2')}
+              >
+                <User className="size-4" aria-hidden="true" />
+                <span className="truncate">{displayName}</span>
+              </Link>
+              <form action={signOutAction}>
+                <button
+                  type="submit"
+                  onClick={close}
+                  className={cn(
+                    buttonVariants({ variant: 'ghost' }),
+                    'w-full justify-start gap-2',
+                  )}
+                >
+                  <LogOut className="size-4" aria-hidden="true" />
+                  Çıkış yap
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/giris"
+                onClick={close}
+                className={cn(buttonVariants({ variant: 'outline' }), 'w-full')}
+              >
+                Giriş
+              </Link>
+              <Link
+                href="/kayit"
+                onClick={close}
+                className={cn(buttonVariants({ variant: 'primary' }), 'w-full')}
+              >
+                Üye Ol
+              </Link>
+            </>
+          )}
         </div>
       </div>
     </div>
