@@ -17,9 +17,11 @@
     "db:diff": "supabase db diff",
     "db:new-migration": "supabase migration new",
     "db:gen-types": "supabase gen types typescript --local > src/types/supabase.ts",
-    "seed": "tsx --env-file=.env.local scripts/seed.ts"
+    "seed": "tsx --env-file=.env.local scripts/seed.ts",
+    "ai:backfill": "tsx --env-file=.env.local scripts/backfill-embeddings.ts"
   },
   "dependencies": {
+    "@google/genai": "^2.0.1",
     "@supabase/ssr": "^0.10.3",
     "@supabase/supabase-js": "^2.105.4",
     "class-variance-authority": "^0.7.1",

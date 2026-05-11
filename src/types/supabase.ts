@@ -676,6 +676,31 @@ export type Database = {
         }
       }
       generate_booking_code: { Args: never; Returns: string }
+      match_deals: {
+        Args: {
+          filter_city?: string
+          match_count?: number
+          query_embedding: string
+        }
+        Returns: {
+          audience: string[]
+          city: string
+          cover_image: string
+          description: string
+          discount_percent: number
+          discounted_price: number
+          district: string
+          duration_minutes: number
+          id: string
+          original_price: number
+          similarity: number
+          slug: string
+          subtitle: string
+          tags: string[]
+          title: string
+          venue_name: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
