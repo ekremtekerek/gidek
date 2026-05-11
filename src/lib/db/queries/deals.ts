@@ -13,6 +13,10 @@ export type DealWithMerchant = DealRow & {
   merchant: Pick<MerchantRow, 'name' | 'slug' | 'city' | 'district'> | null;
 };
 
+export type DealDetailed = DealWithMerchant & {
+  categories: { slug: string; name: string }[];
+};
+
 const DEAL_SELECT = `
   *,
   merchant:merchants ( name, slug, city, district )
@@ -78,16 +82,28 @@ export async function listDeals({
   return (data ?? []) as unknown as DealWithMerchant[];
 }
 
-export async function getDealBySlug(slug: string): Promise<DealWithMerchant | null> {
+export async function getDealBySlug(slug: string): Promise<DealDetailed | null> {
   const supabase = getPublicClient();
   const { data, error } = await supabase
     .from('deals')
-    .select(DEAL_SELECT)
+    .select(`${DEAL_SELECT}, deal_categories ( category:categories ( slug, name ) )`)
     .eq('slug', slug)
     .maybeSingle();
 
   if (error) throw error;
-  return data as unknown as DealWithMerchant | null;
+  if (!data) return null;
+
+  const raw = data as unknown as DealWithMerchant & {
+    deal_categories: { category: { slug: string; name: string } | null }[] | null;
+  };
+
+  const categories = (raw.deal_categories ?? [])
+    .map((dc) => dc.category)
+    .filter((c): c is { slug: string; name: string } => c !== null);
+
+  const { deal_categories: _omit, ...rest } = raw;
+  void _omit;
+  return { ...rest, categories };
 }
 
 export async function listPublishedDealSlugs(): Promise<string[]> {

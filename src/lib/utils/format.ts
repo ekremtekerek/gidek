@@ -20,6 +20,18 @@ export function formatDate(date: string | Date): string {
 }
 
 /**
+ * Format minutes as Turkish-friendly duration: `1 sa 30 dk` / `45 dk`.
+ */
+export function formatDuration(minutes: number | null | undefined): string | null {
+  if (!minutes || minutes <= 0) return null;
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  if (hours === 0) return `${rest} dk`;
+  if (rest === 0) return `${hours} sa`;
+  return `${hours} sa ${rest} dk`;
+}
+
+/**
  * Turkish-aware slug generator. Removes diacritics, replaces spaces with `-`.
  * Output is URL- and DB-safe (matches the CHECK constraint vocabulary patterns).
  */

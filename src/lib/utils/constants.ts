@@ -59,6 +59,10 @@ export const DEAL_TAGS = [
 export type DealTagSlug = (typeof DEAL_TAGS)[number]['slug'];
 export type DealTagGroup = (typeof DEAL_TAGS)[number]['group'];
 
+export const DEAL_TAG_LABEL: Record<string, string> = Object.fromEntries(
+  DEAL_TAGS.map((t) => [t.slug, t.label]),
+);
+
 export const AUDIENCE = [
   { slug: 'couple', label: 'Çiftler' },
   { slug: 'family', label: 'Aile' },
@@ -68,6 +72,10 @@ export const AUDIENCE = [
 ] as const;
 
 export type AudienceSlug = (typeof AUDIENCE)[number]['slug'];
+
+export const AUDIENCE_LABEL: Record<string, string> = Object.fromEntries(
+  AUDIENCE.map((a) => [a.slug, a.label]),
+);
 
 export const HOUSEHOLD_TYPES = [
   { slug: 'single', label: 'Yalnız yaşıyorum' },
