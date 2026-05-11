@@ -55,6 +55,7 @@ $$;
 create or replace function public.generate_booking_code()
 returns text
 language plpgsql
+set search_path = ''
 as $$
 declare
   alphabet text := 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';

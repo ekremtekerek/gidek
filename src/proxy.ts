@@ -4,8 +4,11 @@ import { NextResponse, type NextRequest } from 'next/server';
 /**
  * Refreshes the Supabase session cookie on every request so Server Components
  * see fresh auth state. Without this, getUser() returns stale claims.
+ *
+ * Next.js 16 renamed `middleware.ts` -> `proxy.ts` and the exported function
+ * from `middleware` -> `proxy`.
  */
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(
