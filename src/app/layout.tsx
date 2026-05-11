@@ -1,5 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { Footer } from '@/components/layout/footer';
+import { Header } from '@/components/layout/header';
+import { JsonLd } from '@/components/seo/json-ld';
+import { SITE } from '@/lib/utils/site-config';
 import './globals.css';
 
 const inter = Inter({
@@ -8,24 +12,22 @@ const inter = Inter({
   display: 'swap',
 });
 
-const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000';
-
 export const metadata: Metadata = {
-  metadataBase: new URL(siteUrl),
+  metadataBase: new URL(SITE.url),
   title: {
-    default: 'gidek — AI ile sana özel fırsatlar',
-    template: '%s · gidek',
+    default: `${SITE.name} — ${SITE.tagline}`,
+    template: `%s · ${SITE.name}`,
   },
-  description:
-    'Ne yapmak istediğini söyle, gidek senin için en uygun fırsatları bulsun. Tiyatro, kahvaltı, tatil, masaj ve daha fazlası.',
-  applicationName: 'gidek',
-  authors: [{ name: 'gidek' }],
+  description: SITE.description,
+  applicationName: SITE.name,
+  authors: [{ name: SITE.name }],
   openGraph: {
     type: 'website',
-    locale: 'tr_TR',
-    siteName: 'gidek',
-    url: siteUrl,
+    locale: SITE.locale,
+    siteName: SITE.name,
+    url: SITE.url,
   },
+  twitter: { card: 'summary_large_image' },
   robots: { index: true, follow: true },
 };
 
@@ -38,11 +40,23 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const orgJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'Organization',
+  name: SITE.name,
+  url: SITE.url,
+  description: SITE.description,
+  sameAs: [SITE.social.instagram, SITE.social.x],
+};
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr" className={`${inter.variable} h-full antialiased`}>
       <body className="bg-background text-foreground flex min-h-full flex-col font-sans">
-        {children}
+        <Header />
+        <div className="flex-1">{children}</div>
+        <Footer />
+        <JsonLd data={orgJsonLd} />
       </body>
     </html>
   );

@@ -15,7 +15,9 @@
     "db:status": "supabase status",
     "db:reset": "supabase db reset",
     "db:diff": "supabase db diff",
-    "db:new-migration": "supabase migration new"
+    "db:new-migration": "supabase migration new",
+    "db:gen-types": "supabase gen types typescript --local > src/types/supabase.ts",
+    "seed": "tsx --env-file=.env.local scripts/seed.ts"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.3",
@@ -34,12 +36,14 @@
     "@types/node": "^20.19.40",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.6",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
     "supabase": "^2.98.2",
     "tailwindcss": "^4",
+    "tsx": "^4.21.0",
     "typescript": "^5"
   }
 }
