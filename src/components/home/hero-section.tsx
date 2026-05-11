@@ -4,11 +4,12 @@ import { Container } from '@/components/ui/container';
 import { HeroSearch } from '@/components/home/hero-search';
 
 const QUICK_PROMPTS = [
-  { label: 'Cumartesi belli değil', q: 'Cumartesi akşamı eşimle ne yapabilirim 800 TL bütçeyle' },
-  { label: 'Pazar ailecek', q: 'Pazar günü ailecek kahvaltı veya aktivite' },
-  { label: 'Bu gece çıkacak yer', q: 'Bu gece eğlenceli bir mekan, müzik veya stand-up' },
-  { label: 'Yorgunum, rahatlatıcı', q: 'Yorgunum, pazar günü huzurlu bir şey — masaj veya doğa' },
-  { label: 'Doğum günü', q: 'Doğum günü için özel bir akşam yemeği veya aktivite' },
+  { label: 'Kadıköy kahvaltı', q: 'Kadıköy çevresinde pazar sabahı 2 kişilik serpme kahvaltı' },
+  { label: 'Cumartesi akşam yemeği', q: 'Cumartesi akşamı eşimle romantik akşam yemeği, 800 TL bütçe' },
+  { label: 'Pazar ailecek', q: 'Pazar günü ailecek bahçeli brunch veya doğa aktivitesi' },
+  { label: 'Çocukla hafta sonu', q: 'Çocuğumla cumartesi sabahı bir aktivite veya çocuk tiyatrosu' },
+  { label: 'Yorgunum, masaj', q: 'Yorgunum, pazar günü 60-90 dakikalık rahatlatıcı masaj' },
+  { label: 'Antalya hafta sonu', q: 'Antalya’da hafta sonu için her şey dahil otel önerisi' },
 ] as const;
 
 export function HeroSection() {
