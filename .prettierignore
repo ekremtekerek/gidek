@@ -1,0 +1,11 @@
+node_modules
+.next
+out
+build
+coverage
+*.lock
+package-lock.json
+supabase/.temp
+supabase/.branches
+public
+next-env.d.ts
