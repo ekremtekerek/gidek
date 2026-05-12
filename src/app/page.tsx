@@ -10,12 +10,12 @@ export const revalidate = 300; // ISR: 5 minutes
 
 export default async function HomePage() {
   const [featured, recent] = await Promise.all([
-    listDeals({ featured: true, limit: 8 }),
+    listDeals({ featured: true, limit: 12 }),
     listDeals({ limit: 12 }),
   ]);
 
   // Fall back to recent deals if not enough featured exist yet (mock data).
-  const carouselDeals = featured.length >= 3 ? featured : recent.slice(0, 8);
+  const carouselDeals = featured.length >= 4 ? featured : recent.slice(0, 12);
 
   return (
     <>

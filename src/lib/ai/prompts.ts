@@ -30,8 +30,19 @@ KURALLAR:
    - Kategori (kahvaltı, yemek, tiyatro, masaj, vb.)
 6. Sadece JSON döndür. Markdown, açıklama veya başka metin EKLEME.`;
 
-export function userPrompt(query: string, candidates: CandidateForPrompt[]): string {
-  return `Kullanıcı sorgusu:
+export function userPrompt(
+  query: string,
+  candidates: CandidateForPrompt[],
+  context?: string | null,
+): string {
+  const contextBlock = context
+    ? `Kullanıcı profili (gizli notlar — bu bilgileri sorgudan üstün tut):
+${context}
+
+`
+    : '';
+
+  return `${contextBlock}Kullanıcı sorgusu:
 "${query}"
 
 Aday fırsatlar (benzerliğe göre sıralı, en yakın önce):

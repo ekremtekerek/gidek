@@ -76,11 +76,16 @@ export function FeaturedCarousel({ deals }: Props) {
         </div>
 
         <div ref={emblaRef} className="overflow-hidden">
-          <div className="flex gap-4">
+          {/* Embla canonical pattern: viewport overflow-hidden, container has
+              negative left margin equal to slide left padding so the first
+              card sits flush. Each slide owns its own gutter via pl-*. This
+              keeps gaps consistent at every scroll position (the previous
+              gap-4 made the gap collapse at the right edge during scroll). */}
+          <div className="-ml-4 flex touch-pan-y">
             {deals.map((deal, i) => (
               <div
                 key={deal.id}
-                className="min-w-0 shrink-0 grow-0 basis-full sm:basis-1/2 lg:basis-1/3 xl:basis-1/4"
+                className="min-w-0 shrink-0 grow-0 basis-full pl-4 sm:basis-1/2 lg:basis-1/3 xl:basis-1/4"
               >
                 <DealCard deal={deal} priority={i < 2} />
               </div>

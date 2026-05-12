@@ -59,5 +59,7 @@ export async function signUpAction(
   }
 
   revalidatePath('/', 'layout');
-  redirect(safeNext(formData.get('next')));
+  // New signups go to onboarding by default; an explicit `next` overrides.
+  const next = formData.get('next');
+  redirect(next && typeof next === 'string' && next !== '/' ? safeNext(next) : '/onboarding');
 }

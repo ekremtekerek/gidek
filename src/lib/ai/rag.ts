@@ -8,6 +8,7 @@ import {
   type Recommendation,
 } from '@/lib/ai/schema';
 import { getServiceClient } from '@/lib/db/service';
+import { getUserPreferences, summarisePreferences } from '@/lib/db/queries/preferences';
 import { getCurrentUser } from '@/lib/security/auth';
 import { checkAiRateLimit } from '@/lib/security/rate-limit';
 
@@ -146,6 +147,10 @@ export async function aiSearch(query: string): Promise<AiSearchResult> {
     };
   }
 
+  // Personalisation context: pull the caller's saved preferences and turn
+  // them into a one-line note for Gemini. Anonymous users get null.
+  const userContext = userId ? summarisePreferences(await getUserPreferences(userId)) : null;
+
   // Gemini ranking
   let recommendation: Recommendation;
   try {
@@ -164,7 +169,7 @@ export async function aiSearch(query: string): Promise<AiSearchResult> {
     const ai = getGeminiClient();
     const response = await ai.models.generateContent({
       model: MODELS.chat,
-      contents: userPrompt(trimmed, candidatesForPrompt),
+      contents: userPrompt(trimmed, candidatesForPrompt, userContext),
       config: {
         systemInstruction: SYSTEM_PROMPT,
         temperature: 0.3,
