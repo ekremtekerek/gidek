@@ -1,4 +1,4 @@
-import { convertToModelMessages, streamText, type UIMessage } from 'ai';
+import { convertToModelMessages, stepCountIs, streamText, type UIMessage } from 'ai';
 import { CHAT_SYSTEM_PROMPT } from '@/lib/ai/chat-prompt';
 import { CHAT_MODEL, google } from '@/lib/ai/sdk';
 import { chatTools } from '@/lib/ai/tools';
@@ -53,8 +53,11 @@ export async function POST(req: Request) {
     messages: modelMessages,
     tools: chatTools,
     temperature: 0.6,
-    // experimental_continueSteps would let Gemini chain multiple tool calls;
-    // for now a single call per turn is enough and predictable for cost.
+    // AI SDK v6 defaults to one step — the model would call a tool and stop,
+    // leaving the user with cards but no commentary. stepCountIs(5) lets it
+    // call the tool, see the result, then write the wrap-up text in the same
+    // streamed turn (predictable cost — still a single user message).
+    stopWhen: stepCountIs(5),
   });
 
   // Fire-and-forget logging — never block the stream on it.

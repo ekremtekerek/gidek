@@ -1,12 +1,14 @@
+import { Suspense } from 'react';
 import { CategoryGrid } from '@/components/home/category-grid';
 import { FeaturedCarousel } from '@/components/home/featured-carousel';
-import { HeroSection } from '@/components/home/hero-section';
 import { HowItWorks } from '@/components/home/how-it-works';
+import { ChatContainer } from '@/components/kesfet/chat-container';
 import { DealCard } from '@/components/deal/deal-card';
 import { Container } from '@/components/ui/container';
+import { Skeleton } from '@/components/ui/skeleton';
 import { listDeals } from '@/lib/db/queries/deals';
 
-export const revalidate = 300; // ISR: 5 minutes
+export const revalidate = 300; // ISR: 5 minutes — chat itself is fully client.
 
 export default async function HomePage() {
   const [featured, recent] = await Promise.all([
@@ -14,12 +16,14 @@ export default async function HomePage() {
     listDeals({ limit: 12 }),
   ]);
 
-  // Fall back to recent deals if not enough featured exist yet (mock data).
   const carouselDeals = featured.length >= 4 ? featured : recent.slice(0, 12);
 
   return (
     <>
-      <HeroSection />
+      <Suspense fallback={<ChatFallback />}>
+        <ChatContainer />
+      </Suspense>
+
       <FeaturedCarousel deals={carouselDeals} />
       <HowItWorks />
       <CategoryGrid />
@@ -50,5 +54,16 @@ export default async function HomePage() {
         </Container>
       </section>
     </>
+  );
+}
+
+function ChatFallback() {
+  return (
+    <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 px-4 py-14 text-center sm:py-20">
+      <Skeleton className="h-6 w-40 rounded-full" />
+      <Skeleton className="h-12 w-72 sm:h-14 sm:w-96" />
+      <Skeleton className="h-4 w-80" />
+      <Skeleton className="mt-2 h-14 w-full max-w-xl rounded-2xl" />
+    </div>
   );
 }
