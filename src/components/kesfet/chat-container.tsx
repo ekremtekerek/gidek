@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
-import { ArrowRight, RotateCcw, Sparkles } from 'lucide-react';
+import { RotateCcw, Send, Sparkles } from 'lucide-react';
 import { ChatMessage } from '@/components/kesfet/chat-message';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
@@ -29,16 +29,29 @@ export function ChatContainer() {
   });
 
   const isLoading = status === 'submitted' || status === 'streaming';
+  const isEmpty = messages.length === 0;
 
-  // Auto-send query string on first mount only — React StrictMode runs effects
-  // twice in dev, so guard with a ref to avoid duplicate sends.
+  // Auto-send ?q= once on mount (StrictMode-safe via ref).
   const autoSentRef = useRef(false);
   useEffect(() => {
-    if (initialQ && !autoSentRef.current && messages.length === 0) {
+    if (initialQ && !autoSentRef.current && isEmpty) {
       autoSentRef.current = true;
       void sendMessage({ text: initialQ });
     }
-  }, [initialQ, messages.length, sendMessage]);
+  }, [initialQ, isEmpty, sendMessage]);
+
+  // Auto-scroll the messages container to the bottom whenever new content
+  // arrives. Skipped while empty (no scroll container yet).
+  const scrollRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (isEmpty) return;
+    const el = scrollRef.current;
+    if (!el) return;
+    // Scroll to the absolute bottom in a microtask so the new DOM is in place.
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight;
+    });
+  }, [messages, isLoading, isEmpty]);
 
   function onSubmit(e?: FormEvent) {
     e?.preventDefault();
@@ -60,21 +73,46 @@ export function ChatContainer() {
     autoSentRef.current = false;
   }
 
-  const isEmpty = messages.length === 0;
-
   return (
-    <section aria-label="AI keşif sohbeti" className="relative isolate overflow-hidden">
-      {/* decorative glow — only when empty so it doesn't compete with chat content */}
+    <section
+      aria-label="AI sohbet"
+      className="relative isolate flex min-h-[calc(100svh-4rem)] flex-col"
+    >
+      {/* Decorative radial glow — only in empty state */}
       {isEmpty ? (
         <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">
-          <div className="absolute top-1/3 left-1/2 size-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-amber-300/25 via-rose-300/15 to-blue-300/25 blur-3xl dark:from-amber-500/10 dark:via-rose-500/10 dark:to-blue-500/10" />
+          <div className="absolute top-1/2 left-1/2 size-[600px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-gradient-to-br from-amber-300/25 via-rose-300/15 to-blue-300/25 blur-3xl dark:from-amber-500/10 dark:via-rose-500/10 dark:to-blue-500/10" />
         </div>
       ) : null}
 
-      <div className="mx-auto flex w-full max-w-3xl flex-col gap-6 px-4 py-10 sm:px-6 sm:py-14">
-        {isEmpty ? <WelcomeHero /> : <MessageList messages={messages} isLoading={isLoading} />}
+      {/* Main area — welcome (empty) or scrollable message list (active) */}
+      {isEmpty ? (
+        <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-14">
+          <WelcomeHero />
+        </div>
+      ) : (
+        <div
+          ref={scrollRef}
+          className="flex-1 overflow-y-auto overscroll-contain"
+        >
+          <div className="mx-auto flex max-w-3xl flex-col gap-5 px-4 py-6 sm:px-6">
+            {messages.map((m) => (
+              <ChatMessage key={m.id} message={m} />
+            ))}
+            {isLoading ? <TypingIndicator /> : null}
+          </div>
+        </div>
+      )}
 
+      {/* Bottom dock: error + quick prompts (empty only) + chat input */}
+      <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4 sm:px-6 sm:pb-6">
         {error ? <ErrorBanner error={error} /> : null}
+
+        {isEmpty ? (
+          <div className="mb-3">
+            <QuickPrompts onPrompt={onQuickPrompt} />
+          </div>
+        ) : null}
 
         <ChatInputBar
           value={input}
@@ -84,7 +122,12 @@ export function ChatContainer() {
           disabled={isLoading}
         />
 
-        {isEmpty ? <QuickPrompts onPrompt={onQuickPrompt} /> : null}
+        <p className="text-muted-foreground/70 mt-2 text-center text-[11px]">
+          gidek AI{' '}
+          {isLoading
+            ? 'düşünüyor…'
+            : 'yanıltıcı olabilir; önemli kararlar için ilgili işletmeye doğrula.'}
+        </p>
       </div>
     </section>
   );
@@ -92,43 +135,39 @@ export function ChatContainer() {
 
 function WelcomeHero() {
   return (
-    <header className="flex flex-col items-center gap-4 text-center sm:gap-5">
+    <div className="flex flex-col items-center gap-5 text-center sm:gap-6">
       <span className="border-border bg-background/70 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur">
         <Sparkles className="size-3.5" aria-hidden="true" />
         AI destekli plan keşfi
       </span>
-      <h1 className="max-w-2xl text-3xl font-semibold tracking-tight text-balance sm:text-4xl md:text-5xl">
+      <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
         Merhaba, ne yapmak istersin?
       </h1>
-      <p className="text-muted-foreground max-w-lg text-balance sm:text-lg">
-        Aklındakini yaz — birkaç fırsat seçeyim ve neden uyuyor anlatayım. İstersen tüm bir gün
-        planı bile kurayım.
+      <p className="text-muted-foreground max-w-md text-balance sm:text-lg">
+        Aklındakini yaz — birkaç fırsat seçeyim, neden uyduğunu anlatayım. İstersen tüm bir günü
+        baştan sona kurarım.
       </p>
-    </header>
+    </div>
   );
 }
 
-function MessageList({
-  messages,
-  isLoading,
-}: {
-  messages: ReturnType<typeof useChat>['messages'];
-  isLoading: boolean;
-}) {
+function TypingIndicator() {
   return (
-    <div className="flex flex-col gap-5">
-      {messages.map((m) => (
-        <ChatMessage key={m.id} message={m} />
-      ))}
-      {isLoading ? (
-        <div className="text-muted-foreground flex items-center gap-2 pl-11 text-sm">
-          <span className="inline-block size-1.5 animate-pulse rounded-full bg-current" />
-          <span className="inline-block size-1.5 animate-pulse rounded-full bg-current [animation-delay:120ms]" />
-          <span className="inline-block size-1.5 animate-pulse rounded-full bg-current [animation-delay:240ms]" />
-          gidek düşünüyor…
+    <article className="flex gap-3" aria-label="gidek yazıyor">
+      <span
+        className="bg-violet-500/15 text-violet-600 dark:text-violet-300 inline-flex size-8 shrink-0 items-center justify-center rounded-full"
+        aria-hidden="true"
+      >
+        <Sparkles className="size-4" />
+      </span>
+      <div className="bg-muted rounded-2xl rounded-tl-sm px-4 py-3">
+        <div className="flex items-center gap-1">
+          <span className="bg-foreground/40 inline-block size-2 animate-bounce rounded-full [animation-delay:0ms]" />
+          <span className="bg-foreground/40 inline-block size-2 animate-bounce rounded-full [animation-delay:120ms]" />
+          <span className="bg-foreground/40 inline-block size-2 animate-bounce rounded-full [animation-delay:240ms]" />
         </div>
-      ) : null}
-    </div>
+      </div>
+    </article>
   );
 }
 
@@ -151,11 +190,10 @@ function ChatInputBar({
         e.preventDefault();
         onSubmit();
       }}
-      className="border-border bg-background/95 focus-within:border-foreground/50 sticky bottom-2 z-10 flex items-end gap-2 rounded-2xl border-2 p-2 shadow-md backdrop-blur transition-colors sm:bottom-4"
-      role="search"
+      className="border-border bg-background/95 focus-within:border-foreground/40 hover:border-foreground/30 flex items-end gap-2 rounded-3xl border p-1.5 shadow-sm backdrop-blur transition-colors"
     >
       <label htmlFor="chat-input" className="sr-only">
-        Ne yapmak istersin?
+        Aklında ne var?
       </label>
       <textarea
         id="chat-input"
@@ -167,31 +205,33 @@ function ChatInputBar({
             onSubmit();
           }
         }}
-        placeholder="Ne yapmak istersin? Örn. 'Cumartesi eşimle romantik akşam yemeği'"
+        placeholder="Aklında ne var? — gerisini bana bırak."
         rows={1}
         maxLength={500}
         disabled={disabled}
-        className="placeholder:text-muted-foreground/80 min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2.5 text-sm outline-none disabled:opacity-60 sm:text-base"
+        className="placeholder:text-muted-foreground/70 min-h-[40px] flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none disabled:opacity-60 sm:text-base"
       />
+
       {onReset ? (
         <button
           type="button"
           onClick={onReset}
           disabled={disabled}
-          className="hover:bg-muted text-muted-foreground inline-flex size-10 shrink-0 items-center justify-center rounded-xl"
           aria-label="Yeni sohbet"
           title="Yeni sohbet"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-colors"
         >
           <RotateCcw className="size-4" aria-hidden="true" />
         </button>
       ) : null}
+
       <button
         type="submit"
         disabled={disabled || value.trim().length === 0}
-        className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex size-10 shrink-0 items-center justify-center rounded-xl transition-colors disabled:opacity-50"
         aria-label="Gönder"
+        className="bg-foreground text-background hover:bg-foreground/90 inline-flex size-9 shrink-0 items-center justify-center rounded-full transition-all disabled:opacity-40"
       >
-        <ArrowRight className="size-4" aria-hidden="true" />
+        <Send className="size-4 -translate-x-px translate-y-px" aria-hidden="true" />
       </button>
     </form>
   );
@@ -199,7 +239,10 @@ function ChatInputBar({
 
 function QuickPrompts({ onPrompt }: { onPrompt: (t: string) => void }) {
   return (
-    <ul aria-label="Hızlı başlangıç" className="flex w-full flex-wrap justify-center gap-2">
+    <ul
+      aria-label="Hızlı başlangıç"
+      className="flex w-full flex-wrap justify-center gap-2"
+    >
       {QUICK_PROMPTS.map((p) => (
         <li key={p.label}>
           <button
@@ -222,7 +265,7 @@ function ErrorBanner({ error }: { error: Error }) {
 
   if (isSignup) {
     return (
-      <div className="border-amber-500/30 bg-amber-500/10 flex flex-col items-start gap-3 rounded-lg border p-4 sm:flex-row sm:items-center">
+      <div className="border-amber-500/30 bg-amber-500/10 mb-3 flex flex-col items-start gap-3 rounded-lg border p-4 sm:flex-row sm:items-center">
         <div className="flex-1">
           <p className="text-sm font-medium">Ücretsiz sorgu hakkın bugünlük doldu</p>
           <p className="text-muted-foreground mt-0.5 text-xs">
@@ -240,7 +283,10 @@ function ErrorBanner({ error }: { error: Error }) {
   }
 
   return (
-    <div role="alert" className="border-rose-500/30 bg-rose-500/10 rounded-lg border p-4 text-sm">
+    <div
+      role="alert"
+      className="border-rose-500/30 bg-rose-500/10 mb-3 rounded-lg border p-4 text-sm"
+    >
       {isRate
         ? 'Günlük sorgu limitin doldu. Yarın tekrar dene.'
         : 'Bir şeyler ters gitti — tekrar denemek ister misin?'}
