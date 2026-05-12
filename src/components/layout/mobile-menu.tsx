@@ -13,13 +13,14 @@ import { SITE } from '@/lib/utils/site-config';
 
 interface Props {
   user: SupabaseUser | null;
+  avatarUrl?: string | null;
 }
 
-// User is passed in from the server-rendered Header so the menu reflects
-// the latest cookie-bound auth state immediately after login/logout
+// User and avatar are passed in from the server-rendered Header so the menu
+// reflects the latest cookie-bound auth state immediately after login/logout
 // (the previous useUser() hook lagged because Supabase's browser
 // onAuthStateChange doesn't fire when a server action mutates the cookie).
-export function MobileMenu({ user }: Props) {
+export function MobileMenu({ user, avatarUrl }: Props) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -115,9 +116,23 @@ export function MobileMenu({ user }: Props) {
               <Link
                 href="/profil"
                 onClick={close}
-                className={cn(buttonVariants({ variant: 'outline' }), 'w-full justify-start gap-2')}
+                className={cn(
+                  buttonVariants({ variant: 'outline' }),
+                  'w-full justify-start gap-2 pl-2',
+                )}
               >
-                <User className="size-4" aria-hidden="true" />
+                <span className="bg-muted text-muted-foreground inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full">
+                  {avatarUrl ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={avatarUrl}
+                      alt={displayName}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <User className="size-3.5" aria-hidden="true" />
+                  )}
+                </span>
                 <span className="truncate">{displayName}</span>
               </Link>
               <Link

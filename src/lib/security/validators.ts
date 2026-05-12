@@ -125,3 +125,23 @@ export const createBookingSchema = z.object({
 });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
+
+export const profileUpdateSchema = z.object({
+  display_name: z
+    .string()
+    .trim()
+    .min(2, 'En az 2 karakter')
+    .max(50, 'En fazla 50 karakter')
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null))
+    .or(z.literal('').transform(() => null)),
+  phone: z
+    .string()
+    .trim()
+    .max(20, 'En fazla 20 karakter')
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null))
+    .or(z.literal('').transform(() => null)),
+});
+
+export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
