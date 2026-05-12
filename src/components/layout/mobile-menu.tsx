@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
-import { LogOut, Menu, Sparkles, User, X } from 'lucide-react';
+import { Heart, LogOut, Menu, Sparkles, User, X } from 'lucide-react';
 import { signOutAction } from '@/app/profil/actions';
 import { buttonVariants } from '@/components/ui/button';
 import { useUser } from '@/hooks/use-user';
@@ -114,6 +114,14 @@ export function MobileMenu() {
               >
                 <User className="size-4" aria-hidden="true" />
                 <span className="truncate">{displayName}</span>
+              </Link>
+              <Link
+                href="/favorilerim"
+                onClick={close}
+                className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start gap-2')}
+              >
+                <Heart className="size-4" aria-hidden="true" />
+                Favorilerim
               </Link>
               <form action={signOutAction}>
                 <button

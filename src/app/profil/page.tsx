@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
-import { LogOut, Mail, User } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronRight, Heart, LogOut, Mail, Settings, User } from 'lucide-react';
 import { signOutAction } from '@/app/profil/actions';
 import { Button } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
@@ -62,6 +63,35 @@ export default async function ProfilPage() {
             </div>
           ) : null}
         </dl>
+
+        <nav aria-label="Profil menüsü" className="border-border bg-background mb-8 divide-y divide-[var(--border)] rounded-lg border">
+          <Link
+            href="/favorilerim"
+            className="hover:bg-muted/50 flex items-center gap-4 p-4 transition-colors sm:p-5"
+          >
+            <Heart className="size-5 shrink-0 text-rose-500" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">Favorilerim</p>
+              <p className="text-muted-foreground text-xs">Kaydettiğin fırsatları gör</p>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
+          </Link>
+          <Link
+            href="/onboarding"
+            className="hover:bg-muted/50 flex items-center gap-4 p-4 transition-colors sm:p-5"
+          >
+            <Settings className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">AI tercihleri</p>
+              <p className="text-muted-foreground text-xs">
+                {profile?.onboarding_done
+                  ? 'Şehir, bütçe, ilgi alanları — güncelle'
+                  : 'Tamamla — öneriler kişiselleşsin'}
+              </p>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
+          </Link>
+        </nav>
 
         <form action={signOutAction}>
           <Button type="submit" variant="outline" size="md">

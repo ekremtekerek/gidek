@@ -2,17 +2,23 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Clock, Lock, MapPin, Users } from 'lucide-react';
+import { Clock, Heart, Lock, MapPin, Users } from 'lucide-react';
+import { FavoriteButton } from '@/components/favorites/favorite-button';
 import { JsonLd } from '@/components/seo/json-ld';
 import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { getDealBySlug, listPublishedDealSlugs } from '@/lib/db/queries/deals';
+import { isFavorite } from '@/lib/db/queries/favorites';
+import { getCurrentUser } from '@/lib/security/auth';
+import { cn } from '@/lib/utils/cn';
 import { AUDIENCE_LABEL, DEAL_TAG_LABEL } from '@/lib/utils/constants';
 import { formatDuration, formatTRY } from '@/lib/utils/format';
 import { SITE } from '@/lib/utils/site-config';
 
-export const revalidate = 3600; // 1 hour ISR
+// Auth state (favorite toggle) means we can't ISR every minute — switch to
+// per-request rendering so the heart shows the right state for the caller.
+export const dynamic = 'force-dynamic';
 
 type Params = { slug: string };
 
@@ -58,6 +64,9 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
   const { slug } = await params;
   const deal = await getDealBySlug(slug);
   if (!deal) notFound();
+
+  const user = await getCurrentUser();
+  const favorited = user ? await isFavorite(deal.id) : false;
 
   const primaryCategory = deal.categories[0];
   const location = [deal.district, deal.city].filter(Boolean).join(', ');
@@ -258,12 +267,19 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                 <Lock className="size-4" aria-hidden="true" />
                 Rezervasyon Yap
               </Button>
-              <Button variant="outline" size="md" full disabled>
-                Favorilere ekle
-              </Button>
+              {user ? (
+                <FavoriteButton dealId={deal.id} initialFavorited={favorited} />
+              ) : (
+                <Link
+                  href={`/giris?next=/f/${deal.slug}`}
+                  className={cn(buttonVariants({ variant: 'outline', size: 'md' }), 'w-full gap-2')}
+                >
+                  <Heart className="size-4" aria-hidden="true" />
+                  Favorilere ekle
+                </Link>
+              )}
               <p className="text-muted-foreground text-center text-xs">
-                Rezervasyon ve favoriler için üyelik gerekiyor. Auth + ödeme akışı yakında
-                ekleniyor.
+                Rezervasyon akışı yakında — şimdilik favoriye al, takip et.
               </p>
 
               {deal.merchant ? (
