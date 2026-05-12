@@ -40,7 +40,15 @@ export function SignInForm({ next }: Props) {
       </div>
 
       <div className="flex flex-col gap-1.5">
-        <Label htmlFor="password">Şifre</Label>
+        <div className="flex items-baseline justify-between">
+          <Label htmlFor="password">Şifre</Label>
+          <Link
+            href="/sifre-sifirla"
+            className="text-muted-foreground hover:text-foreground text-xs underline-offset-4 hover:underline"
+          >
+            Şifremi unuttum
+          </Link>
+        </div>
         <Input
           id="password"
           name="password"
