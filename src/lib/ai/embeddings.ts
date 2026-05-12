@@ -1,4 +1,4 @@
-import 'server-only';
+// See gemini.ts for why this file does not import `server-only`.
 import { EMBEDDING_DIMENSIONS, MODELS, getGeminiClient } from './gemini';
 
 /**

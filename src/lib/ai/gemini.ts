@@ -1,4 +1,7 @@
-import 'server-only';
+// NOTE: no `import 'server-only'` here — this module is imported by the
+// standalone backfill script (scripts/backfill-embeddings.ts) via tsx, where
+// the react-server condition isn't active and `server-only` throws at runtime.
+// Protection is enforced at the call sites (rag.ts, API routes).
 import { GoogleGenAI } from '@google/genai';
 
 let client: GoogleGenAI | null = null;

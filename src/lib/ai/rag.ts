@@ -168,7 +168,12 @@ export async function aiSearch(query: string): Promise<AiSearchResult> {
       config: {
         systemInstruction: SYSTEM_PROMPT,
         temperature: 0.3,
-        maxOutputTokens: 800,
+        // 2.5 Flash's thinking shares this budget with the JSON output;
+        // 2000 leaves plenty of room for 5 picks with Turkish reasons.
+        maxOutputTokens: 2048,
+        // We don't need chain-of-thought for a ranking task — keep latency
+        // and cost predictable by turning thinking off.
+        thinkingConfig: { thinkingBudget: 0 },
         responseMimeType: 'application/json',
         responseSchema: RECOMMENDATION_RESPONSE_SCHEMA,
       },
@@ -176,7 +181,12 @@ export async function aiSearch(query: string): Promise<AiSearchResult> {
 
     const rawText = response.text;
     if (!rawText) throw new Error('Gemini returned empty response');
-    recommendation = recommendationSchema.parse(JSON.parse(rawText));
+    try {
+      recommendation = recommendationSchema.parse(JSON.parse(rawText));
+    } catch (parseErr) {
+      console.error('Gemini returned non-JSON or schema mismatch:', rawText.slice(0, 500));
+      throw parseErr;
+    }
   } catch (err) {
     console.error('Gemini rank failed:', err);
     await logQuery({
