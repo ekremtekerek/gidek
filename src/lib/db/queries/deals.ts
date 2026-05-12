@@ -1,5 +1,6 @@
 import 'server-only';
 import { getPublicClient } from '@/lib/db/public';
+import type { Bounds } from '@/lib/utils/geo';
 import type { Database } from '@/types/supabase';
 
 type DealRow = Database['public']['Tables']['deals']['Row'];
@@ -10,7 +11,12 @@ type MerchantRow = Database['public']['Tables']['merchants']['Row'];
  * query in this module so deal cards and detail pages have a single contract.
  */
 export type DealWithMerchant = DealRow & {
-  merchant: Pick<MerchantRow, 'name' | 'slug' | 'city' | 'district'> | null;
+  merchant:
+    | (Pick<MerchantRow, 'name' | 'slug' | 'city' | 'district'> & {
+        lat: number | null;
+        lng: number | null;
+      })
+    | null;
 };
 
 export type DealDetailed = DealWithMerchant & {
@@ -19,7 +25,7 @@ export type DealDetailed = DealWithMerchant & {
 
 const DEAL_SELECT = `
   *,
-  merchant:merchants ( name, slug, city, district )
+  merchant:merchants ( name, slug, city, district, lat, lng )
 `;
 
 export type DealSort = 'newest' | 'price-asc' | 'price-desc' | 'popular';
@@ -83,6 +89,8 @@ export async function listDeals({
   let query = supabase.from('deals').select(DEAL_SELECT).range(offset, offset + limit - 1);
 
   // Sorting — chained .order() calls compose into a multi-column sort.
+  // `id` tiebreaker her zaman en sonda: ties durumunda Postgres'in nondeterministic
+  // sıralaması nedeniyle paginated query'lerde page boundaries'te overlap oluşmasın.
   switch (sort) {
     case 'price-asc':
       query = query.order('discounted_price', { ascending: true });
@@ -101,6 +109,7 @@ export async function listDeals({
         .order('sort_priority', { ascending: false })
         .order('published_at', { ascending: false });
   }
+  query = query.order('id', { ascending: true });
 
   if (dealIdsByCategory) query = query.in('id', dealIdsByCategory);
   if (city) query = query.eq('city', city);
@@ -143,4 +152,70 @@ export async function listPublishedDealSlugs(): Promise<string[]> {
   const { data, error } = await supabase.from('deals').select('slug');
   if (error) throw error;
   return (data ?? []).map((d) => d.slug);
+}
+
+/**
+ * Harita için: belirli bir bbox içindeki merchant'lara ait fırsatlar.
+ * `merchant:merchants!inner` ile JOIN, lat/lng filtreleri PostgREST embedded
+ * filter syntax'ı (`merchant.lat`) ile çalıştırılır.
+ */
+export type DealWithCoords = DealWithMerchant & {
+  merchant:
+    | (Pick<MerchantRow, 'name' | 'slug' | 'city' | 'district'> & {
+        lat: number | null;
+        lng: number | null;
+      })
+    | null;
+};
+
+export async function getDealsInBounds(
+  bounds: Bounds,
+  options: { categorySlug?: string; limit?: number } = {},
+): Promise<DealWithCoords[]> {
+  const supabase = getPublicClient();
+  const limit = options.limit ?? 60;
+
+  // Category filter: same pattern as listDeals — resolve dealIds via the
+  // deal_categories junction first, then constrain the main query.
+  let dealIdsByCategory: string[] | undefined;
+  if (options.categorySlug) {
+    const { data: cat, error: catErr } = await supabase
+      .from('categories')
+      .select('id')
+      .eq('slug', options.categorySlug)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (catErr) throw catErr;
+    if (!cat) return [];
+
+    const { data: joins, error: joinErr } = await supabase
+      .from('deal_categories')
+      .select('deal_id')
+      .eq('category_id', cat.id);
+    if (joinErr) throw joinErr;
+    dealIdsByCategory = (joins ?? []).map((j) => j.deal_id);
+    if (dealIdsByCategory.length === 0) return [];
+  }
+
+  let query = supabase
+    .from('deals')
+    .select(
+      `
+      *,
+      merchant:merchants!inner ( name, slug, city, district, lat, lng )
+    `,
+    )
+    .filter('merchant.lat', 'gte', bounds.sw.lat)
+    .filter('merchant.lat', 'lte', bounds.ne.lat)
+    .filter('merchant.lng', 'gte', bounds.sw.lng)
+    .filter('merchant.lng', 'lte', bounds.ne.lng)
+    .order('sort_priority', { ascending: false })
+    .order('published_at', { ascending: false })
+    .limit(limit);
+
+  if (dealIdsByCategory) query = query.in('id', dealIdsByCategory);
+
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data ?? []) as unknown as DealWithCoords[];
 }

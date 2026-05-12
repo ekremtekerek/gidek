@@ -1,12 +1,10 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Heart } from 'lucide-react';
 import { DealCard } from '@/components/deal/deal-card';
-import { buttonVariants } from '@/components/ui/button';
+import { EmptyState } from '@/components/feedback/empty-state';
 import { Container } from '@/components/ui/container';
 import { listFavoriteDeals } from '@/lib/db/queries/favorites';
 import { requireUser } from '@/lib/security/auth';
-import { cn } from '@/lib/utils/cn';
 
 export const metadata: Metadata = {
   title: 'Favorilerim',
@@ -29,23 +27,19 @@ export default async function FavorilerimPage() {
         <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Favorilerim</h1>
         <p className="text-muted-foreground text-sm">
           {favorites.length === 0
-            ? 'Henüz favori eklemedin. Beğendiğin bir fırsatı kalp ile işaretle.'
+            ? 'Beğendiğin fırsatları buradan takip et.'
             : `${favorites.length} kayıtlı fırsat`}
         </p>
       </header>
 
       {favorites.length === 0 ? (
-        <div className="border-border bg-muted/40 flex flex-col items-center gap-4 rounded-xl border border-dashed p-12 text-center">
-          <span className="bg-background border-border inline-flex size-14 items-center justify-center rounded-full border">
-            <Heart className="size-6 text-rose-500" aria-hidden="true" />
-          </span>
-          <p className="text-muted-foreground max-w-md">
-            Favori listen şu an boş. Bir fırsata göz at, kalbi tıkla; buradan tek bakışta görelim.
-          </p>
-          <Link href="/" className={cn(buttonVariants({ variant: 'outline' }), 'mt-2')}>
-            Fırsatları keşfet
-          </Link>
-        </div>
+        <EmptyState
+          icon={Heart}
+          title="Favori listen boş"
+          description="Bir fırsata göz at, kart üzerindeki kalbe tıkla; buradan tek bakışta hatırlayabilirsin."
+          primaryAction={{ label: 'Fırsatları keşfet', href: '/' }}
+          secondaryAction={{ label: 'AI ile öneri al', href: '/?q=Bana+bir+f%C4%B1rsat+%C3%B6ner' }}
+        />
       ) : (
         <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {favorites.map((d) => (

@@ -1,28 +1,28 @@
-import { Suspense } from 'react';
 import { CategoryGrid } from '@/components/home/category-grid';
 import { FeaturedCarousel } from '@/components/home/featured-carousel';
+import { HomeHero } from '@/components/home/home-hero';
+import { HomeStageProvider } from '@/components/home/home-stage-context';
 import { HowItWorks } from '@/components/home/how-it-works';
-import { ChatContainer } from '@/components/kesfet/chat-container';
-import { DealCard } from '@/components/deal/deal-card';
+import { InfiniteDeals } from '@/components/home/infinite-deals';
+import { QueryProvider } from '@/components/providers/query-provider';
 import { Container } from '@/components/ui/container';
-import { Skeleton } from '@/components/ui/skeleton';
 import { listDeals } from '@/lib/db/queries/deals';
+import { getUserContext } from '@/lib/security/user-context-server';
 
 export const revalidate = 300; // ISR: 5 minutes — chat itself is fully client.
 
 export default async function HomePage() {
+  const ctx = await getUserContext();
   const [featured, recent] = await Promise.all([
-    listDeals({ featured: true, limit: 12 }),
-    listDeals({ limit: 12 }),
+    listDeals({ city: ctx.city, featured: true, limit: 12 }),
+    listDeals({ city: ctx.city, limit: 12 }),
   ]);
 
   const carouselDeals = featured.length >= 4 ? featured : recent.slice(0, 12);
 
   return (
-    <>
-      <Suspense fallback={<ChatFallback />}>
-        <ChatContainer />
-      </Suspense>
+    <HomeStageProvider>
+      <HomeHero />
 
       <FeaturedCarousel deals={carouselDeals} />
       <HowItWorks />
@@ -38,32 +38,12 @@ export default async function HomePage() {
               Tüm fırsatlar
             </h2>
           </div>
-          {recent.length === 0 ? (
-            <p className="text-muted-foreground py-8 text-center">
-              Henüz fırsat yok. Yakında burada olacaklar!
-            </p>
-          ) : (
-            <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {recent.map((deal) => (
-                <li key={deal.id}>
-                  <DealCard deal={deal} />
-                </li>
-              ))}
-            </ul>
-          )}
+          <QueryProvider>
+            <InfiniteDeals initialDeals={recent} city={ctx.city} />
+          </QueryProvider>
         </Container>
       </section>
-    </>
+    </HomeStageProvider>
   );
 }
 
-function ChatFallback() {
-  return (
-    <div className="mx-auto flex w-full max-w-3xl flex-col items-center gap-4 px-4 py-14 text-center sm:py-20">
-      <Skeleton className="h-6 w-40 rounded-full" />
-      <Skeleton className="h-12 w-72 sm:h-14 sm:w-96" />
-      <Skeleton className="h-4 w-80" />
-      <Skeleton className="mt-2 h-14 w-full max-w-xl rounded-2xl" />
-    </div>
-  );
-}

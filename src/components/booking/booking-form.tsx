@@ -3,8 +3,10 @@
 import { useActionState, useState } from 'react';
 import { Calendar, Clock, MessageSquare, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { DateField } from '@/components/ui/date-field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { TimeField } from '@/components/ui/time-field';
 import { createBookingAction, type CreateBookingState } from '@/app/rezervasyon/[slug]/actions';
 import { formatTRY } from '@/lib/utils/format';
 
@@ -59,14 +61,13 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
             <Calendar className="size-4" aria-hidden="true" />
             Tarih
           </Label>
-          <Input
+          <DateField
             id="selected_date"
             name="selected_date"
-            type="date"
             min={todayIso}
             max={validUntilDate}
             required
-            aria-invalid={err?.selected_date ? 'true' : undefined}
+            placeholder="Tarih seç"
           />
           {err?.selected_date ? (
             <p className="text-sm text-rose-600 dark:text-rose-400">{err.selected_date[0]}</p>
@@ -78,12 +79,7 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
             <Clock className="size-4" aria-hidden="true" />
             Saat (opsiyonel)
           </Label>
-          <Input
-            id="selected_time"
-            name="selected_time"
-            type="time"
-            aria-invalid={err?.selected_time ? 'true' : undefined}
-          />
+          <TimeField id="selected_time" name="selected_time" placeholder="Saat seç" />
           {err?.selected_time ? (
             <p className="text-sm text-rose-600 dark:text-rose-400">{err.selected_time[0]}</p>
           ) : null}

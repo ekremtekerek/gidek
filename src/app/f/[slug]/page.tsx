@@ -1,13 +1,18 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import { Calendar, Clock, Heart, MapPin, Users } from 'lucide-react';
 import { FavoriteButton } from '@/components/favorites/favorite-button';
+import { ImageGallery } from '@/components/deal/image-gallery';
+import { ReviewsSection } from '@/components/deal/reviews-section';
+import { ShowOnMap } from '@/components/deal/show-on-map';
+import { SimilarDeals } from '@/components/deal/similar-deals';
 import { JsonLd } from '@/components/seo/json-ld';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
+import { Skeleton } from '@/components/ui/skeleton';
 import { getDealBySlug, listPublishedDealSlugs } from '@/lib/db/queries/deals';
 import { isFavorite } from '@/lib/db/queries/favorites';
 import { getCurrentUser } from '@/lib/security/auth';
@@ -89,7 +94,11 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
     ].filter(Boolean),
   };
 
-  const offerLd = {
+  const ratingAvg = deal.rating_avg ? Number(deal.rating_avg) : null;
+  const ratingCount = deal.rating_count ?? 0;
+  const hasRating = ratingAvg !== null && ratingCount > 0;
+
+  const offerLd: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'Offer',
     name: deal.title,
@@ -109,6 +118,15 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
         }
       : undefined,
   };
+  if (hasRating) {
+    offerLd.aggregateRating = {
+      '@type': 'AggregateRating',
+      ratingValue: ratingAvg,
+      reviewCount: ratingCount,
+      bestRating: 5,
+      worstRating: 1,
+    };
+  }
 
   return (
     <>
@@ -143,26 +161,13 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
         <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
           {/* Left: image + content */}
           <div className="flex flex-col gap-6">
-            <div className="border-border bg-muted relative aspect-[4/3] w-full overflow-hidden rounded-xl border">
-              <Image
-                src={deal.cover_image}
-                alt={deal.title}
-                fill
-                sizes="(min-width: 1024px) 60vw, 100vw"
-                className="object-cover"
-                priority
-              />
-              {showDiscount ? (
-                <div className="absolute top-4 left-4">
-                  <Badge variant="discount" size="lg">%{discount} indirim</Badge>
-                </div>
-              ) : null}
-              {deal.is_featured ? (
-                <div className="absolute top-4 right-4">
-                  <Badge variant="accent" size="md">Öne çıkan</Badge>
-                </div>
-              ) : null}
-            </div>
+            <ImageGallery
+              title={deal.title}
+              cover={deal.cover_image}
+              images={deal.images}
+              discount={discount}
+              isFeatured={deal.is_featured}
+            />
 
             <header className="flex flex-col gap-3">
               <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{deal.title}</h1>
@@ -202,6 +207,18 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                     </li>
                   ))}
                 </ul>
+              ) : null}
+
+              {deal.merchant?.lat !== null && deal.merchant?.lat !== undefined &&
+              deal.merchant.lng !== null && deal.merchant.lng !== undefined ? (
+                <div className="pt-2">
+                  <ShowOnMap
+                    lat={Number(deal.merchant.lat)}
+                    lng={Number(deal.merchant.lng)}
+                    title={deal.merchant.name}
+                    address={location}
+                  />
+                </div>
               ) : null}
             </header>
 
@@ -307,10 +324,55 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
             </div>
           </aside>
         </div>
+
+        <div className="mt-10 flex flex-col gap-10">
+          <Suspense fallback={<ReviewsSkeleton />}>
+            <ReviewsSection dealId={deal.id} />
+          </Suspense>
+
+          {primaryCategory ? (
+            <Suspense fallback={<SimilarDealsSkeleton />}>
+              <SimilarDeals categorySlug={primaryCategory.slug} excludeDealId={deal.id} />
+            </Suspense>
+          ) : null}
+        </div>
       </Container>
 
       <JsonLd data={breadcrumbLd} />
       <JsonLd data={offerLd} />
     </>
+  );
+}
+
+function ReviewsSkeleton() {
+  return (
+    <section className="border-border border-t pt-10">
+      <Skeleton className="mb-2 h-5 w-32" />
+      <Skeleton className="mb-5 h-8 w-48" />
+      <Skeleton className="mb-6 h-32 w-full rounded-xl" />
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <Skeleton key={i} className="h-28 w-full rounded-xl" />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function SimilarDealsSkeleton() {
+  return (
+    <section className="border-border border-t pt-10">
+      <Skeleton className="mb-2 h-5 w-32" />
+      <Skeleton className="mb-5 h-8 w-48" />
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex flex-col gap-3">
+            <Skeleton className="aspect-[4/3] w-full rounded-lg" />
+            <Skeleton className="h-5 w-3/4" />
+            <Skeleton className="h-4 w-1/2" />
+          </div>
+        ))}
+      </div>
+    </section>
   );
 }

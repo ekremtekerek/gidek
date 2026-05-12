@@ -6,6 +6,7 @@ import { getServiceClient } from '@/lib/db/service';
 import { getUserPreferences, summarisePreferences } from '@/lib/db/queries/preferences';
 import { getCurrentUser } from '@/lib/security/auth';
 import { checkAiRateLimit } from '@/lib/security/rate-limit';
+import { getUserContext } from '@/lib/security/user-context-server';
 
 export const maxDuration = 30;
 
@@ -38,9 +39,15 @@ export async function POST(req: Request) {
   }
 
   const prefsContext = user ? summarisePreferences(await getUserPreferences(user.id)) : null;
-  const systemPrompt = prefsContext
-    ? `${CHAT_SYSTEM_PROMPT}\n\nKULLANICI PROFİLİ (gizli notlar): ${prefsContext}`
-    : CHAT_SYSTEM_PROMPT;
+  const ctx = await getUserContext();
+  const contextLine = `Aktif şehir: ${ctx.city}. searchDeals çağırırken city argümanı bu şehir olsun; başka bir şehir kullanıcı tarafından açıkça belirtilmedikçe değiştirme.`;
+  const systemPrompt = [
+    CHAT_SYSTEM_PROMPT,
+    contextLine,
+    prefsContext ? `KULLANICI PROFİLİ (gizli notlar): ${prefsContext}` : null,
+  ]
+    .filter(Boolean)
+    .join('\n\n');
 
   const startedAt = Date.now();
   const lastUserMessage =

@@ -17,7 +17,11 @@ const REGISTRY: Record<string, () => void> = {
   'onboarding-done': () => toast.success('Tercihlerin kaydedildi'),
   'booking-created': () =>
     toast.success('Rezervasyon oluşturuldu', {
-      description: 'Kodun aşağıda — mock akış, gerçek ödeme alınmaz.',
+      description: 'Ödeme adımına yönlendiriliyorsun.',
+    }),
+  'payment-success': () =>
+    toast.success('Ödeme onaylandı', {
+      description: 'E-biletin aşağıda — yazdırabilir veya QR kodu gösterebilirsin.',
     }),
   'password-updated': () => toast.success('Şifre güncellendi'),
 };

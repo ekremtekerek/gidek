@@ -1,28 +1,24 @@
 import Link from 'next/link';
-import { Sparkles } from 'lucide-react';
 import { Container } from '@/components/ui/container';
+import { CityChip } from '@/components/layout/context-chips';
+import { HeaderSearch } from '@/components/layout/header-search';
 import { MobileMenu } from '@/components/layout/mobile-menu';
 import { UserMenu } from '@/components/layout/user-menu';
 import { getServerClient } from '@/lib/db/server';
 import { getCurrentUser } from '@/lib/security/auth';
+import { getUserContext } from '@/lib/security/user-context-server';
 import { SITE } from '@/lib/utils/site-config';
 
-const NAV_LINKS = [
-  { href: '/k/kahvalti', label: 'Kahvaltı' },
-  { href: '/k/yemek', label: 'Yemek' },
-  { href: '/k/tiyatro', label: 'Tiyatro' },
-  { href: '/k/aktivite', label: 'Aktivite' },
-] as const;
-
-// Async server component: one getCurrentUser() per request feeds both the
-// desktop UserMenu and the mobile sheet. Server actions that mutate auth
-// (signIn/signUp/signOut) revalidate the layout, so the very next render
-// already shows the correct state — no client-side staleness, no need for
-// onAuthStateChange to chase server cookie writes.
+/**
+ * Search-first header. Yazınca debounced autocomplete dropdown'unda fırsat
+ * kartları açılır (Elastic gibi). Şehir chip'i sağ tarafta aramaya ve tüm
+ * sayfa içeriklerine uygulanan bağlamı tutar. Kategorilere link konmadı —
+ * harita filtre chip'leri ve anasayfa CategoryGrid'i kategori navigasyonu
+ * için yeterli görsel sağlıyor.
+ */
 export async function Header() {
-  const user = await getCurrentUser();
+  const [user, ctx] = await Promise.all([getCurrentUser(), getUserContext()]);
 
-  // Pull just the columns the chrome needs so layout queries stay cheap.
   let avatarUrl: string | null = null;
   if (user) {
     const supabase = await getServerClient();
@@ -36,34 +32,26 @@ export async function Header() {
 
   return (
     <header className="border-border bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
-      <Container className="flex h-16 items-center justify-between gap-4">
-        <Link href="/" className="text-xl font-semibold tracking-tight" aria-label={SITE.name}>
+      <Container className="flex h-16 items-center gap-3 sm:gap-4">
+        <Link
+          href="/"
+          className="text-xl font-semibold tracking-tight shrink-0"
+          aria-label={SITE.name}
+        >
           {SITE.name}
           <span className="text-muted-foreground ms-0.5">.</span>
         </Link>
 
-        <nav aria-label="Birincil" className="hidden items-center gap-1 md:flex">
-          <Link
-            href="/"
-            className="hover:bg-muted inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium"
-          >
-            <Sparkles className="size-4" aria-hidden="true" />
-            AI ile keşfet
-          </Link>
-          {NAV_LINKS.map((l) => (
-            <Link
-              key={l.href}
-              href={l.href}
-              className="hover:bg-muted rounded-md px-3 py-2 text-sm font-medium"
-            >
-              {l.label}
-            </Link>
-          ))}
-        </nav>
+        <div className="hidden flex-1 justify-center md:flex">
+          <div className="flex w-full max-w-2xl items-center gap-2">
+            <HeaderSearch />
+            <CityChip value={ctx.city} />
+          </div>
+        </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <UserMenu user={user} avatarUrl={avatarUrl} />
-          <MobileMenu user={user} avatarUrl={avatarUrl} />
+          <MobileMenu user={user} avatarUrl={avatarUrl} ctx={ctx} />
         </div>
       </Container>
     </header>

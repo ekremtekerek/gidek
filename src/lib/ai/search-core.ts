@@ -23,6 +23,9 @@ export type MatchedDeal = {
   discount_percent: number;
   audience: string[];
   tags: string[];
+  /** Merchant koordinatları — AI sonuçlarının haritada pinlenebilmesi için. */
+  lat: number | null;
+  lng: number | null;
   similarity: number;
 };
 

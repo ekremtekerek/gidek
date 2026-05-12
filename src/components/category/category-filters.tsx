@@ -1,5 +1,6 @@
+import Link from 'next/link';
 import { Filter } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { DEAL_TAGS, SUPPORTED_CITIES } from '@/lib/utils/constants';
@@ -141,9 +142,9 @@ export function CategoryFilters({ action, current }: Props) {
         </div>
 
         <div className="border-border flex flex-col-reverse gap-3 border-t pt-4 sm:flex-row sm:justify-end">
-          <Button type="reset" variant="ghost" size="md" formAction={action} formMethod="get">
+          <Link href={action} className={cn(buttonVariants({ variant: 'ghost', size: 'md' }))}>
             Sıfırla
-          </Button>
+          </Link>
           <Button type="submit" variant="primary" size="md">
             Uygula
           </Button>

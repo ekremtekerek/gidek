@@ -3,12 +3,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { CalendarDays, ChevronRight, MapPin, Ticket } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
+import { EmptyState } from '@/components/feedback/empty-state';
 import { listBookings } from '@/lib/db/queries/bookings';
 import { requireUser } from '@/lib/security/auth';
 import { BOOKING_STATUS_BADGE, BOOKING_STATUS_LABEL } from '@/lib/utils/booking-status';
-import { cn } from '@/lib/utils/cn';
 import type { BookingStatus } from '@/lib/utils/constants';
 import { formatDate, formatTRY } from '@/lib/utils/format';
 
@@ -39,17 +38,13 @@ export default async function RezervasyonlarimPage() {
       </header>
 
       {bookings.length === 0 ? (
-        <div className="border-border bg-muted/40 flex flex-col items-center gap-4 rounded-xl border border-dashed p-12 text-center">
-          <span className="bg-background border-border inline-flex size-14 items-center justify-center rounded-full border">
-            <Ticket className="text-foreground/60 size-6" aria-hidden="true" />
-          </span>
-          <p className="text-muted-foreground max-w-md">
-            Henüz rezervasyon almadın. Beğendiğin bir fırsata git, “Rezervasyon Yap” de.
-          </p>
-          <Link href="/" className={cn(buttonVariants({ variant: 'outline' }), 'mt-2')}>
-            Fırsatları keşfet
-          </Link>
-        </div>
+        <EmptyState
+          icon={Ticket}
+          title="Henüz rezervasyon yok"
+          description="Beğendiğin bir fırsata git, “Rezervasyon Yap” de — onay kodun burada görünecek."
+          primaryAction={{ label: 'Fırsatları keşfet', href: '/' }}
+          secondaryAction={{ label: 'AI ile öneri al', href: '/?q=Bug%C3%BCn+ne+yapsam' }}
+        />
       ) : (
         <ul className="flex flex-col gap-3">
           {bookings.map((b) => (

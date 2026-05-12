@@ -48,3 +48,212 @@
     transition: outline-offset 100ms;
   }
 }
+
+/* Yatay overflow guard — Mapbox veya başka bir 3rd-party widget yanlışlıkla
+ * viewport'u geniştirmesin, sticky'ler kırılmasın diye `clip` kullanıyoruz. */
+html,
+body {
+  overflow-x: clip;
+}
+
+/* Yatay scroll — bar gizli. Sağdaki silik chevron ipucu sağlıyor. */
+.gidek-scroll-x {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.gidek-scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+/* Chevron nudge — "Hepsini gör" butonundaki ok hafifçe sağa kayar, dikkat çek */
+@keyframes gidek-chevron-nudge {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  50% {
+    transform: translateX(3px);
+  }
+}
+.gidek-chevron-nudge {
+  animation: gidek-chevron-nudge 1.8s ease-in-out infinite;
+}
+
+/* Print CSS — e-bilet yazdırılırken sadece bilet kartı görünür kalır */
+@media print {
+  .gidek-no-print,
+  header,
+  footer,
+  nav,
+  aside {
+    display: none !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  .gidek-eticket {
+    max-width: 100% !important;
+    page-break-inside: avoid;
+  }
+}
+
+/* ----------------------------------------------------------------------------
+ * Mapbox marker — Airbnb-style price pill with gradient, drop shadow, pop-in
+ * animation. .is-selected ekleyince hot gradient + dış pulse halkası.
+ * ------------------------------------------------------------------------- */
+@keyframes gidek-marker-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.85);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes gidek-marker-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(244, 63, 94, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(244, 63, 94, 0);
+  }
+}
+
+.gidek-marker {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.4rem 0.75rem;
+  border-radius: 9999px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  color: #0a0a0a;
+  font-size: 0.82rem;
+  font-weight: 700;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.08),
+    0 4px 14px rgba(15, 23, 42, 0.1);
+  cursor: pointer;
+  white-space: nowrap;
+  letter-spacing: -0.01em;
+  transition:
+    transform 180ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 180ms ease,
+    background 200ms ease,
+    color 200ms ease;
+  animation: gidek-marker-in 280ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.gidek-marker:hover {
+  transform: scale(1.1);
+  z-index: 20;
+  box-shadow:
+    0 4px 10px rgba(15, 23, 42, 0.12),
+    0 14px 32px rgba(15, 23, 42, 0.2);
+}
+
+.gidek-marker.is-selected {
+  background: linear-gradient(135deg, #fb923c 0%, #f43f5e 100%);
+  color: white;
+  border-color: rgba(255, 255, 255, 0.7);
+  transform: scale(1.2);
+  z-index: 50;
+  animation: gidek-marker-pulse 1.8s ease-out infinite;
+}
+
+/* AI önerisi marker'ları — altın halka, parıltı, hafif scale */
+@keyframes gidek-marker-ai-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(251, 191, 36, 0.55),
+      0 6px 18px rgba(0, 0, 0, 0.12);
+  }
+  50% {
+    box-shadow:
+      0 0 0 10px rgba(251, 191, 36, 0.05),
+      0 6px 18px rgba(0, 0, 0, 0.12);
+  }
+}
+.gidek-marker.is-ai {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  color: #1f1300;
+  border-color: rgba(255, 255, 255, 0.85);
+  transform: scale(1.1);
+  z-index: 30;
+  animation: gidek-marker-ai-pulse 2.2s ease-out infinite;
+}
+.gidek-marker.is-ai::before {
+  content: '✨';
+  margin-right: 0.2rem;
+  font-size: 0.7rem;
+}
+.gidek-marker.is-ai.is-selected {
+  transform: scale(1.25);
+  z-index: 60;
+}
+
+@media (prefers-color-scheme: dark) {
+  .gidek-marker {
+    background: linear-gradient(180deg, #1f2937 0%, #111827 100%);
+    color: #fafafa;
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* User location — animated blue dot with halo */
+@keyframes gidek-user-halo {
+  0%,
+  100% {
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.22);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(37, 99, 235, 0.08);
+  }
+}
+.gidek-user-marker {
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: radial-gradient(circle at 30% 30%, #60a5fa 0%, #2563eb 70%);
+  border: 3px solid white;
+  animation: gidek-user-halo 2.4s ease-in-out infinite;
+}
+
+/* Mapbox popup — glassmorphic card style */
+.mapboxgl-popup-content {
+  padding: 0 !important;
+  border-radius: 1rem !important;
+  overflow: hidden;
+  background: var(--background) !important;
+  border: 1px solid var(--border);
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.08),
+    0 18px 44px rgba(15, 23, 42, 0.18) !important;
+}
+.mapboxgl-popup-tip {
+  border-top-color: var(--background) !important;
+  border-bottom-color: var(--background) !important;
+}
+.mapboxgl-popup-close-button {
+  font-size: 1.1rem;
+  padding: 0.25rem 0.5rem;
+  color: var(--muted-foreground);
+}
+
+/* Mapbox controls — soften default look so they match the site */
+.mapboxgl-ctrl-group {
+  border-radius: 0.75rem !important;
+  overflow: hidden;
+  box-shadow:
+    0 1px 2px rgba(15, 23, 42, 0.06),
+    0 8px 22px rgba(15, 23, 42, 0.08) !important;
+  border: 1px solid var(--border) !important;
+}

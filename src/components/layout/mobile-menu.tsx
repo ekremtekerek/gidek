@@ -4,23 +4,26 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import { Heart, LogOut, Menu, Sparkles, Ticket, User, X } from 'lucide-react';
+import { Heart, LogOut, Menu, Ticket, User, X } from 'lucide-react';
 import { signOutAction } from '@/app/profil/actions';
 import { buttonVariants } from '@/components/ui/button';
+import { CityChip } from '@/components/layout/context-chips';
+import { HeaderSearch } from '@/components/layout/header-search';
+import type { UserContext } from '@/lib/security/user-context';
 import { cn } from '@/lib/utils/cn';
-import { MAIN_CATEGORIES } from '@/lib/utils/constants';
 import { SITE } from '@/lib/utils/site-config';
 
 interface Props {
   user: SupabaseUser | null;
   avatarUrl?: string | null;
+  ctx: UserContext;
 }
 
 // User and avatar are passed in from the server-rendered Header so the menu
 // reflects the latest cookie-bound auth state immediately after login/logout
 // (the previous useUser() hook lagged because Supabase's browser
 // onAuthStateChange doesn't fire when a server action mutates the cookie).
-export function MobileMenu({ user, avatarUrl }: Props) {
+export function MobileMenu({ user, avatarUrl, ctx }: Props) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -81,33 +84,48 @@ export function MobileMenu({ user, avatarUrl }: Props) {
 
         <nav
           aria-label="Mobil ana menü"
-          className="flex flex-1 flex-col overflow-y-auto px-5 py-6"
+          className="flex flex-1 flex-col gap-6 overflow-y-auto px-5 py-6"
         >
-          <Link
-            href="/"
-            onClick={close}
-            className="bg-foreground text-background hover:bg-foreground/90 mb-6 inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-medium"
-          >
-            <Sparkles className="size-4" aria-hidden="true" />
-            AI ile keşfet
-          </Link>
+          <div>
+            <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+              Fırsat ara
+            </p>
+            <HeaderSearch size="lg" onSelect={close} />
+          </div>
 
-          <p className="text-muted-foreground mb-3 text-xs font-semibold tracking-wide uppercase">
-            Kategoriler
-          </p>
-          <ul className="space-y-1">
-            {MAIN_CATEGORIES.map((c) => (
-              <li key={c.slug}>
-                <Link
-                  href={`/k/${c.slug}`}
-                  onClick={close}
-                  className="hover:bg-muted flex items-center rounded-md px-3 py-2.5 text-sm font-medium"
-                >
-                  {c.name}
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <div>
+            <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+              Şehrim
+            </p>
+            <CityChip value={ctx.city} />
+            <p className="text-muted-foreground mt-2 text-xs">
+              Şehir seçimin arama, harita ve AI önerilerine yansır.
+            </p>
+          </div>
+
+          {user ? (
+            <div className="flex flex-col gap-1">
+              <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
+                Hesabım
+              </p>
+              <Link
+                href="/favorilerim"
+                onClick={close}
+                className="hover:bg-muted flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium"
+              >
+                <Heart className="size-4" aria-hidden="true" />
+                Favorilerim
+              </Link>
+              <Link
+                href="/rezervasyonlarim"
+                onClick={close}
+                className="hover:bg-muted flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium"
+              >
+                <Ticket className="size-4" aria-hidden="true" />
+                Rezervasyonlarım
+              </Link>
+            </div>
+          ) : null}
         </nav>
 
         <div className="border-border flex flex-col gap-2 border-t px-5 py-4">
@@ -134,22 +152,6 @@ export function MobileMenu({ user, avatarUrl }: Props) {
                   )}
                 </span>
                 <span className="truncate">{displayName}</span>
-              </Link>
-              <Link
-                href="/rezervasyonlarim"
-                onClick={close}
-                className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start gap-2')}
-              >
-                <Ticket className="size-4" aria-hidden="true" />
-                Rezervasyonlarım
-              </Link>
-              <Link
-                href="/favorilerim"
-                onClick={close}
-                className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start gap-2')}
-              >
-                <Heart className="size-4" aria-hidden="true" />
-                Favorilerim
               </Link>
               <form action={signOutAction}>
                 <button

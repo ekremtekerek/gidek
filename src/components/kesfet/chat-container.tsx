@@ -7,7 +7,11 @@ import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
 import { RotateCcw, Send, Sparkles } from 'lucide-react';
 import { ChatMessage } from '@/components/kesfet/chat-message';
+import { NearbyCarousel } from '@/components/kesfet/nearby-carousel';
+import { useHomeStage } from '@/components/home/home-stage-context';
 import { buttonVariants } from '@/components/ui/button';
+import type { DealShape } from '@/lib/ai/tools';
+import type { DealWithMerchant } from '@/lib/db/queries/deals';
 import { cn } from '@/lib/utils/cn';
 
 const QUICK_PROMPTS = [
@@ -19,7 +23,12 @@ const QUICK_PROMPTS = [
   { label: 'Bodrum hafta sonu', text: "Bodrum'da hafta sonu için tatil oteli ve aktivite" },
 ];
 
-export function ChatContainer() {
+interface ChatContainerProps {
+  welcomeDeals?: DealWithMerchant[];
+  city?: string;
+}
+
+export function ChatContainer({ welcomeDeals = [], city }: ChatContainerProps = {}) {
   const params = useSearchParams();
   const initialQ = params?.get('q')?.trim() ?? '';
 
@@ -30,6 +39,18 @@ export function ChatContainer() {
 
   const isLoading = status === 'submitted' || status === 'streaming';
   const isEmpty = messages.length === 0;
+
+  // Chat → harita coupling: en son AI tool sonuçlarını (searchDeals veya
+  // createDayPlan içindeki deal'lar) HomeStage context'e ilet. Hero dışında
+  // mount edildiyse stage null gelir, no-op. stage'i ref'le tutuyoruz, aksi
+  // halde context value her güncellendiğinde effect tekrar tetiklenir → loop.
+  const stage = useHomeStage();
+  const stageRef = useRef(stage);
+  stageRef.current = stage;
+  useEffect(() => {
+    const latest = extractLatestSuggestedDeals(messages);
+    stageRef.current?.setAiSuggestedDeals(latest);
+  }, [messages]);
 
   // Auto-send ?q= once on mount (StrictMode-safe via ref).
   const autoSentRef = useRef(false);
@@ -71,6 +92,7 @@ export function ChatContainer() {
     setMessages([]);
     setInput('');
     autoSentRef.current = false;
+    stage?.setAiSuggestedDeals(null);
   }
 
   return (
@@ -91,7 +113,7 @@ export function ChatContainer() {
       {/* Main area — welcome (empty) or scrollable message list (active) */}
       {isEmpty ? (
         <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-14">
-          <WelcomeHero />
+          <WelcomeHero welcomeDeals={welcomeDeals} city={city} />
         </div>
       ) : (
         <div
@@ -136,20 +158,27 @@ export function ChatContainer() {
   );
 }
 
-function WelcomeHero() {
+function WelcomeHero({
+  welcomeDeals,
+  city,
+}: {
+  welcomeDeals: DealWithMerchant[];
+  city?: string;
+}) {
   return (
-    <div className="flex flex-col items-center gap-5 text-center sm:gap-6">
-      <span className="border-border bg-background/70 inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium backdrop-blur">
-        <Sparkles className="size-3.5" aria-hidden="true" />
-        AI destekli plan keşfi
-      </span>
-      <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
-        Merhaba, ne yapmak istersin?
-      </h1>
-      <p className="text-muted-foreground max-w-md text-balance sm:text-lg">
-        Aklındakini yaz — birkaç fırsat seçeyim, neden uyduğunu anlatayım. İstersen tüm bir günü
-        baştan sona kurarım.
-      </p>
+    <div className="flex w-full flex-col items-center gap-6 text-center sm:gap-8">
+      {welcomeDeals.length > 0 && city ? (
+        <NearbyCarousel deals={welcomeDeals} city={city} />
+      ) : null}
+      <div className="flex flex-col items-center gap-4">
+        <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
+          Merhaba, ne yapmak istersin?
+        </h1>
+        <p className="text-muted-foreground max-w-md text-balance sm:text-lg">
+          Aklındakini yaz — birkaç fırsat seçeyim, neden uyduğunu anlatayım. İstersen tüm bir
+          günü baştan sona kurarım.
+        </p>
+      </div>
     </div>
   );
 }
@@ -295,4 +324,42 @@ function ErrorBanner({ error }: { error: Error }) {
         : 'Bir şeyler ters gitti — tekrar denemek ister misin?'}
     </div>
   );
+}
+
+/**
+ * Mesaj listesinde en son AI tool sonucundan deal listesini çıkar. Hem
+ * searchDeals (output.results) hem createDayPlan (output.plan.steps[].deal)
+ * destekli. Null lat/lng olanlar yine de döner — filtreyi map yapar.
+ */
+function extractLatestSuggestedDeals(
+  messages: ReturnType<typeof useChat>['messages'],
+): DealShape[] | null {
+  for (let i = messages.length - 1; i >= 0; i--) {
+    const m = messages[i];
+    if (m.role !== 'assistant') continue;
+    for (let j = m.parts.length - 1; j >= 0; j--) {
+      const part = m.parts[j] as {
+        type: string;
+        state?: string;
+        output?: unknown;
+      };
+      if (part.state !== 'output-available') continue;
+
+      if (part.type === 'tool-searchDeals') {
+        const out = part.output as { results?: DealShape[] } | null;
+        if (out?.results?.length) return out.results;
+      }
+
+      if (part.type === 'tool-createDayPlan') {
+        const out = part.output as {
+          plan?: { steps?: Array<{ deal: DealShape | null }> };
+        } | null;
+        const deals = (out?.plan?.steps ?? [])
+          .map((s) => s.deal)
+          .filter((d): d is DealShape => d !== null);
+        if (deals.length > 0) return deals;
+      }
+    }
+  }
+  return null;
 }

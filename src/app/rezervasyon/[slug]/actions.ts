@@ -66,6 +66,7 @@ export async function createBookingAction(
       selected_date: parsed.data.selected_date,
       selected_time: parsed.data.selected_time ?? null,
       notes: parsed.data.notes ?? null,
+      status: 'pending', // ödeme adımından sonra 'confirmed'e geçer
     })
     .select('booking_code')
     .single();
@@ -73,5 +74,5 @@ export async function createBookingAction(
   if (bErr || !booking) return { ok: false, error: 'Rezervasyon oluşturulamadı.' };
 
   revalidatePath('/rezervasyonlarim');
-  redirect(withToast(`/rezervasyonlarim/${booking.booking_code}`, TOAST_KEYS.bookingCreated));
+  redirect(withToast(`/odeme/${booking.booking_code}`, TOAST_KEYS.bookingCreated));
 }

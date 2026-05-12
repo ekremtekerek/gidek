@@ -1,4 +1,4 @@
-﻿export type Json =
+export type Json =
   | string
   | number
   | boolean
@@ -580,6 +580,50 @@ export type Database = {
         }
         Relationships: []
       }
+      reviews: {
+        Row: {
+          body: string
+          created_at: string
+          deal_id: string
+          display_name: string
+          id: string
+          is_active: boolean
+          rating: number
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          deal_id: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          rating: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          deal_id?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          rating?: number
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_preferences: {
         Row: {
           accessibility: string[] | null
@@ -692,6 +736,8 @@ export type Database = {
           district: string
           duration_minutes: number
           id: string
+          lat: number
+          lng: number
           original_price: number
           similarity: number
           slug: string
@@ -701,6 +747,7 @@ export type Database = {
           venue_name: string
         }[]
       }
+      refresh_deal_rating: { Args: { deal_uuid: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

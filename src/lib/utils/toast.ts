@@ -14,6 +14,7 @@ export const TOAST_KEYS = {
   avatarRemoved: 'avatar-removed',
   onboardingDone: 'onboarding-done',
   bookingCreated: 'booking-created',
+  paymentSuccess: 'payment-success',
   passwordUpdated: 'password-updated',
 } as const;
 

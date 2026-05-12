@@ -8,6 +8,7 @@
  */
 import { createClient } from '@supabase/supabase-js';
 import { MAIN_CATEGORIES } from '../src/lib/utils/constants';
+import { CITY_CENTROIDS, ISTANBUL_CENTER, type LatLng } from '../src/lib/utils/geo';
 import type { Database } from '../src/types/supabase';
 
 if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -1132,6 +1133,80 @@ function hashSlug(slug: string): number {
   return Math.abs(h);
 }
 
+/**
+ * Mock koordinat üretimi: ilçe centroid'i + slug'a göre deterministik
+ * ±0.005° (~500m) jitter. Aynı merchant her seed'de aynı noktayı alır.
+ */
+const DISTRICT_CENTROIDS: Record<string, LatLng> = {
+  // İstanbul
+  Beşiktaş: { lat: 41.0426, lng: 29.0078 },
+  Karaköy: { lat: 41.0254, lng: 28.9742 },
+  Kadıköy: { lat: 40.9923, lng: 29.0244 },
+  Arnavutköy: { lat: 41.0686, lng: 29.0428 },
+  Cihangir: { lat: 41.0334, lng: 28.9836 },
+  Sultanahmet: { lat: 41.0058, lng: 28.9769 },
+  Levent: { lat: 41.0814, lng: 29.0166 },
+  Sarıyer: { lat: 41.1668, lng: 29.0571 },
+  Maltepe: { lat: 40.9352, lng: 29.1336 },
+  Şişli: { lat: 41.0602, lng: 28.987 },
+  Bebek: { lat: 41.0773, lng: 29.0438 },
+  Suadiye: { lat: 40.953, lng: 29.086 },
+  Etiler: { lat: 41.0822, lng: 29.0317 },
+  Kuruçeşme: { lat: 41.0641, lng: 29.0376 },
+  Bostancı: { lat: 40.9504, lng: 29.0961 },
+  Beyoğlu: { lat: 41.0349, lng: 28.9777 },
+  Galata: { lat: 41.0258, lng: 28.9744 },
+  Maslak: { lat: 41.1107, lng: 29.021 },
+  Üsküdar: { lat: 41.0233, lng: 29.0156 },
+  // Ankara
+  Çankaya: { lat: 39.9081, lng: 32.8612 },
+  Kavaklıdere: { lat: 39.908, lng: 32.8624 },
+  Bilkent: { lat: 39.8682, lng: 32.7497 },
+  // İzmir
+  Alsancak: { lat: 38.4327, lng: 27.1429 },
+  Konak: { lat: 38.4192, lng: 27.1287 },
+  Bornova: { lat: 38.4708, lng: 27.2117 },
+  Çeşme: { lat: 38.3236, lng: 26.3071 },
+  // Antalya
+  Muratpaşa: { lat: 36.8841, lng: 30.7056 },
+  Lara: { lat: 36.8528, lng: 30.8077 },
+  // Bursa
+  Mudanya: { lat: 40.3753, lng: 28.8806 },
+  // Adana
+  Seyhan: { lat: 37.0067, lng: 35.3214 },
+  // Eskişehir
+  Tepebaşı: { lat: 39.7842, lng: 30.4854 },
+  // Muğla
+  Bodrum: { lat: 37.0344, lng: 27.4305 },
+  Fethiye: { lat: 36.6213, lng: 29.1167 },
+  Marmaris: { lat: 36.855, lng: 28.278 },
+  // Aydın
+  Kuşadası: { lat: 37.8597, lng: 27.2563 },
+  Didim: { lat: 37.376, lng: 27.2654 },
+  // Çanakkale
+  Merkez: { lat: 40.1553, lng: 26.4142 },
+  // Trabzon
+  Ortahisar: { lat: 41.0027, lng: 39.7168 },
+  // Konya
+  Selçuklu: { lat: 38.0204, lng: 32.5076 },
+  // Gaziantep
+  Şahinbey: { lat: 37.059, lng: 37.3833 },
+  // Nevşehir
+  Göreme: { lat: 38.6431, lng: 34.8284 },
+};
+
+function coordsFor(slug: string, city: string, district?: string): LatLng {
+  const centroid =
+    (district && DISTRICT_CENTROIDS[district]) || CITY_CENTROIDS[city] || ISTANBUL_CENTER;
+  const h = hashSlug(slug);
+  const jitterLat = ((h % 1000) / 1000 - 0.5) * 0.01;
+  const jitterLng = (((Math.floor(h / 1000)) % 1000) / 1000 - 0.5) * 0.01;
+  return {
+    lat: +(centroid.lat + jitterLat).toFixed(6),
+    lng: +(centroid.lng + jitterLng).toFixed(6),
+  };
+}
+
 function pickPhoto(slug: string, category?: string): string {
   const pool = category ? CATEGORY_PHOTOS[category] : undefined;
   if (pool && pool.length > 0) {
@@ -1171,16 +1246,21 @@ async function seedCategories() {
 }
 
 async function seedMerchants() {
-  const rows = MERCHANTS.map((m) => ({
-    slug: m.slug,
-    name: m.name,
-    description: m.description,
-    city: m.city,
-    district: m.district,
-    is_active: true,
-    is_verified: true,
-    logo_url: coverFor(`logo-${m.slug}`, 200, 200),
-  }));
+  const rows = MERCHANTS.map((m) => {
+    const c = coordsFor(m.slug, m.city, m.district);
+    return {
+      slug: m.slug,
+      name: m.name,
+      description: m.description,
+      city: m.city,
+      district: m.district,
+      lat: c.lat,
+      lng: c.lng,
+      is_active: true,
+      is_verified: true,
+      logo_url: coverFor(`logo-${m.slug}`, 200, 200),
+    };
+  });
 
   const { error } = await supabase.from('merchants').upsert(rows, { onConflict: 'slug' });
   if (error) throw error;
@@ -1256,11 +1336,119 @@ async function seedDeals() {
   console.log(`  junctions:  ${junctions.length}`);
 }
 
+// ----------------------------------------------------------------------------
+// REVIEWS — her aktif deal için 0-8 mock yorum. Trigger rating_avg/count'u
+// otomatik günceller. Aynı seed yeniden çalıştığında temizleyip yeniden yazar.
+// ----------------------------------------------------------------------------
+const REVIEW_NAMES = [
+  'Selin K.', 'Mert A.', 'Ayşe Y.', 'Burak D.', 'Ece T.', 'Onur G.',
+  'Zeynep B.', 'Furkan M.', 'Deniz Ö.', 'Cansu E.', 'Kerem U.', 'Naz S.',
+  'Eren C.', 'İrem H.', 'Berk N.', 'Pelin V.', 'Tolga P.', 'Defne R.',
+  'Çağrı Z.', 'Yağmur F.', 'Volkan I.', 'Sıla J.', 'Barış L.', 'Melis O.',
+];
+
+const REVIEW_TEMPLATES = [
+  'Beklediğimden çok daha iyi bir deneyimdi. Tekrar gelmeyi planlıyoruz.',
+  'Hizmet kaliteli, fiyat-performans gayet iyi. Tavsiye ederim.',
+  'Ortam çok şıktı, personel ilgili. Eşimle harika bir akşam geçirdik.',
+  'Lezzetler taze ve sunum güzeldi. Yine geleceğiz mutlaka.',
+  'Konum çok rahat ulaşılabilir, otoparkı da var. Çocuklarla rahat ettik.',
+  'Rezervasyon süreci kolaydı, mekan beklentimizi karşıladı.',
+  'Biraz kalabalıktı ama servis hızlıydı. Genel olarak memnunuz.',
+  'Manzara nefes kesiciydi, akşam yemeği için ideal.',
+  'Spa kısmı çok rahatlatıcı, profesyonel ekip. Mutlaka tekrar deneyeceğim.',
+  'Çocuklar için harika bir aktivite, biz de keyif aldık.',
+  'Kahvaltı sınırsız çay ve geniş seçenekleriyle gayet doyurucuydu.',
+  'Tiyatro performansı etkileyiciydi, oyuncular çok başarılıydı.',
+  'Konser sesi temiz, atmosfer harikaydı. Bilet karşılığını fazlasıyla aldım.',
+  'Otelde temizlik üst düzeydi, yatak konforlu. Tatil için ideal.',
+  'Tur rehberi çok bilgiliydi, programı sıkmadan akıttı.',
+  'Personel güler yüzlü, kahve ve atıştırmalıklar kaliteliydi.',
+  'Tatlısı muhteşemdi, ana yemekler standartın üzerinde.',
+  'Atölye eğlenceli geçti, materyaller hazırdı, başlamak kolaydı.',
+  'Mekan küçük ama sıcacık. Romantik bir akşam yemeği için doğru tercih.',
+  'Fiyat biraz yüksek ama deneyim değerdi. Özel günler için saklıyoruz.',
+];
+
+function pickReviewCount(slug: string): number {
+  // Slug hash'inden 0-8 deterministik sayı; çoğu deal için 3-6 yorum çıkar.
+  const h = hashSlug(slug);
+  const bias = h % 10;
+  if (bias < 2) return 0; // %20 deal için yorum yok (gerçekçi dağılım)
+  if (bias < 6) return (h % 4) + 2; // 2-5
+  return (h % 4) + 5; // 5-8
+}
+
+function pickRating(slug: string, idx: number): number {
+  // 3-5 yıldız ağırlıklı (ortalama ~4.4)
+  const h = hashSlug(`${slug}-r-${idx}`);
+  const roll = h % 10;
+  if (roll < 1) return 3;
+  if (roll < 4) return 4;
+  return 5;
+}
+
+function pickReview(slug: string, idx: number): { name: string; body: string; daysAgo: number } {
+  const h = hashSlug(`${slug}-n-${idx}`);
+  return {
+    name: REVIEW_NAMES[h % REVIEW_NAMES.length],
+    body: REVIEW_TEMPLATES[(h >>> 4) % REVIEW_TEMPLATES.length],
+    daysAgo: (h >>> 8) % 60, // son 60 gün
+  };
+}
+
+async function seedReviews() {
+  const { data: deals, error: dErr } = await supabase.from('deals').select('id, slug');
+  if (dErr) throw dErr;
+
+  // Temizle ve yeniden yaz — seed idempotent kalır.
+  const { error: delErr } = await supabase.from('reviews').delete().not('id', 'is', null);
+  if (delErr) throw delErr;
+
+  type ReviewRow = {
+    deal_id: string;
+    user_id: null;
+    display_name: string;
+    rating: number;
+    body: string;
+    created_at: string;
+  };
+  const rows: ReviewRow[] = [];
+  for (const d of deals ?? []) {
+    const n = pickReviewCount(d.slug);
+    for (let i = 0; i < n; i++) {
+      const { name, body, daysAgo } = pickReview(d.slug, i);
+      rows.push({
+        deal_id: d.id,
+        user_id: null,
+        display_name: name,
+        rating: pickRating(d.slug, i),
+        body,
+        created_at: new Date(Date.now() - daysAgo * 86_400_000).toISOString(),
+      });
+    }
+  }
+
+  if (rows.length === 0) {
+    console.log('  reviews:    0');
+    return;
+  }
+
+  // Batch insert (1000 limit'i aşmasın, deal sayısı ~200 olduğunda toplam < 1500).
+  const batchSize = 500;
+  for (let i = 0; i < rows.length; i += batchSize) {
+    const { error } = await supabase.from('reviews').insert(rows.slice(i, i + batchSize));
+    if (error) throw error;
+  }
+  console.log(`  reviews:    ${rows.length}`);
+}
+
 async function main() {
   console.log('Seeding gidek.net…');
   await seedCategories();
   await seedMerchants();
   await seedDeals();
+  await seedReviews();
   console.log('Done.');
 }
 

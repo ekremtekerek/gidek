@@ -23,6 +23,9 @@ function shapeDeal(d: Awaited<ReturnType<typeof searchDealsByQuery>>[number]) {
     tags: d.tags,
     duration: d.duration_minutes ?? 0,
     coverImage: d.cover_image,
+    /** Merchant koordinatları — chat → harita coupling için. */
+    lat: d.lat !== null ? Number(d.lat) : null,
+    lng: d.lng !== null ? Number(d.lng) : null,
   };
 }
 

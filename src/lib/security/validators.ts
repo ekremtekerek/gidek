@@ -145,3 +145,22 @@ export const profileUpdateSchema = z.object({
 });
 
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
+
+/** Map bounds query params — string'den number'a parse + sınırlandırma. */
+const coord = (min: number, max: number) =>
+  z.coerce.number().refine((v) => Number.isFinite(v) && v >= min && v <= max, {
+    message: 'Geçersiz koordinat',
+  });
+
+export const boundsQuerySchema = z
+  .object({
+    swLat: coord(-90, 90),
+    swLng: coord(-180, 180),
+    neLat: coord(-90, 90),
+    neLng: coord(-180, 180),
+  })
+  .refine((b) => b.neLat > b.swLat && b.neLng > b.swLng, {
+    message: 'Bbox tersine çevrilmiş',
+  });
+
+export type BoundsQuery = z.infer<typeof boundsQuerySchema>;

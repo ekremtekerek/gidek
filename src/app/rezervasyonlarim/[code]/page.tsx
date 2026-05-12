@@ -1,9 +1,10 @@
 import type { Metadata } from 'next';
-import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, CalendarDays, Clock, MapPin, MessageSquare, Ticket } from 'lucide-react';
+import { ArrowLeft, Clock, MessageSquare } from 'lucide-react';
 import { CancelButton } from '@/components/booking/cancel-button';
+import { ETicket } from '@/components/booking/eticket';
+import { PrintButton } from '@/components/booking/print-button';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
@@ -16,7 +17,7 @@ import {
 } from '@/lib/utils/booking-status';
 import { cn } from '@/lib/utils/cn';
 import type { BookingStatus } from '@/lib/utils/constants';
-import { formatDate, formatTRY } from '@/lib/utils/format';
+import { formatDate } from '@/lib/utils/format';
 
 export const metadata: Metadata = {
   title: 'Rezervasyon detayı',
@@ -43,81 +44,60 @@ export default async function RezervasyonDetailPage({
   const location = booking.deal
     ? [booking.deal.district, booking.deal.city].filter(Boolean).join(', ')
     : null;
+  const showTicket = (status === 'confirmed' || status === 'used') && booking.deal;
 
   return (
     <Container className="py-10 sm:py-14">
       <div className="mx-auto max-w-2xl">
         <Link
           href="/rezervasyonlarim"
-          className="text-muted-foreground hover:text-foreground mb-6 inline-flex items-center gap-1 text-sm"
+          className="text-muted-foreground hover:text-foreground gidek-no-print mb-6 inline-flex items-center gap-1 text-sm"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
           Tüm rezervasyonlar
         </Link>
 
         <header className="mb-6 flex flex-col gap-3">
-          <Badge variant={BOOKING_STATUS_BADGE[status]} size="md" className="self-start">
-            {BOOKING_STATUS_LABEL[status]}
-          </Badge>
-          <div className="flex items-baseline gap-3">
-            <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
-              Rezervasyon kodu
-            </p>
-            <p className="font-mono text-sm">{booking.booking_code}</p>
+          <div className="flex items-center justify-between gap-3">
+            <Badge variant={BOOKING_STATUS_BADGE[status]} size="md">
+              {BOOKING_STATUS_LABEL[status]}
+            </Badge>
+            {showTicket ? <PrintButton /> : null}
           </div>
         </header>
 
-        {booking.deal ? (
-          <Link
-            href={`/f/${booking.deal.slug}`}
-            className="border-border bg-background hover:bg-muted/40 mb-6 flex items-center gap-4 rounded-lg border p-3 transition-colors sm:p-4"
-          >
-            <div className="relative size-20 shrink-0 overflow-hidden rounded-md sm:size-24">
-              <Image
-                src={booking.deal.cover_image}
-                alt={booking.deal.title}
-                fill
-                sizes="96px"
-                className="object-cover"
-              />
-            </div>
+        {status === 'pending' ? (
+          <div className="border-amber-500/30 bg-amber-500/10 mb-6 flex flex-col gap-3 rounded-xl border p-5 sm:flex-row sm:items-center">
             <div className="min-w-0 flex-1">
-              <p className="line-clamp-2 text-sm font-semibold">{booking.deal.title}</p>
-              {booking.deal.merchant ? (
-                <p className="text-muted-foreground text-xs">{booking.deal.merchant.name}</p>
-              ) : null}
-              {location ? (
-                <p className="text-muted-foreground mt-1 inline-flex items-center gap-1 text-xs">
-                  <MapPin className="size-3.5" aria-hidden="true" />
-                  {location}
-                </p>
-              ) : null}
+              <p className="text-sm font-medium">Bu rezervasyon ödeme bekliyor</p>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                Ödemeyi tamamla, e-biletin hemen oluşsun.
+              </p>
             </div>
-          </Link>
+            <Link
+              href={`/odeme/${booking.booking_code}`}
+              className={cn(buttonVariants({ variant: 'primary', size: 'sm' }), 'shrink-0')}
+            >
+              Ödemeye geç
+            </Link>
+          </div>
         ) : null}
 
-        <dl className="border-border bg-background mb-6 divide-y divide-[var(--border)] rounded-lg border">
-          {booking.selected_date ? (
-            <div className="flex items-start gap-4 p-4 sm:p-5">
-              <CalendarDays className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
-              <div className="min-w-0 flex-1">
-                <dt className="text-muted-foreground text-xs">Tarih</dt>
-                <dd className="text-sm font-medium">
-                  {formatDate(booking.selected_date)}
-                  {booking.selected_time ? ` · ${booking.selected_time.slice(0, 5)}` : ''}
-                </dd>
-              </div>
-            </div>
-          ) : null}
-          <div className="flex items-start gap-4 p-4 sm:p-5">
-            <Ticket className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
-            <div className="min-w-0 flex-1">
-              <dt className="text-muted-foreground text-xs">Adet ve tutar</dt>
-              <dd className="text-sm font-medium">
-                {booking.quantity} adet · {formatTRY(booking.total_amount)}
-              </dd>
-            </div>
-          </div>
+        {showTicket && booking.deal ? (
+          <ETicket
+            bookingCode={booking.booking_code}
+            dealTitle={booking.deal.title}
+            dealCover={booking.deal.cover_image}
+            merchantName={booking.deal.merchant?.name}
+            location={location ?? undefined}
+            selectedDate={booking.selected_date}
+            selectedTime={booking.selected_time}
+            quantity={booking.quantity}
+            totalAmount={booking.total_amount}
+          />
+        ) : null}
+
+        <dl className="border-border bg-background gidek-no-print mt-6 divide-y divide-[var(--border)] rounded-lg border">
           {booking.notes ? (
             <div className="flex items-start gap-4 p-4 sm:p-5">
               <MessageSquare
@@ -139,30 +119,32 @@ export default async function RezervasyonDetailPage({
           </div>
         </dl>
 
-        {isCancellable(status) ? (
-          <CancelButton bookingId={booking.id} />
-        ) : (
-          <div className="border-border bg-muted/40 flex items-start gap-3 rounded-lg border p-4">
-            <p className="text-muted-foreground text-sm">
-              Bu rezervasyon <strong className="text-foreground">{BOOKING_STATUS_LABEL[status]}</strong>{' '}
-              durumunda — iptal edilemez.
-            </p>
-          </div>
-        )}
+        <div className="gidek-no-print mt-6 flex flex-col gap-3">
+          {isCancellable(status) ? <CancelButton bookingId={booking.id} /> : null}
 
-        <p className="text-muted-foreground mt-6 text-center text-xs">
+          {!isCancellable(status) && status !== 'pending' ? (
+            <div className="border-border bg-muted/40 flex items-start gap-3 rounded-lg border p-4">
+              <p className="text-muted-foreground text-sm">
+                Bu rezervasyon <strong className="text-foreground">{BOOKING_STATUS_LABEL[status]}</strong>{' '}
+                durumunda — iptal edilemez.
+              </p>
+            </div>
+          ) : null}
+
+          {booking.deal ? (
+            <Link
+              href={`/f/${booking.deal.slug}`}
+              className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'w-full')}
+            >
+              Fırsat sayfasına dön
+            </Link>
+          ) : null}
+        </div>
+
+        <p className="text-muted-foreground gidek-no-print mt-6 text-center text-xs">
           <strong className="text-foreground">Mock rezervasyon.</strong> Gerçek ödeme alınmaz; bu
           kod yalnızca demo akış içindir.
         </p>
-
-        {booking.deal ? (
-          <Link
-            href={`/f/${booking.deal.slug}`}
-            className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }), 'mt-4 w-full')}
-          >
-            Fırsat sayfasına dön
-          </Link>
-        ) : null}
       </div>
     </Container>
   );

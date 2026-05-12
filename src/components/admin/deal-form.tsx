@@ -4,6 +4,7 @@ import { useActionState } from 'react';
 import Link from 'next/link';
 import { createDealAction, updateDealAction, type DealFormState } from '@/app/admin/deals/actions';
 import { Button } from '@/components/ui/button';
+import { DateTimeField } from '@/components/ui/datetime-field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AUDIENCE, DEAL_TAGS, MAIN_CATEGORIES } from '@/lib/utils/constants';
@@ -194,21 +195,25 @@ export function DealForm({ merchants, initial }: Props) {
 
       <Section title="Geçerlilik">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field
-            label="Geçerli (başlangıç)"
-            name="valid_from"
-            type="datetime-local"
-            defaultValue={toLocalDateInput(initial?.valid_from ?? null)}
-            required
-          />
-          <Field
-            label="Geçerli (bitiş)"
-            name="valid_until"
-            type="datetime-local"
-            defaultValue={toLocalDateInput(initial?.valid_until ?? null)}
-            required
-            error={err?.valid_until}
-          />
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="valid_from">Geçerli (başlangıç)</Label>
+            <DateTimeField
+              name="valid_from"
+              defaultValue={toLocalDateInput(initial?.valid_from ?? null)}
+              required
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="valid_until">Geçerli (bitiş)</Label>
+            <DateTimeField
+              name="valid_until"
+              defaultValue={toLocalDateInput(initial?.valid_until ?? null)}
+              required
+            />
+            {err?.valid_until ? (
+              <p className="text-sm text-rose-600 dark:text-rose-400">{err.valid_until[0]}</p>
+            ) : null}
+          </div>
         </div>
       </Section>
 
