@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -24,9 +24,39 @@ interface Props {
  * sıralaması korunur.
  */
 export function NearbyCarousel({ deals, city }: Props) {
-  const [emblaRef] = useEmblaCarousel({ loop: false, align: 'start', dragFree: true });
+  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: 'start', dragFree: true });
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const setRefs = (node: HTMLDivElement | null) => {
+    emblaRef(node);
+    viewportRef.current = node;
+  };
   const stage = useHomeStage();
   const userLocation = stage?.userLocation ?? null;
+
+  // Mouse wheel'i embla'nın slide-bazlı navigasyonuna bağla.
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el || !emblaApi) return;
+    let accum = 0;
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      const canNext = emblaApi.canScrollNext();
+      const canPrev = emblaApi.canScrollPrev();
+      if ((e.deltaY > 0 && !canNext) || (e.deltaY < 0 && !canPrev)) return;
+      e.preventDefault();
+      accum += e.deltaY;
+      if (accum > 50) {
+        emblaApi.scrollNext();
+        accum = 0;
+      } else if (accum < -50) {
+        emblaApi.scrollPrev();
+        accum = 0;
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [emblaApi]);
 
   const ordered = useMemo(() => {
     if (!userLocation) return deals;
@@ -51,7 +81,7 @@ export function NearbyCarousel({ deals, city }: Props) {
         <Sparkles className="size-3.5" aria-hidden="true" />
         {userLocation ? 'Sana en yakın fırsatlar' : `${city} • Yakınınızdaki fırsatlar`}
       </div>
-      <div ref={emblaRef} className="overflow-hidden">
+      <div ref={setRefs} className="overflow-hidden">
         <div className="-ml-3 flex touch-pan-y">
           {ordered.map((deal) => (
             <div

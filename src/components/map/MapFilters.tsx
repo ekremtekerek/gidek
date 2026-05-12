@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ChevronLeft, ChevronRight, Filter, LayoutGrid, MapPin, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { CategoryModal } from '@/components/map/category-modal';
+import { useWheelToHorizontal } from '@/hooks/use-wheel-to-horizontal';
 import { MAIN_CATEGORIES, type CategorySlug } from '@/lib/utils/constants';
 import { CATEGORY_STYLE } from '@/lib/utils/category-styles';
 import { cn } from '@/lib/utils/cn';
@@ -41,6 +42,7 @@ export function MapFilters({
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  useWheelToHorizontal(scrollRef);
 
   function scrollByX(delta: number) {
     scrollRef.current?.scrollBy({ left: delta, behavior: 'smooth' });

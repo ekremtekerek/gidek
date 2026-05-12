@@ -1,13 +1,15 @@
 'use client';
 
-import { type FormEvent, useEffect, useRef, useState } from 'react';
+import { type FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useChat } from '@ai-sdk/react';
-import { DefaultChatTransport } from 'ai';
+import { DefaultChatTransport, type UIMessage } from 'ai';
 import { RotateCcw, Send, Sparkles } from 'lucide-react';
 import { ChatMessage } from '@/components/kesfet/chat-message';
+import { FollowupChips } from '@/components/kesfet/followup-chips';
 import { NearbyCarousel } from '@/components/kesfet/nearby-carousel';
+import { VoiceInputButton } from '@/components/kesfet/voice-input-button';
 import { useHomeStage } from '@/components/home/home-stage-context';
 import { SaveSearchButton } from '@/components/saved-searches/save-search-button';
 import { buttonVariants } from '@/components/ui/button';
@@ -27,19 +29,77 @@ const QUICK_PROMPTS = [
 interface ChatContainerProps {
   welcomeDeals?: DealWithMerchant[];
   city?: string;
+  /** Server'dan gelen geçmiş sohbet — varsa o id ile mount olur. */
+  initialConversationId?: string;
+  initialMessages?: UIMessage[];
+  /** Caller giriş yapmışsa true; persist endpoint sadece auth'ta yazar. */
+  isAuthenticated?: boolean;
 }
 
-export function ChatContainer({ welcomeDeals = [], city }: ChatContainerProps = {}) {
+function newConversationId(): string {
+  if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
+  // Fallback (SSR veya çok eski tarayıcı) — sadece istemcide gerçek random gelir.
+  return `tmp-${Math.random().toString(36).slice(2)}-${Date.now()}`;
+}
+
+export function ChatContainer({
+  welcomeDeals = [],
+  city,
+  initialConversationId,
+  initialMessages,
+  isAuthenticated = false,
+}: ChatContainerProps = {}) {
   const params = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const initialQ = params?.get('q')?.trim() ?? '';
 
+  const [conversationId, setConversationId] = useState<string>(
+    () => initialConversationId ?? newConversationId(),
+  );
   const [input, setInput] = useState('');
+
+  // Transport conversationId değişince yeniden kurulur — body params güncel olsun.
+  const transport = useMemo(
+    () =>
+      new DefaultChatTransport({
+        api: '/api/ai/chat',
+        body: { conversationId },
+      }),
+    [conversationId],
+  );
+
   const { messages, sendMessage, status, error, setMessages } = useChat({
-    transport: new DefaultChatTransport({ api: '/api/ai/chat' }),
+    id: conversationId,
+    messages: initialMessages,
+    transport,
+    onFinish: ({ message }) => {
+      // Stream tamamlanınca assistant mesajının final halini DB'ye yaz.
+      if (message.role === 'assistant') {
+        persistMessage('assistant', message.parts as unknown[]);
+      }
+    },
   });
 
   const isLoading = status === 'submitted' || status === 'streaming';
   const isEmpty = messages.length === 0;
+
+  // Yardımcı — auth ise persist endpoint'e fire-and-forget POST atar.
+  function persistMessage(role: 'user' | 'assistant', parts: unknown[]) {
+    if (!isAuthenticated) return;
+    const firstUserText = role === 'user' && isEmpty ? extractText(parts).slice(0, 60) : undefined;
+    void fetch('/api/ai/conversations/persist', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        conversationId,
+        title: firstUserText,
+        message: { role, parts },
+      }),
+    }).catch(() => {
+      // ignore — persistence başarısız olursa chat akışı kesilmesin
+    });
+  }
 
   // Chat → harita coupling: en son AI tool sonuçlarını (searchDeals veya
   // createDayPlan içindeki deal'lar) HomeStage context'e ilet. Hero dışında
@@ -58,8 +118,11 @@ export function ChatContainer({ welcomeDeals = [], city }: ChatContainerProps = 
   useEffect(() => {
     if (initialQ && !autoSentRef.current && isEmpty) {
       autoSentRef.current = true;
+      persistMessage('user', [{ type: 'text', text: initialQ }]);
       void sendMessage({ text: initialQ });
     }
+    // persistMessage stable değil; sendMessage / isEmpty / initialQ değişimine güveniyoruz.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialQ, isEmpty, sendMessage]);
 
   // Auto-scroll the messages container to the bottom whenever new content
@@ -75,18 +138,23 @@ export function ChatContainer({ welcomeDeals = [], city }: ChatContainerProps = 
     });
   }, [messages, isLoading, isEmpty]);
 
+  function dispatchUserMessage(text: string) {
+    persistMessage('user', [{ type: 'text', text }]);
+    void sendMessage({ text });
+  }
+
   function onSubmit(e?: FormEvent) {
     e?.preventDefault();
     const text = input.trim();
     if (!text || isLoading) return;
-    void sendMessage({ text });
+    dispatchUserMessage(text);
     setInput('');
   }
 
   function onQuickPrompt(text: string) {
     if (isLoading) return;
     setInput('');
-    void sendMessage({ text });
+    dispatchUserMessage(text);
   }
 
   function reset() {
@@ -94,6 +162,11 @@ export function ChatContainer({ welcomeDeals = [], city }: ChatContainerProps = 
     setInput('');
     autoSentRef.current = false;
     stage?.setAiSuggestedDeals(null);
+    setConversationId(newConversationId());
+    // URL'de ?c= varsa temizle.
+    if (params?.get('c')) {
+      router.replace(pathname, { scroll: false });
+    }
   }
 
   // Aramayı kaydet butonu için en son user mesajının text'i.
@@ -109,6 +182,18 @@ export function ChatContainer({ welcomeDeals = [], city }: ChatContainerProps = 
       if (text.length >= 3 && text.length <= 300) return text;
     }
     return '';
+  })();
+
+  // En son AI mesajı text içeriyor mu? Follow-up chip'leri sadece akış
+  // tamamlandıktan sonra ve cevap geldiğinde gösteriyoruz.
+  const lastAssistantHasContent = (() => {
+    const last = messages[messages.length - 1];
+    if (!last || last.role !== 'assistant') return false;
+    return last.parts.some(
+      (p) => (p.type === 'text' && 'text' in p && p.text.trim().length > 0) ||
+        p.type === 'tool-searchDeals' ||
+        p.type === 'tool-createDayPlan',
+    );
   })();
 
   return (
@@ -152,6 +237,18 @@ export function ChatContainer({ welcomeDeals = [], city }: ChatContainerProps = 
         {isEmpty ? (
           <div className="mb-3">
             <QuickPrompts onPrompt={onQuickPrompt} />
+          </div>
+        ) : null}
+
+        {!isEmpty && !isLoading && lastAssistantHasContent ? (
+          <div className="mb-2">
+            <FollowupChips
+              onPick={(text) => {
+                if (isLoading) return;
+                dispatchUserMessage(text);
+              }}
+              disabled={isLoading}
+            />
           </div>
         ) : null}
 
@@ -266,6 +363,11 @@ function ChatInputBar({
         className="placeholder:text-muted-foreground/70 min-h-[40px] flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none disabled:opacity-60 sm:text-base"
       />
 
+      <VoiceInputButton
+        onTranscript={(text) => onChange(text)}
+        disabled={disabled}
+      />
+
       {onReset ? (
         <button
           type="button"
@@ -346,6 +448,18 @@ function ErrorBanner({ error }: { error: Error }) {
         : 'Bir şeyler ters gitti — tekrar denemek ister misin?'}
     </div>
   );
+}
+
+/** UIMessage parts dizisinden saf metin birleştir. Persist için kullanılır. */
+function extractText(parts: unknown[]): string {
+  const out: string[] = [];
+  for (const p of parts) {
+    if (typeof p === 'object' && p !== null && 'type' in p && (p as { type: string }).type === 'text') {
+      const t = (p as { text?: unknown }).text;
+      if (typeof t === 'string') out.push(t);
+    }
+  }
+  return out.join(' ').trim();
 }
 
 /**

@@ -9,10 +9,16 @@ import { Container } from '@/components/ui/container';
 import { listDeals } from '@/lib/db/queries/deals';
 import { getUserContext } from '@/lib/security/user-context-server';
 
-export const revalidate = 300; // ISR: 5 minutes — chat itself is fully client.
+// ?c= query'sini okumak için her istek tazelenmeli — ISR yerine dinamik.
+export const dynamic = 'force-dynamic';
 
-export default async function HomePage() {
+interface PageProps {
+  searchParams: Promise<{ c?: string }>;
+}
+
+export default async function HomePage({ searchParams }: PageProps) {
   const ctx = await getUserContext();
+  const { c: conversationId } = await searchParams;
   const [featured, recent] = await Promise.all([
     listDeals({ city: ctx.city, featured: true, limit: 12 }),
     listDeals({ city: ctx.city, limit: 12 }),
@@ -22,7 +28,7 @@ export default async function HomePage() {
 
   return (
     <HomeStageProvider>
-      <HomeHero />
+      <HomeHero conversationId={conversationId} />
 
       <FeaturedCarousel deals={carouselDeals} />
       <HowItWorks />

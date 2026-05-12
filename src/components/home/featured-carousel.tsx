@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import useEmblaCarousel from 'embla-carousel-react';
 import Autoplay from 'embla-carousel-autoplay';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -36,6 +36,33 @@ export function FeaturedCarousel({ deals }: Props) {
       emblaApi.off('reInit', onSelect);
     };
   }, [emblaApi, onSelect]);
+
+  // Mouse wheel → slide bazlı navigasyon (akümülasyon eşiği 50px).
+  const viewportRef = useRef<HTMLDivElement | null>(null);
+  const setRefs = (node: HTMLDivElement | null) => {
+    emblaRef(node);
+    viewportRef.current = node;
+  };
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el || !emblaApi) return;
+    let accum = 0;
+    const onWheel = (e: WheelEvent) => {
+      if (e.deltaY === 0) return;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
+      e.preventDefault();
+      accum += e.deltaY;
+      if (accum > 50) {
+        emblaApi.scrollNext();
+        accum = 0;
+      } else if (accum < -50) {
+        emblaApi.scrollPrev();
+        accum = 0;
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  }, [emblaApi]);
 
   if (deals.length === 0) return null;
 
@@ -75,7 +102,7 @@ export function FeaturedCarousel({ deals }: Props) {
           </div>
         </div>
 
-        <div ref={emblaRef} className="overflow-hidden">
+        <div ref={setRefs} className="overflow-hidden">
           {/* Embla canonical pattern: viewport overflow-hidden, container has
               negative left margin equal to slide left padding so the first
               card sits flush. Each slide owns its own gutter via pl-*. This
