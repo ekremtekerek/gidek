@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/db/server';
 import { signUpSchema } from '@/lib/security/validators';
+import { TOAST_KEYS, withToast } from '@/lib/utils/toast';
 
 export type SignUpState = {
   ok: boolean;
@@ -61,5 +62,7 @@ export async function signUpAction(
   revalidatePath('/', 'layout');
   // New signups go to onboarding by default; an explicit `next` overrides.
   const next = formData.get('next');
-  redirect(next && typeof next === 'string' && next !== '/' ? safeNext(next) : '/onboarding');
+  const target =
+    next && typeof next === 'string' && next !== '/' ? safeNext(next) : '/onboarding';
+  redirect(withToast(target, TOAST_KEYS.signupSuccess));
 }

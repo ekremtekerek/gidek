@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/db/server';
 import { requireUser } from '@/lib/security/auth';
 import { createBookingSchema } from '@/lib/security/validators';
+import { TOAST_KEYS, withToast } from '@/lib/utils/toast';
 
 export type CreateBookingState =
   | {
@@ -72,5 +73,5 @@ export async function createBookingAction(
   if (bErr || !booking) return { ok: false, error: 'Rezervasyon oluşturulamadı.' };
 
   revalidatePath('/rezervasyonlarim');
-  redirect(`/rezervasyonlarim/${booking.booking_code}`);
+  redirect(withToast(`/rezervasyonlarim/${booking.booking_code}`, TOAST_KEYS.bookingCreated));
 }

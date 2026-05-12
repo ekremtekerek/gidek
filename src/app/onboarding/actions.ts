@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/db/server';
 import { requireUser } from '@/lib/security/auth';
 import { onboardingSchema } from '@/lib/security/validators';
+import { TOAST_KEYS, withToast } from '@/lib/utils/toast';
 
 export type OnboardingState =
   | {
@@ -80,5 +81,5 @@ export async function onboardingAction(
   if (profErr) return { ok: false, error: 'Profil güncellenemedi.' };
 
   revalidatePath('/', 'layout');
-  redirect('/');
+  redirect(withToast('/', TOAST_KEYS.onboardingDone));
 }

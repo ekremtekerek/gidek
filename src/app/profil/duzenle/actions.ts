@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/db/server';
 import { requireUser } from '@/lib/security/auth';
 import { profileUpdateSchema } from '@/lib/security/validators';
+import { TOAST_KEYS, withToast } from '@/lib/utils/toast';
 
 export type ProfileActionState =
   | {
@@ -46,7 +47,7 @@ export async function updateProfileAction(
 
   revalidatePath('/profil');
   revalidatePath('/', 'layout');
-  redirect('/profil');
+  redirect(withToast('/profil', TOAST_KEYS.profileUpdated));
 }
 
 const MAX_AVATAR_SIZE = 2 * 1024 * 1024;
@@ -113,7 +114,7 @@ export async function uploadAvatarAction(
 
   revalidatePath('/profil');
   revalidatePath('/', 'layout');
-  redirect('/profil');
+  redirect(withToast('/profil', TOAST_KEYS.avatarUpdated));
 }
 
 export async function removeAvatarAction(): Promise<void> {
@@ -128,5 +129,5 @@ export async function removeAvatarAction(): Promise<void> {
 
   revalidatePath('/profil');
   revalidatePath('/', 'layout');
-  redirect('/profil');
+  redirect(withToast('/profil', TOAST_KEYS.avatarRemoved));
 }

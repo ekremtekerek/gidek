@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/db/server';
 import { signInSchema } from '@/lib/security/validators';
+import { TOAST_KEYS, withToast } from '@/lib/utils/toast';
 
 export type SignInState = {
   ok: boolean;
@@ -39,5 +40,5 @@ export async function signInAction(
   }
 
   revalidatePath('/', 'layout');
-  redirect(safeNext(formData.get('next')));
+  redirect(withToast(safeNext(formData.get('next')), TOAST_KEYS.loginSuccess));
 }

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from 'react';
 import { X } from 'lucide-react';
+import { toast } from 'sonner';
 import { cancelBookingAction } from '@/app/rezervasyonlarim/[code]/actions';
 import { Button } from '@/components/ui/button';
 
@@ -20,7 +21,11 @@ export function CancelButton({ bookingId }: Props) {
       const result = await cancelBookingAction(bookingId);
       if (!result.ok) {
         setError(result.error);
+        toast.error(result.error);
+        return;
       }
+      toast.success('Rezervasyon iptal edildi');
+      setConfirming(false);
     });
   }
 

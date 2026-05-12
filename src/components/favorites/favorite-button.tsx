@@ -2,6 +2,7 @@
 
 import { useOptimistic, useTransition } from 'react';
 import { Heart } from 'lucide-react';
+import { toast } from 'sonner';
 import { toggleFavoriteAction } from '@/app/favorilerim/actions';
 import { Button } from '@/components/ui/button';
 
@@ -22,12 +23,18 @@ export function FavoriteButton({ dealId, initialFavorited }: Props) {
     startTransition(async () => {
       setOptimisticFavorited(next);
       const result = await toggleFavoriteAction(dealId);
-      // If the server disagrees, rollback by reading the truth from the
-      // returned value. revalidatePath will refresh the page-level prop too.
       if ('error' in result) {
         setOptimisticFavorited(!next);
-      } else if (result.favorited !== next) {
+        toast.error(result.error);
+        return;
+      }
+      if (result.favorited !== next) {
         setOptimisticFavorited(result.favorited);
+      }
+      if (result.favorited) {
+        toast.success('Favorilere eklendi');
+      } else {
+        toast('Favorilerden çıkarıldı');
       }
     });
   }

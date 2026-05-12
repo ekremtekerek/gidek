@@ -1,7 +1,10 @@
+import { Suspense } from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { Toaster } from 'sonner';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
+import { ToastBridge } from '@/components/layout/toast-bridge';
 import { JsonLd } from '@/components/seo/json-ld';
 import { SITE } from '@/lib/utils/site-config';
 import './globals.css';
@@ -56,6 +59,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header />
         <div className="flex-1">{children}</div>
         <Footer />
+        <Toaster position="top-center" richColors closeButton />
+        {/* Reads ?toast= query params from server-action redirects.
+            useSearchParams requires a Suspense boundary in Next.js 15+. */}
+        <Suspense fallback={null}>
+          <ToastBridge />
+        </Suspense>
         <JsonLd data={orgJsonLd} />
       </body>
     </html>

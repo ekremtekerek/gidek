@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { getServerClient } from '@/lib/db/server';
 import { passwordSchema } from '@/lib/security/validators';
+import { TOAST_KEYS, withToast } from '@/lib/utils/toast';
 
 const updateSchema = z.object({ password: passwordSchema });
 
@@ -44,5 +45,5 @@ export async function updatePasswordAction(
   }
 
   revalidatePath('/', 'layout');
-  redirect('/profil');
+  redirect(withToast('/profil', TOAST_KEYS.passwordUpdated));
 }
