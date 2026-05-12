@@ -341,7 +341,7 @@ function ChatInputBar({
         e.preventDefault();
         onSubmit();
       }}
-      className="border-border bg-background/95 focus-within:border-foreground/40 hover:border-foreground/30 flex items-end gap-2 rounded-3xl border p-1.5 shadow-sm backdrop-blur transition-colors"
+      className="border-border bg-background/95 focus-within:border-foreground/40 hover:border-foreground/30 gidek-input-attention flex items-end gap-2 rounded-3xl border p-1.5 backdrop-blur transition-colors"
     >
       <label htmlFor="chat-input" className="sr-only">
         Aklında ne var?
@@ -360,7 +360,7 @@ function ChatInputBar({
         rows={1}
         maxLength={500}
         disabled={disabled}
-        className="placeholder:text-muted-foreground/70 min-h-[40px] flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none disabled:opacity-60 sm:text-base"
+        className="placeholder:text-muted-foreground/70 gidek-no-focus-ring min-h-[40px] flex-1 resize-none bg-transparent px-3 py-2 text-sm outline-none disabled:opacity-60 sm:text-base"
       />
 
       <VoiceInputButton

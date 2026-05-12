@@ -86,6 +86,38 @@ body {
   animation: gidek-chevron-nudge 1.8s ease-in-out infinite;
 }
 
+/* Bazı element'lerde global :focus-visible outline'ı kapatmak gerekiyor
+ * (chat textarea — form'un kendi focus-within border'ı zaten görsel ipucu).
+ * Specificity yükseltmek için !important gerekli, çünkü globals'taki
+ * :focus-visible kuralı utility'lerden sonra cascade'de yazıyor. */
+.gidek-no-focus-ring:focus,
+.gidek-no-focus-ring:focus-visible {
+  outline: none !important;
+  box-shadow: none;
+}
+
+/* Chat input "dikkat çek" — tıklanana kadar yumuşak ring nabız atar,
+ * input focus olunca otomatik durur. Border zaten focus-within ile koyulaşır. */
+@keyframes gidek-input-attention {
+  0%,
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(244, 63, 94, 0.32),
+      0 4px 14px rgba(15, 23, 42, 0.08);
+  }
+  50% {
+    box-shadow:
+      0 0 0 9px rgba(244, 63, 94, 0),
+      0 4px 14px rgba(15, 23, 42, 0.08);
+  }
+}
+.gidek-input-attention {
+  animation: gidek-input-attention 2.4s ease-in-out infinite;
+}
+.gidek-input-attention:focus-within {
+  animation: none;
+}
+
 /* Voice input — kayıt sırasında "nefes alan" kırmızı buton */
 @keyframes gidek-mic-pulse {
   0%,

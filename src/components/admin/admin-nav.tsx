@@ -1,9 +1,12 @@
 import Link from 'next/link';
-import { LayoutDashboard, Sparkles, Ticket } from 'lucide-react';
+import { Activity, LayoutDashboard, MessageSquare, Sparkles, Store, Ticket } from 'lucide-react';
 
 const ITEMS = [
   { href: '/admin', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/admin/deals', label: 'Fırsatlar', Icon: Ticket },
+  { href: '/admin/merchants', label: 'İşletmeler', Icon: Store },
+  { href: '/admin/reviews', label: 'Yorumlar', Icon: MessageSquare },
+  { href: '/admin/ai-logs', label: 'AI sorguları', Icon: Activity },
 ] as const;
 
 export function AdminNav() {
