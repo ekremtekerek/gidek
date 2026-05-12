@@ -93,6 +93,23 @@ const MERCHANTS: MerchantSeed[] = [
 
   // Trabzon
   { slug: 'trabzon-yore',            name: 'Karadeniz Sofrası',       city: 'Trabzon',  district: 'Ortahisar',  description: 'Yöresel Karadeniz mutfağı.' },
+
+  // --- Sprint 13 — ek tedarikçiler ----------------------------------------
+  // İstanbul (semt çeşitliliği)
+  { slug: 'galata-bistro',           name: 'Galata Bistro',           city: 'İstanbul', district: 'Galata',     description: 'Tarihi sokakta brunch ve şarap akşamları.' },
+  { slug: 'maslak-otel',             name: 'Maslak Plaza Otel',       city: 'İstanbul', district: 'Maslak',     description: 'Business kullanıcılar için şehir oteli.' },
+  { slug: 'uskudar-aktivite',        name: 'Üsküdar Sahil Spor',      city: 'İstanbul', district: 'Üsküdar',    description: 'Yoga, pilates, koşu kulübü ve kano.' },
+  { slug: 'pera-stand-up',           name: 'Pera Stand Up',           city: 'İstanbul', district: 'Beyoğlu',    description: 'Beyoğlu’da Türkçe stand-up gecesi.' },
+  { slug: 'cankaya-spa',             name: 'Çankaya Wellness',        city: 'Ankara',   district: 'Çankaya',    description: 'Spa, masaj ve cilt bakımı merkezi.' },
+  { slug: 'sisli-cocuk-tiyatrosu',   name: 'Şişli Çocuk Sahnesi',     city: 'İstanbul', district: 'Şişli',      description: 'Hafta sonu çocuk oyunları ve atölyeler.' },
+
+  // Yeni şehirler
+  { slug: 'konya-mutfak',            name: 'Konya Mevlana Lokantası', city: 'Konya',    district: 'Selçuklu',   description: 'Etli ekmek, fırın kebabı, helva.' },
+  { slug: 'gaziantep-baklava',       name: 'Gaziantep Lezzet Evi',    city: 'Gaziantep',district: 'Şahinbey',   description: 'Baklava, katmer, beyran çorbası.' },
+  { slug: 'bodrum-beach',            name: 'Bodrum Beach Club',       city: 'Muğla',    district: 'Bodrum',     description: 'Şezlong + havuz + DJ partileri.' },
+  { slug: 'marmaris-otel',           name: 'Marmaris Yat Otel',       city: 'Muğla',    district: 'Marmaris',   description: 'Marina manzaralı tatil oteli.' },
+  { slug: 'kapadokya-balonu',        name: 'Kapadokya Sky',           city: 'Nevşehir', district: 'Göreme',     description: 'Sıcak hava balonu ve doğa turları.' },
+  { slug: 'didim-otel',              name: 'Didim Altınkum Resort',   city: 'Aydın',    district: 'Didim',      description: 'Sahile sıfır her şey dahil resort.' },
 ];
 
 // ----------------------------------------------------------------------------
@@ -907,11 +924,222 @@ const D: DealSeed[] = [
     durationMin: 120,
     audience: ['solo','family'], tags: ['aninda-onay','rahat'],
   },
+
+  // ==========================================================================
+  // === SPRINT 13 — 200'e çıkaran yeni fırsatlar =============================
+  // ==========================================================================
+
+  // === KAHVALTI (+10) ===
+  { slug: 'galata-pazar-brunch',     merchant: 'galata-bistro',    categories: ['kahvalti'], title: 'Galata Kuleli Pazar Brunch · 2 Kişi', description: 'Galata Kulesi manzarasına bakan açık teras, 22 çeşit brunch.', original: 1500, discounted: 850, city: 'İstanbul', district: 'Galata', audience: ['couple','solo','group'], tags: ['brunch','sehir-merkezi','tarihi','populer'] },
+  { slug: 'uskudar-sahil-kahvalti',  merchant: 'uskudar-aktivite', categories: ['kahvalti'], title: 'Üsküdar Sahil 2 Kişilik Kahvaltı', description: 'Boğaz’a karşı sade köy kahvaltısı, koşu sonrası favorimiz.', original: 750, discounted: 440, city: 'İstanbul', district: 'Üsküdar', audience: ['couple','solo','family'], tags: ['deniz-manzarali','hafta-sonu','huzurlu'] },
+  { slug: 'sisli-erkenci-omlet',     merchant: 'sisli-kahve',      categories: ['kahvalti'], title: 'Şişli 07:00 Erkenci Omlet & Kahve', description: 'İş öncesi açık 25 dk hızlı kahvaltı + filtre kahve.', original: 400, discounted: 220, city: 'İstanbul', district: 'Şişli', audience: ['solo','couple'], tags: ['son-dakika','business-uygun','sehir-merkezi'] },
+  { slug: 'bebek-glutensiz-brunch',  merchant: 'bebek-bistro',     categories: ['kahvalti'], title: 'Bebek Glütensiz Brunch', description: 'Tüm çeşitlerde glütensiz alternatif. Çölyak güvenli mutfak.', original: 1200, discounted: 720, city: 'İstanbul', district: 'Bebek', audience: ['couple','solo'], tags: ['glutensiz','samimi','deniz-manzarali'] },
+  { slug: 'kadikoy-vegan-brunch',    merchant: 'kadikoy-brunch',   categories: ['kahvalti'], title: 'Moda Vegan Brunch Tabağı', description: 'Avokado tost, kaju peyniri, smoothie bowl. Tamamen vegan.', original: 850, discounted: 490, city: 'İstanbul', district: 'Kadıköy', audience: ['couple','solo'], tags: ['vegan','brunch','populer','samimi'] },
+  { slug: 'cesme-zeytin-kahvalti',   merchant: 'alsancak-kahvalti',categories: ['kahvalti'], title: 'Çeşme Köyünde Zeytinlikte Kahvaltı', description: 'Ege’nin köy serpme kahvaltısı, zeytinliklerin arasında.', original: 900, discounted: 540, city: 'İzmir', district: 'Çeşme', audience: ['couple','family'], tags: ['acik-hava','huzurlu','samimi','dogada'] },
+  { slug: 'antalya-kaleici-kahvalti',merchant: 'kaleici-restaurant',categories:['kahvalti'], title: 'Kaleiçi Tarihi Konak Kahvaltı', description: 'Osmanlı konağında bahçeli serpme kahvaltı.', original: 1100, discounted: 640, city: 'Antalya', district: 'Muratpaşa', audience: ['couple','family'], tags: ['tarihi','samimi','sehir-merkezi'] },
+  { slug: 'gaziantep-katmer',        merchant: 'gaziantep-baklava',categories: ['kahvalti'], title: 'Gaziantep Geleneksel Katmer Kahvaltısı', description: 'Antep usulü katmer + menemen + çay. 2 kişilik.', original: 600, discounted: 340, city: 'Gaziantep', district: 'Şahinbey', audience: ['couple','solo','family'], tags: ['yerel-favori','gizli-cevher','samimi'] },
+  { slug: 'bilkent-pazartesi-brunch',merchant: 'bilkent-otel',     categories: ['kahvalti'], title: 'Bilkent Otel Hafta İçi Brunch', description: 'İş günlerinde sakin, sınırsız çay/kahve.', original: 950, discounted: 540, city: 'Ankara', district: 'Bilkent', audience: ['solo','couple'], tags: ['business-uygun','rahat','huzurlu'] },
+  { slug: 'konya-mutfak-yore-kahvalti', merchant: 'konya-mutfak', categories: ['kahvalti'], title: 'Konya Yöresel Etli Pide Kahvaltı', description: 'Pazar sabahı Konya usulü kahvaltı. Etli pide dahil.', original: 700, discounted: 420, city: 'Konya', district: 'Selçuklu', audience: ['family','couple'], tags: ['yerel-favori','gizli-cevher','populer'] },
+
+  // === YEMEK (+10) ===
+  { slug: 'galata-bistro-aksam',     merchant: 'galata-bistro',    categories: ['yemek'], title: 'Galata Bistro · 3 Kap Akşam Yemeği', description: 'Şefin önerisi 3 kap menü + 1 kadeh şarap.', original: 2200, discounted: 1290, city: 'İstanbul', district: 'Galata', audience: ['couple'], tags: ['romantik','sehir-merkezi','tarihi','luks'] },
+  { slug: 'maslak-business-yemek',   merchant: 'maslak-otel',      categories: ['yemek'], title: 'Maslak · Business İş Yemeği Menü', description: '2 kişilik öğle yemeği. Sessiz köşe masalar.', original: 1800, discounted: 990, city: 'İstanbul', district: 'Maslak', audience: ['couple','group'], tags: ['business-uygun','luks','sehir-merkezi'] },
+  { slug: 'bagdat-balik-aksam',      merchant: 'bagdat-brunch',    categories: ['yemek'], title: 'Bağdat Caddesi 2 Kişilik Balık Mezesi', description: 'Mevsim balığı + 10 çeşit meze. Cuma-Cumartesi.', original: 2400, discounted: 1390, city: 'İstanbul', district: 'Suadiye', audience: ['couple','group'], tags: ['romantik','gece-hayati','populer','luks'] },
+  { slug: 'cihangir-iki-kisi-meze',  merchant: 'cihangir-bistro',  categories: ['yemek'], title: 'Cihangir 2 Kişilik Meze + Şarap Gecesi', description: 'Şarap eşliğinde 12 çeşit meze + ana yemek.', original: 2000, discounted: 1190, city: 'İstanbul', district: 'Cihangir', audience: ['couple'], tags: ['romantik','samimi','sehir-merkezi'] },
+  { slug: 'konya-etli-ekmek',        merchant: 'konya-mutfak',     categories: ['yemek'], title: 'Konya Mevlana 4 Kişilik Et Sofrası', description: 'Etli ekmek, fırın kebabı, çorba, helva.', original: 1600, discounted: 890, city: 'Konya', district: 'Selçuklu', audience: ['family','group'], tags: ['yerel-favori','grup-icin','tarihi'] },
+  { slug: 'gaziantep-mutfak-tabagi', merchant: 'gaziantep-baklava',categories: ['yemek'], title: 'Antep Mutfağı Tadım Tabağı · 2 Kişi', description: 'Beyran, lahmacun, kibe, baklava. Tadım menüsü.', original: 1400, discounted: 790, city: 'Gaziantep', district: 'Şahinbey', audience: ['couple','solo'], tags: ['yerel-favori','populer','gizli-cevher'] },
+  { slug: 'bodrum-balik-iskele',     merchant: 'bodrum-resort',    categories: ['yemek'], title: 'Bodrum İskele Balık Akşam Yemeği', description: 'İskelede günün balığı, beyaz şarap, gün batımı.', original: 2800, discounted: 1690, city: 'Muğla', district: 'Bodrum', audience: ['couple','group'], tags: ['romantik','deniz-manzarali','luks','ozel-gun'] },
+  { slug: 'antalya-osmanli-mutfak',  merchant: 'kaleici-restaurant',categories:['yemek'], title: 'Antalya Osmanlı Saray Mutfağı', description: 'Tarihi reçeteler, tandır eti, gül şerbeti.', original: 1900, discounted: 1090, city: 'Antalya', district: 'Muratpaşa', audience: ['couple','family'], tags: ['tarihi','luks','populer'] },
+  { slug: 'kurucesme-vip-aksam',     merchant: 'kurucesme-rooftop',categories: ['yemek'], title: 'Kuruçeşme Rooftop VIP Akşam · 2 Kişi', description: 'Özel masada Boğaz manzarası, premium menü, şampanya.', original: 4500, discounted: 2690, city: 'İstanbul', district: 'Kuruçeşme', audience: ['couple'], tags: ['romantik','luks','ozel-gun','deniz-manzarali'], featured: true },
+  { slug: 'cesme-otel-aksam',        merchant: 'cesme-otel',       categories: ['yemek'], title: 'Çeşme Sahil Otel · A La Carte Akşam Yemeği', description: 'Plaja sıfır restoran, deniz mahsulleri menü.', original: 2200, discounted: 1290, city: 'İzmir', district: 'Çeşme', audience: ['couple','family'], tags: ['deniz-manzarali','luks','romantik'] },
+
+  // === TIYATRO (+5) ===
+  { slug: 'sisli-cocuk-pazar',       merchant: 'sisli-cocuk-tiyatrosu', categories: ['tiyatro'], title: 'Şişli Çocuk Sahnesi Pazar Matine', description: 'Müzikli interaktif çocuk oyunu, atölye dahil.', original: 600, discounted: 320, city: 'İstanbul', district: 'Şişli', durationMin: 60, audience: ['family','kids'], tags: ['cocuk-dostu','hafta-sonu','eglenceli'] },
+  { slug: 'sisli-cocuk-cumartesi',   merchant: 'sisli-cocuk-tiyatrosu', categories: ['tiyatro'], title: 'Şişli Çocuk Sahnesi Cumartesi · Yetişkin + Çocuk', description: 'Aile bileti, hafta sonu interaktif gösteri.', original: 550, discounted: 290, city: 'İstanbul', district: 'Şişli', durationMin: 55, audience: ['family','kids'], tags: ['cocuk-dostu','hafta-sonu','samimi'] },
+  { slug: 'kadikoy-deneysel',        merchant: 'kadikoy-sahne',    categories: ['tiyatro'], title: 'Kadıköy Deneysel Tiyatro Gecesi', description: '2 kişilik bilet, çağdaş deneysel performans.', original: 750, discounted: 440, city: 'İstanbul', district: 'Kadıköy', durationMin: 90, audience: ['couple','solo'], tags: ['odullu','gizli-cevher','sessiz'] },
+  { slug: 'bostanci-tek-perde-2',    merchant: 'bostanci-sahne',   categories: ['tiyatro'], title: 'Bostancı · Çağdaş Tek Perde · 2 Kişi', description: 'Çağdaş yapım, hafta içi indirimli bilet.', original: 700, discounted: 380, city: 'İstanbul', district: 'Bostancı', durationMin: 85, audience: ['couple','solo'], tags: ['sehir-merkezi','odullu','sessiz'] },
+  { slug: 'izmir-cocuk-tiyatrosu',   merchant: 'izmir-tiyatro',    categories: ['tiyatro'], title: 'İzmir · Hafta Sonu Çocuk Tiyatrosu', description: 'Aile bileti, atölye dahil 60 dakika.', original: 500, discounted: 260, city: 'İzmir', district: 'Konak', durationMin: 60, audience: ['family','kids'], tags: ['cocuk-dostu','hafta-sonu','samimi'] },
+
+  // === KONSER (+5) ===
+  { slug: 'beyoglu-akustik-cuma',    merchant: 'beyoglu-jazz',     categories: ['konser'], title: 'Beyoğlu · Cuma Akustik Türk Klasikleri', description: 'Türk klasikleri akustik düzenlemeyle. 2 kişilik bilet.', original: 900, discounted: 540, city: 'İstanbul', district: 'Beyoğlu', durationMin: 105, audience: ['couple','solo'], tags: ['gece-hayati','romantik','samimi'] },
+  { slug: 'levent-blues',            merchant: 'levent-stage',     categories: ['konser'], title: 'Levent Stage · Blues Gecesi', description: 'Uluslararası blues sanatçıları, 2 saatlik gösteri.', original: 1100, discounted: 660, city: 'İstanbul', district: 'Levent', durationMin: 120, audience: ['couple','solo','group'], tags: ['gece-hayati','populer','enerjik'] },
+  { slug: 'bodrum-beach-konser',     merchant: 'bodrum-beach',     categories: ['konser'], title: 'Bodrum Beach Club · Yaz Konseri', description: 'Açık hava sahne, ünlü DJ’ler, yaz partisi.', original: 1500, discounted: 890, city: 'Muğla', district: 'Bodrum', audience: ['couple','group','solo'], tags: ['gece-hayati','enerjik','acik-hava','deniz-manzarali'] },
+  { slug: 'cesme-yaz-konser',        merchant: 'cesme-otel',       categories: ['konser'], title: 'Çeşme · Otelde Yaz Konseri Gecesi', description: 'Otel sahil sahnesinde canlı performans.', original: 1200, discounted: 720, city: 'İzmir', district: 'Çeşme', audience: ['couple','group'], tags: ['acik-hava','gece-hayati','deniz-manzarali'] },
+  { slug: 'ankara-rock-cuma',        merchant: 'ankara-stand-up',  categories: ['konser'], title: 'Ankara · Cuma Rock Gecesi', description: 'Yerli rock grubu performansı.', original: 700, discounted: 410, city: 'Ankara', district: 'Kavaklıdere', durationMin: 150, audience: ['couple','solo','group'], tags: ['gece-hayati','enerjik','eglenceli'] },
+
+  // === STAND UP (+4) ===
+  { slug: 'pera-cumartesi-stand-up', merchant: 'pera-stand-up',    categories: ['stand-up'], title: 'Pera Stand Up · Cumartesi Gecesi', description: '3 farklı komedyen, 2 saatlik gösteri.', original: 900, discounted: 540, city: 'İstanbul', district: 'Beyoğlu', durationMin: 120, audience: ['couple','solo','group'], tags: ['gece-hayati','eglenceli','populer'] },
+  { slug: 'pera-persembe-stand-up',  merchant: 'pera-stand-up',    categories: ['stand-up'], title: 'Pera Stand Up · Persembe Mikrofona Açık', description: 'Acemilerin denemediği mikrofon. Sürprizli gece.', original: 400, discounted: 240, city: 'İstanbul', district: 'Beyoğlu', durationMin: 90, audience: ['solo','couple'], tags: ['gizli-cevher','eglenceli','samimi'] },
+  { slug: 'ankara-stand-up-cifte',   merchant: 'ankara-stand-up',  categories: ['stand-up'], title: 'Ankara · 2 Kişilik Stand Up Bileti', description: 'Türkçe stand-up, masa rezervasyonu dahil.', original: 1000, discounted: 590, city: 'Ankara', district: 'Kavaklıdere', durationMin: 100, audience: ['couple','group'], tags: ['gece-hayati','populer','eglenceli'] },
+  { slug: 'izmir-stand-up-cumartesi',merchant: 'izmir-tiyatro',    categories: ['stand-up'], title: 'İzmir · Cumartesi Stand Up Show', description: '2 kişilik bilet + 1 ikram içecek.', original: 800, discounted: 480, city: 'İzmir', district: 'Konak', durationMin: 100, audience: ['couple','group','solo'], tags: ['eglenceli','gece-hayati','populer'] },
+
+  // === AKTIVITE (+12) ===
+  { slug: 'uskudar-yoga-sahil',      merchant: 'uskudar-aktivite', categories: ['aktivite'], title: 'Üsküdar Sahilde Açık Hava Yoga', description: '90 dakika vinyasa yoga, mat sağlanır.', original: 500, discounted: 290, city: 'İstanbul', district: 'Üsküdar', durationMin: 90, audience: ['solo','couple'], tags: ['huzurlu','acik-hava','dogada','rahat'] },
+  { slug: 'uskudar-pilates',         merchant: 'uskudar-aktivite', categories: ['aktivite'], title: 'Üsküdar Pilates · 4 Ders Paket', description: 'Reformer pilates 4 ders, eğitmenli.', original: 1800, discounted: 1090, city: 'İstanbul', district: 'Üsküdar', durationMin: 60, audience: ['solo'], tags: ['rahat','populer','huzurlu'] },
+  { slug: 'uskudar-kano-cifte',      merchant: 'uskudar-aktivite', categories: ['aktivite'], title: 'Üsküdar Sahil Çift Kişilik Kano', description: '90 dk kano, ekipman dahil, eğitmen eşliğinde.', original: 1200, discounted: 690, city: 'İstanbul', district: 'Üsküdar', durationMin: 90, audience: ['couple'], tags: ['enerjik','deniz-manzarali','romantik','acik-hava'] },
+  { slug: 'sariyer-yamac-parasutu',  merchant: 'sariyer-aktivite', categories: ['aktivite'], title: 'Sarıyer · Yamaç Paraşütü Deneyimi', description: 'Eğitmen eşliğinde tandem yamaç paraşütü.', original: 3000, discounted: 1790, city: 'İstanbul', district: 'Sarıyer', durationMin: 30, audience: ['solo','couple'], tags: ['enerjik','acik-hava','populer','ozel-gun'], featured: true },
+  { slug: 'canakkale-trekking-2',    merchant: 'canakkale-doga',   categories: ['aktivite'], title: 'Çanakkale · Yarımada Trekking', description: 'Tarihi yarımadada rehberli trekking, 5 saat.', original: 1100, discounted: 640, city: 'Çanakkale', district: 'Merkez', durationMin: 300, audience: ['group','solo','couple'], tags: ['dogada','tarihi','acik-hava','grup-icin'] },
+  { slug: 'bodrum-tekne-gunbatimi',  merchant: 'bodrum-beach',     categories: ['aktivite'], title: 'Bodrum · Gün Batımı Tekne Turu', description: '3 saat tekne, içecek ve atıştırmalık dahil.', original: 1800, discounted: 1090, city: 'Muğla', district: 'Bodrum', durationMin: 180, audience: ['couple','group'], tags: ['romantik','deniz-manzarali','acik-hava','luks'] },
+  { slug: 'bodrum-dalmaçya-snorkel', merchant: 'bodrum-resort',    categories: ['aktivite'], title: 'Bodrum · Şnorkelle Yüzme Turu', description: 'Eğitmenli şnorkel turu, 3 saat tekne.', original: 1400, discounted: 790, city: 'Muğla', district: 'Bodrum', durationMin: 180, audience: ['couple','family','group','solo'], tags: ['dogada','enerjik','acik-hava','populer'] },
+  { slug: 'kapadokya-balon',         merchant: 'kapadokya-balonu', categories: ['aktivite'], title: 'Kapadokya · Sıcak Hava Balonu Sabahı', description: 'Sunrise balon turu, şampanya kahvaltısı dahil.', original: 5500, discounted: 3290, city: 'Nevşehir', district: 'Göreme', durationMin: 90, audience: ['couple','solo','group'], tags: ['ozel-gun','dogada','acik-hava','luks','populer'], featured: true },
+  { slug: 'kapadokya-jeep-safari',   merchant: 'kapadokya-balonu', categories: ['aktivite'], title: 'Kapadokya · Jeep Safari Turu', description: '4 saat off-road peri bacaları arası tur.', original: 2200, discounted: 1290, city: 'Nevşehir', district: 'Göreme', durationMin: 240, audience: ['couple','family','group'], tags: ['dogada','enerjik','acik-hava','tarihi'] },
+  { slug: 'antalya-rafting',         merchant: 'antalya-resort',   categories: ['aktivite'], title: 'Antalya · Köprülü Kanyon Rafting', description: 'Tam gün rafting + öğle yemeği dahil.', original: 1500, discounted: 890, city: 'Antalya', district: 'Manavgat', durationMin: 480, audience: ['couple','group','family'], tags: ['enerjik','dogada','acik-hava','grup-icin'] },
+  { slug: 'fethiye-kelebek-vadisi',  merchant: 'fethiye-otel',     categories: ['aktivite'], title: 'Fethiye · Kelebek Vadisi Tekne Turu', description: '6 koy + Kelebek Vadisi, öğle yemeği dahil.', original: 1300, discounted: 740, city: 'Muğla', district: 'Fethiye', durationMin: 480, audience: ['couple','family','group','solo'], tags: ['dogada','acik-hava','deniz-manzarali','populer'] },
+  { slug: 'sariyer-paintball-cifte', merchant: 'sariyer-aktivite', categories: ['aktivite'], title: 'Sarıyer · 2 Kişilik Paintball', description: '2 kişilik mini turnuva, ekipman dahil.', original: 900, discounted: 540, city: 'İstanbul', district: 'Sarıyer', durationMin: 90, audience: ['couple'], tags: ['eglenceli','enerjik','acik-hava'] },
+
+  // === MASAJ (+8) ===
+  { slug: 'cankaya-anti-stres',      merchant: 'cankaya-spa',      categories: ['masaj'], title: 'Çankaya Wellness · 60 dk Anti-Stres Masajı', description: 'Klasik masaj, aromaterapi yağları.', original: 950, discounted: 540, city: 'Ankara', district: 'Çankaya', durationMin: 60, audience: ['solo','couple'], tags: ['huzurlu','rahat','populer'] },
+  { slug: 'cankaya-cift-masaj',      merchant: 'cankaya-spa',      categories: ['masaj'], title: 'Çankaya · Çift Masajı 90 dk', description: 'Aynı odada çift terapist, aromaterapi yağları.', original: 2200, discounted: 1290, city: 'Ankara', district: 'Çankaya', durationMin: 90, audience: ['couple'], tags: ['romantik','luks','huzurlu','ozel-gun'] },
+  { slug: 'cankaya-hamam-paket',     merchant: 'cankaya-spa',      categories: ['masaj'], title: 'Çankaya · Hamam + Kese + Masaj Paketi', description: 'Geleneksel hamam, kese, köpük, klasik masaj.', original: 1600, discounted: 890, city: 'Ankara', district: 'Çankaya', durationMin: 120, audience: ['solo','couple'], tags: ['huzurlu','rahat','populer','luks'] },
+  { slug: 'maslak-business-masaj',   merchant: 'maslak-otel',      categories: ['masaj'], title: 'Maslak Otel · 45 dk Sırt-Boyun Masajı', description: 'Ofis yorgunluğuna kısa ama etkili masaj.', original: 700, discounted: 390, city: 'İstanbul', district: 'Maslak', durationMin: 45, audience: ['solo'], tags: ['business-uygun','rahat','aninda-onay'] },
+  { slug: 'antalya-spa-vip',         merchant: 'antalya-spa',      categories: ['masaj'], title: 'Lara Spa · VIP Tam Gün Wellness', description: 'Tam gün spa: hamam, sauna, 2× masaj, öğle yemeği.', original: 4500, discounted: 2690, city: 'Antalya', district: 'Lara', durationMin: 360, audience: ['couple','solo'], tags: ['luks','huzurlu','ozel-gun','rahat'], featured: true },
+  { slug: 'marmaris-masaj',          merchant: 'marmaris-otel',    categories: ['masaj'], title: 'Marmaris · Spa Paketi 90 dk', description: 'Marina manzaralı oda, klasik masaj + hamam.', original: 1500, discounted: 890, city: 'Muğla', district: 'Marmaris', durationMin: 90, audience: ['couple','solo'], tags: ['luks','huzurlu','deniz-manzarali'] },
+  { slug: 'didim-cift-spa',          merchant: 'didim-otel',       categories: ['masaj'], title: 'Didim · Sahile Karşı Çift Masajı', description: 'Sahil odasında 60 dk çift masajı.', original: 1700, discounted: 990, city: 'Aydın', district: 'Didim', durationMin: 60, audience: ['couple'], tags: ['romantik','deniz-manzarali','luks'] },
+  { slug: 'sariyer-doga-masaj',      merchant: 'sariyer-aktivite', categories: ['masaj'], title: 'Sarıyer · Doğa İçinde Açık Hava Masajı', description: 'Belgrad Ormanı kampüsünde, eğitmenli.', original: 1100, discounted: 640, city: 'İstanbul', district: 'Sarıyer', durationMin: 75, audience: ['solo','couple'], tags: ['dogada','huzurlu','acik-hava','gizli-cevher'] },
+
+  // === GUZELLIK (+5) ===
+  { slug: 'cankaya-manikur-pedikur', merchant: 'cankaya-spa',      categories: ['guzellik'], title: 'Çankaya · Manikür + Pedikür + Jel', description: 'Tek seansta jel manikür ve pedikür.', original: 700, discounted: 390, city: 'Ankara', district: 'Çankaya', durationMin: 90, audience: ['solo'], tags: ['rahat','populer','aninda-onay'] },
+  { slug: 'sisli-cilt-bakimi',       merchant: 'sisli-kahve',      categories: ['guzellik'], title: 'Şişli · Profesyonel Cilt Bakımı 60 dk', description: 'Cilt analizi + peeling + maske.', original: 900, discounted: 540, city: 'İstanbul', district: 'Şişli', durationMin: 60, audience: ['solo'], tags: ['rahat','populer'] },
+  { slug: 'kadikoy-sac-bakim',       merchant: 'kadikoy-brunch',   categories: ['guzellik'], title: 'Kadıköy · Saç Bakım + Kesim Paketi', description: 'Yıkama, maske, kesim, fön.', original: 800, discounted: 440, city: 'İstanbul', district: 'Kadıköy', durationMin: 90, audience: ['solo'], tags: ['rahat','populer'] },
+  { slug: 'maltepe-saç-renk',        merchant: 'maltepe-guzellik', categories: ['guzellik'], title: 'Maltepe · Saç Renklendirme + Bakım', description: 'Renk + bakım + fön. Profesyonel ürünler.', original: 1500, discounted: 890, city: 'İstanbul', district: 'Maltepe', durationMin: 180, audience: ['solo'], tags: ['luks','populer'] },
+  { slug: 'cankaya-kasilar',         merchant: 'cankaya-spa',      categories: ['guzellik'], title: 'Çankaya · Kaş Şekillendirme + Boyama', description: '30 dk kaş tasarımı ve boyama.', original: 350, discounted: 190, city: 'Ankara', district: 'Çankaya', durationMin: 30, audience: ['solo'], tags: ['aninda-onay','rahat','populer'] },
+
+  // === TURLAR (+10) ===
+  { slug: 'sultanahmet-bizans-turu', merchant: 'sultanahmet-tours',categories: ['turlar'], title: 'Bizans İstanbul Turu · 4 Saat', description: 'Ayasofya, Sultanahmet, Yerebatan + rehber.', original: 1300, discounted: 740, city: 'İstanbul', district: 'Sultanahmet', durationMin: 240, audience: ['couple','solo','family','group'], tags: ['tarihi','populer','sehir-merkezi'] },
+  { slug: 'sultanahmet-bospori-tur', merchant: 'sultanahmet-tours',categories: ['turlar'], title: 'Bosphorus Cruise · 2 Kişilik Tekne Turu', description: '2 saat Boğaz turu, 1 ikram içecek.', original: 900, discounted: 540, city: 'İstanbul', district: 'Sultanahmet', durationMin: 120, audience: ['couple','family','solo'], tags: ['deniz-manzarali','populer','tarihi'] },
+  { slug: 'kapadokya-tam-gun',       merchant: 'kapadokya-balonu', categories: ['turlar'], title: 'Kapadokya · Tam Gün Rehberli Tur', description: 'Göreme, Uçhisar, Avanos. Öğle yemeği dahil.', original: 1800, discounted: 1090, city: 'Nevşehir', district: 'Göreme', durationMin: 480, audience: ['couple','family','group','solo'], tags: ['tarihi','populer','dogada','grup-icin'] },
+  { slug: 'kusadasi-pamukkale',      merchant: 'kusadasi-turlar',  categories: ['turlar'], title: 'Kuşadası · Pamukkale + Hierapolis Turu', description: 'Tam gün otobüs turu, öğle yemeği dahil.', original: 1500, discounted: 890, city: 'Aydın', district: 'Kuşadası', durationMin: 600, audience: ['couple','family','group','solo'], tags: ['tarihi','dogada','populer'] },
+  { slug: 'bodrum-mavi-tur',         merchant: 'bodrum-beach',     categories: ['turlar'], title: 'Bodrum · 1 Günlük Mavi Tur', description: 'Tam gün tekne, 4 koy, öğle yemeği dahil.', original: 1200, discounted: 720, city: 'Muğla', district: 'Bodrum', durationMin: 480, audience: ['family','couple','group','solo'], tags: ['deniz-manzarali','acik-hava','populer','grup-icin'] },
+  { slug: 'galata-yuruyus-turu',     merchant: 'galata-bistro',    categories: ['turlar'], title: 'Galata · Sokak Sanatı Yürüyüş Turu', description: '2.5 saat Galata + Karaköy sokak sanatı turu.', original: 700, discounted: 390, city: 'İstanbul', district: 'Galata', durationMin: 150, audience: ['solo','couple','group'], tags: ['sehir-merkezi','tarihi','gizli-cevher'] },
+  { slug: 'gaziantep-mutfak-turu',   merchant: 'gaziantep-baklava',categories: ['turlar'], title: 'Gaziantep · Mutfak Turu', description: 'Yöresel lezzetleri tanıyan rehberli tur, 5 durak.', original: 1100, discounted: 640, city: 'Gaziantep', district: 'Şahinbey', durationMin: 240, audience: ['couple','solo','family','group'], tags: ['yerel-favori','populer','gizli-cevher','tarihi'] },
+  { slug: 'konya-mevlana-turu',      merchant: 'konya-mutfak',     categories: ['turlar'], title: 'Konya · Mevlana ve Tarihi Konya Turu', description: 'Mevlana Müzesi + Karatay Medresesi + İnce Minare.', original: 800, discounted: 440, city: 'Konya', district: 'Selçuklu', durationMin: 240, audience: ['couple','family','solo','group'], tags: ['tarihi','populer','huzurlu'] },
+  { slug: 'fethiye-olu-deniz-tur',   merchant: 'fethiye-otel',     categories: ['turlar'], title: 'Fethiye · Ölüdeniz + Kayaköy Tur', description: 'Yarım gün otobüs turu + plaj ziyareti.', original: 700, discounted: 410, city: 'Muğla', district: 'Fethiye', durationMin: 300, audience: ['couple','family','solo'], tags: ['dogada','populer','deniz-manzarali','tarihi'] },
+  { slug: 'marmaris-dalyan-turu',    merchant: 'marmaris-otel',    categories: ['turlar'], title: 'Marmaris · Dalyan + Kaplumbağa Plajı Tur', description: 'Tam gün gemi turu, çamur banyosu, öğle yemeği.', original: 1000, discounted: 590, city: 'Muğla', district: 'Marmaris', durationMin: 480, audience: ['couple','family','group','solo'], tags: ['dogada','acik-hava','populer'] },
+
+  // === SEHIR OTELLERI (+8) ===
+  { slug: 'maslak-1-gece-business',  merchant: 'maslak-otel',      categories: ['sehir-otelleri'], title: 'Maslak Plaza · 1 Gece + Brunch', description: 'Business kullanıcılar için merkezi konum.', original: 3000, discounted: 1790, city: 'İstanbul', district: 'Maslak', audience: ['solo','couple','family'], tags: ['business-uygun','sehir-merkezi','luks'], validDays: 180 },
+  { slug: 'galata-butik-1-gece',     merchant: 'galata-bistro',    categories: ['sehir-otelleri'], title: 'Galata · Butik Otel 1 Gece + Kahvaltı', description: 'Tarihi binada butik oda, kahvaltı dahil.', original: 2800, discounted: 1690, city: 'İstanbul', district: 'Galata', audience: ['couple','solo'], tags: ['romantik','tarihi','sehir-merkezi','samimi'], validDays: 180 },
+  { slug: 'bilkent-2-gece-paket',    merchant: 'bilkent-otel',     categories: ['sehir-otelleri'], title: 'Bilkent · 2 Gece Hafta İçi Paket', description: 'Hafta içi 2 gece, kahvaltı + spa erişimi.', original: 6000, discounted: 3490, city: 'Ankara', district: 'Bilkent', audience: ['couple','solo'], tags: ['business-uygun','luks','huzurlu'], validDays: 180 },
+  { slug: 'konya-otel-1-gece',       merchant: 'konya-mutfak',     categories: ['sehir-otelleri'], title: 'Konya · Şehir Otel 1 Gece + Kahvaltı', description: 'Mevlana Müzesi yakını şehir oteli.', original: 2200, discounted: 1290, city: 'Konya', district: 'Selçuklu', audience: ['couple','solo','family'], tags: ['tarihi','sehir-merkezi','huzurlu'], validDays: 180 },
+  { slug: 'gaziantep-otel-1-gece',   merchant: 'gaziantep-baklava',categories: ['sehir-otelleri'], title: 'Gaziantep · 1 Gece Konaklama + Kahvaltı', description: 'Şehir oteli, yerel mutfak kahvaltısı.', original: 2400, discounted: 1390, city: 'Gaziantep', district: 'Şahinbey', audience: ['couple','solo'], tags: ['business-uygun','sehir-merkezi','yerel-favori'], validDays: 180 },
+  { slug: 'trabzon-otel-1-gece',     merchant: 'trabzon-yore',     categories: ['sehir-otelleri'], title: 'Trabzon · Şehir Otelinde 1 Gece', description: 'Merkez konum, kahvaltı dahil.', original: 2600, discounted: 1490, city: 'Trabzon', district: 'Ortahisar', audience: ['couple','family'], tags: ['sehir-merkezi','huzurlu'], validDays: 180 },
+  { slug: 'bursa-otel-1-gece',       merchant: 'bursa-kahvalti',   categories: ['sehir-otelleri'], title: 'Bursa · 1 Gece + Hamam Paketi', description: 'Mudanya yakını otel + hamam erişimi.', original: 2900, discounted: 1690, city: 'Bursa', district: 'Mudanya', audience: ['couple'], tags: ['huzurlu','tarihi','luks'], validDays: 180 },
+  { slug: 'eskisehir-otel-1-gece',   merchant: 'eskisehir-kurs',   categories: ['sehir-otelleri'], title: 'Eskişehir · Şehir Otel 1 Gece', description: 'Porsuk Çayı yakını, kahvaltı dahil.', original: 2100, discounted: 1190, city: 'Eskişehir', district: 'Tepebaşı', audience: ['couple','solo','family'], tags: ['sehir-merkezi','huzurlu','samimi'], validDays: 180 },
+
+  // === TATIL OTELLERI (+12) ===
+  { slug: 'marmaris-3-gece-paket',   merchant: 'marmaris-otel',    categories: ['tatil-otelleri'], title: 'Marmaris · 3 Gece Her Şey Dahil', description: 'Marina manzaralı oda, her şey dahil.', original: 13000, discounted: 7490, city: 'Muğla', district: 'Marmaris', audience: ['couple','family'], tags: ['luks','deniz-manzarali','huzurlu','cocuk-dostu'], validDays: 180 },
+  { slug: 'marmaris-1-gece-romantik',merchant: 'marmaris-otel',    categories: ['tatil-otelleri'], title: 'Marmaris · 1 Gece Romantik + Şampanya', description: 'Marina suite, gün batımı şampanyası.', original: 5500, discounted: 3290, city: 'Muğla', district: 'Marmaris', audience: ['couple'], tags: ['romantik','luks','ozel-gun','deniz-manzarali'], featured: true, validDays: 180 },
+  { slug: 'didim-her-sey-dahil-2',   merchant: 'didim-otel',       categories: ['tatil-otelleri'], title: 'Didim · 2 Gece Her Şey Dahil', description: 'Altınkum sahiline sıfır, aile uygun.', original: 8500, discounted: 4990, city: 'Aydın', district: 'Didim', audience: ['family','couple'], tags: ['luks','deniz-manzarali','cocuk-dostu','huzurlu'], validDays: 180 },
+  { slug: 'didim-1-gece-spa',        merchant: 'didim-otel',       categories: ['tatil-otelleri'], title: 'Didim · 1 Gece + Spa Erişimi', description: 'Standart oda, kahvaltı, spa erişimi.', original: 3500, discounted: 1990, city: 'Aydın', district: 'Didim', audience: ['couple'], tags: ['romantik','luks','deniz-manzarali'], validDays: 180 },
+  { slug: 'bodrum-2-gece-suite',     merchant: 'bodrum-resort',    categories: ['tatil-otelleri'], title: 'Bodrum · 2 Gece Suite + Kahvaltı', description: 'Sahile sıfır suite oda.', original: 9000, discounted: 5290, city: 'Muğla', district: 'Bodrum', audience: ['couple'], tags: ['romantik','luks','deniz-manzarali','huzurlu'], validDays: 180 },
+  { slug: 'fethiye-3-gece-doga',     merchant: 'fethiye-otel',     categories: ['tatil-otelleri'], title: 'Fethiye · 3 Gece Doğa Otel + Yarım Pansiyon', description: 'Çam ormanı içinde butik otel, yarım pansiyon.', original: 11000, discounted: 6390, city: 'Muğla', district: 'Fethiye', audience: ['couple','family'], tags: ['dogada','huzurlu','romantik','cocuk-dostu'], validDays: 180 },
+  { slug: 'fethiye-1-gece-romantik', merchant: 'fethiye-otel',     categories: ['tatil-otelleri'], title: 'Fethiye · 1 Gece Romantik Paket', description: 'Doğa içinde oda + şampanya + kahvaltı.', original: 3800, discounted: 2190, city: 'Muğla', district: 'Fethiye', audience: ['couple'], tags: ['romantik','dogada','ozel-gun','luks'], validDays: 180 },
+  { slug: 'antalya-resort-aile-paket',merchant: 'antalya-resort',  categories: ['tatil-otelleri'], title: 'Antalya · 5 Gece Aile Tatil Paketi', description: 'Her şey dahil 5 gece, çocuk kulübü.', original: 28000, discounted: 16490, city: 'Antalya', district: 'Lara', audience: ['family'], tags: ['luks','cocuk-dostu','deniz-manzarali','huzurlu'], validDays: 180, featured: true },
+  { slug: 'cesme-3-gece-yarim',      merchant: 'cesme-otel',       categories: ['tatil-otelleri'], title: 'Çeşme · 3 Gece Yarım Pansiyon', description: 'Deniz manzaralı oda, yarım pansiyon.', original: 9500, discounted: 5490, city: 'İzmir', district: 'Çeşme', audience: ['couple','family'], tags: ['luks','deniz-manzarali','huzurlu'], validDays: 180 },
+  { slug: 'cesme-1-gece-aksam-yemegi',merchant: 'cesme-otel',      categories: ['tatil-otelleri'], title: 'Çeşme · 1 Gece + Akşam Yemeği', description: 'Sahil suite + a la carte akşam yemeği.', original: 3700, discounted: 2190, city: 'İzmir', district: 'Çeşme', audience: ['couple'], tags: ['romantik','deniz-manzarali','luks'], validDays: 180 },
+  { slug: 'kapadokya-magara-otel',   merchant: 'kapadokya-balonu', categories: ['tatil-otelleri'], title: 'Kapadokya · Mağara Otelde 2 Gece', description: 'Geleneksel mağara oda, kahvaltı dahil.', original: 7000, discounted: 4190, city: 'Nevşehir', district: 'Göreme', audience: ['couple'], tags: ['romantik','tarihi','luks','gizli-cevher'], validDays: 180 },
+  { slug: 'uludag-2-gece-kayak',     merchant: 'bursa-kahvalti',   categories: ['tatil-otelleri'], title: 'Uludağ · 2 Gece Kayak Otel', description: 'Pistlere sıfır, kayak takımı kiralık.', original: 8500, discounted: 4990, city: 'Bursa', district: 'Uludağ', audience: ['couple','family','group'], tags: ['dogada','luks','huzurlu'], validDays: 180 },
+
+  // === KURS (+9) ===
+  { slug: 'uskudar-yoga-haftalik',   merchant: 'uskudar-aktivite', categories: ['kurs'], title: 'Üsküdar · 8 Hafta Yoga Kursu', description: 'Haftada 2 ders, eğitmenli vinyasa yoga.', original: 3200, discounted: 1890, city: 'İstanbul', district: 'Üsküdar', durationMin: 90, audience: ['solo'], tags: ['rahat','populer','huzurlu'] },
+  { slug: 'uskudar-pilates-paket',   merchant: 'uskudar-aktivite', categories: ['kurs'], title: 'Üsküdar · Reformer Pilates 8 Ders', description: 'Eğitmenli reformer pilates 8 ders paketi.', original: 4000, discounted: 2390, city: 'İstanbul', district: 'Üsküdar', durationMin: 60, audience: ['solo'], tags: ['rahat','populer'] },
+  { slug: 'eskisehir-fotograf',      merchant: 'eskisehir-kurs',   categories: ['kurs'], title: 'Eskişehir · Fotoğrafçılık 4 Hafta Kursu', description: 'Temel fotoğraf teknikleri, sokak fotoğrafı, atölye.', original: 2200, discounted: 1290, city: 'Eskişehir', district: 'Tepebaşı', durationMin: 120, audience: ['solo','couple'], tags: ['gizli-cevher','samimi','yeni'] },
+  { slug: 'eskisehir-resim',         merchant: 'eskisehir-kurs',   categories: ['kurs'], title: 'Eskişehir · Akrilik Resim Atölyesi', description: 'Tek seans 3 saatlik akrilik resim atölyesi.', original: 600, discounted: 340, city: 'Eskişehir', district: 'Tepebaşı', durationMin: 180, audience: ['solo','couple'], tags: ['samimi','gizli-cevher','yeni','rahat'] },
+  { slug: 'kurucesme-yoga-paket',    merchant: 'kurucesme-rooftop',categories: ['kurs'], title: 'Kuruçeşme · 5 Ders Açık Hava Yoga Paketi', description: 'Çatıda 5 ders, hafta sonu sabahı.', original: 1800, discounted: 990, city: 'İstanbul', district: 'Kuruçeşme', durationMin: 60, audience: ['solo'], tags: ['acik-hava','huzurlu','rahat','populer'] },
+  { slug: 'bornova-keramik',         merchant: 'bornova-kafe',     categories: ['kurs'], title: 'Bornova · Seramik Atölyesi', description: 'Çamur şekillendirme + sırlama atölyesi.', original: 800, discounted: 440, city: 'İzmir', district: 'Bornova', durationMin: 180, audience: ['solo','couple','family'], tags: ['samimi','yeni','rahat'] },
+  { slug: 'galata-italyan-yemek',    merchant: 'galata-bistro',    categories: ['kurs'], title: 'Galata · İtalyan Pasta Atölyesi', description: 'Şefle taze pasta yapımı, akşam yemeği dahil.', original: 1500, discounted: 890, city: 'İstanbul', district: 'Galata', durationMin: 180, audience: ['couple','solo','group'], tags: ['samimi','populer','yeni'] },
+  { slug: 'sisli-cizgi-roman',       merchant: 'sisli-kahve',      categories: ['kurs'], title: 'Şişli · Çocuk Çizgi Roman Atölyesi', description: 'Hafta sonu çocuk atölyesi, 8-12 yaş.', original: 700, discounted: 390, city: 'İstanbul', district: 'Şişli', durationMin: 120, audience: ['kids','family'], tags: ['cocuk-dostu','samimi','yeni','hafta-sonu'] },
+  { slug: 'kadikoy-dans-salsa',      merchant: 'kadikoy-sahne',    categories: ['kurs'], title: 'Kadıköy · Salsa Dans 4 Hafta Kursu', description: 'Başlangıç düzeyi salsa, çift halinde.', original: 1600, discounted: 890, city: 'İstanbul', district: 'Kadıköy', durationMin: 75, audience: ['couple'], tags: ['eglenceli','enerjik','samimi'] },
+
+  // === HIZMET (+10) ===
+  { slug: 'istanbul-derin-temizlik', merchant: 'istanbul-hizmet',  categories: ['hizmet'], title: 'Profesyonel Derin Temizlik · Daire (3+1)', description: '3+1 daire için 5 saatlik derin temizlik.', original: 2500, discounted: 1490, city: 'İstanbul', durationMin: 300, audience: ['solo','family'], tags: ['aninda-onay','populer','luks'] },
+  { slug: 'istanbul-ofis-temizlik',  merchant: 'istanbul-hizmet',  categories: ['hizmet'], title: 'Ofis Temizliği · 50m² · Tek Seferlik', description: 'Hafta içi ofis temizliği. Akşam saatleri uygun.', original: 1200, discounted: 690, city: 'İstanbul', durationMin: 180, audience: ['solo'], tags: ['business-uygun','aninda-onay','populer'] },
+  { slug: 'istanbul-haserle-mucadele',merchant: 'istanbul-hizmet', categories: ['hizmet'], title: 'Haşere ile Mücadele · Daire', description: 'Profesyonel ekipman, çevre dostu kimyasallar.', original: 1500, discounted: 890, city: 'İstanbul', durationMin: 120, audience: ['solo','family'], tags: ['aninda-onay','populer'] },
+  { slug: 'istanbul-bakim-kombi-2',  merchant: 'istanbul-hizmet',  categories: ['hizmet'], title: 'Kombi Bakım + Petek Temizliği', description: 'Kombi bakımı + tüm petek temizliği paketi.', original: 1400, discounted: 790, city: 'İstanbul', durationMin: 120, audience: ['solo','family'], tags: ['aninda-onay','populer'] },
+  { slug: 'istanbul-elektrik',       merchant: 'istanbul-hizmet',  categories: ['hizmet'], title: 'Elektrikçi · Tesisat Kontrol + Onarım', description: 'Yetkili elektrikçi, tesisat kontrol ve küçük onarımlar.', original: 900, discounted: 540, city: 'İstanbul', durationMin: 90, audience: ['solo','family'], tags: ['aninda-onay'] },
+  { slug: 'istanbul-tesisat',        merchant: 'istanbul-hizmet',  categories: ['hizmet'], title: 'Tesisatçı · Sıhhi Tesisat Onarımı', description: 'Sızıntı, tıkanıklık, musluk değişimi.', original: 800, discounted: 440, city: 'İstanbul', durationMin: 90, audience: ['solo','family'], tags: ['aninda-onay'] },
+  { slug: 'istanbul-perde-yikama',   merchant: 'istanbul-hizmet',  categories: ['hizmet'], title: 'Perde Yıkama · Tek Daire', description: 'Tüm perdelerin kaldırılması, yıkanması, asılması.', original: 1000, discounted: 540, city: 'İstanbul', durationMin: 240, audience: ['solo','family'], tags: ['aninda-onay','rahat'] },
+  { slug: 'istanbul-halı-yikama',    merchant: 'istanbul-hizmet',  categories: ['hizmet'], title: 'Halı Yıkama · Yerinde Servis', description: 'Kuru yerinde halı yıkama, makineli temizlik.', original: 700, discounted: 390, city: 'İstanbul', durationMin: 180, audience: ['solo','family'], tags: ['aninda-onay','rahat'] },
+  { slug: 'istanbul-evde-bakim',     merchant: 'istanbul-hizmet',  categories: ['hizmet'], title: 'Evde Yaşlı Bakım Hizmeti · Yarım Gün', description: 'Sertifikalı bakım personeli, 4 saatlik refakat.', original: 1100, discounted: 640, city: 'İstanbul', durationMin: 240, audience: ['solo','family'], tags: ['rahat','populer'] },
+  { slug: 'istanbul-bahce-bakim',    merchant: 'istanbul-hizmet',  categories: ['hizmet'], title: 'Bahçe Bakım · Çim + Çitler + Sulama', description: 'Profesyonel bahçe bakım hizmeti.', original: 1500, discounted: 890, city: 'İstanbul', durationMin: 240, audience: ['solo','family'], tags: ['aninda-onay','dogada','rahat'] },
 ];
 
 // ----------------------------------------------------------------------------
 // HELPERS
 // ----------------------------------------------------------------------------
+
+// Curated Unsplash photo IDs per category. The pool is small (4-5 IDs each)
+// so deals in the same category visually rhyme without being identical.
+// Each ID corresponds to a real Unsplash photo. If any ID is invalid the
+// image just won't load — alt text takes over.
+const CATEGORY_PHOTOS: Record<string, string[]> = {
+  kahvalti: [
+    '1414235077428-338989a2e8c0', '1525351484163-7529414344d8',
+    '1551218808-94e220e084d2', '1525755662778-989d0524087e', '1467003909585-2f8a72700288',
+  ],
+  yemek: [
+    '1546069901-ba9599a7e63c', '1517248135467-4c7edcad34c4',
+    '1567620905732-2d1ec7ab7445', '1555939594-58d7cb561ad1', '1565299624946-b28f40a0ae38',
+  ],
+  tiyatro: [
+    '1503095396549-807759245b35', '1507676184212-d03ab07a01bf', '1518609878373-06d740f60d8b',
+  ],
+  konser: [
+    '1501386761578-eac5c94b800a', '1493225457124-a3eb161ffa5f',
+    '1459749411175-04bf5292ceea', '1429962714451-bb934ecdc4ec',
+  ],
+  'stand-up': [
+    '1564613302700-94b6a8b3ab74', '1597173115256-d49e6f2cf60d', '1531058020387-3be344556be6',
+  ],
+  aktivite: [
+    '1502780402662-acc01917738e', '1448375240586-882707db888b',
+    '1517649763962-0c623066013b', '1518609878373-06d740f60d8b',
+  ],
+  masaj: [
+    '1540555700478-4be289fbecef', '1544161515-4ab6ce6db874',
+    '1583416750470-965b2707b355', '1487412947147-5cebf100ffc2',
+  ],
+  guzellik: [
+    '1522337360788-8b13dee7a37e', '1607008829749-c0f284a49841',
+    '1487412947147-5cebf100ffc2', '1532635241-17e820acc59f',
+  ],
+  turlar: [
+    '1564501049412-61c2a3083791', '1538430480410-c2f3ec5f7bc6',
+    '1518509562904-e7ef99cddc85', '1604610040716-37cc093d3a91',
+  ],
+  'sehir-otelleri': [
+    '1551882547-ff40c63fe5fa', '1542314831-068cd1dbfeeb',
+    '1549294413-26f195200c16', '1564501049412-61c2a3083791',
+  ],
+  'tatil-otelleri': [
+    '1571003123894-1f0594d2b5d9', '1582719508461-905c673771fd',
+    '1566073771259-6a8506099945', '1540541338287-41700207dee6',
+  ],
+  kurs: [
+    '1503676260728-1c00da094a0b', '1488521787991-ed7bbaae773c',
+    '1454165804606-c3d57bc86b40', '1543269865-cbf427effbad',
+  ],
+  hizmet: [
+    '1581578731548-c64695cc6952', '1558618666-fcd25c85cd64', '1521587760476-6c12a4b040da',
+  ],
+};
+
+function hashSlug(slug: string): number {
+  let h = 0;
+  for (let i = 0; i < slug.length; i++) {
+    h = (h * 31 + slug.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h);
+}
+
+function pickPhoto(slug: string, category?: string): string {
+  const pool = category ? CATEGORY_PHOTOS[category] : undefined;
+  if (pool && pool.length > 0) {
+    const id = pool[hashSlug(slug) % pool.length];
+    return `https://images.unsplash.com/photo-${id}?w=1200&q=70&auto=format&fit=crop`;
+  }
+  return `https://picsum.photos/seed/${slug}/800/600`;
+}
 
 function coverFor(slug: string, w = 800, h = 600): string {
   return `https://picsum.photos/seed/${slug}/${w}/${h}`;
@@ -979,8 +1207,11 @@ async function seedDeals() {
       subtitle: d.subtitle ?? null,
       description: d.description,
       highlights: d.highlights ?? [],
-      cover_image: coverFor(d.slug),
-      images: [coverFor(`${d.slug}-2`, 1200, 800), coverFor(`${d.slug}-3`, 1200, 800)],
+      cover_image: pickPhoto(d.slug, d.categories[0]),
+      images: [
+        pickPhoto(`${d.slug}-2`, d.categories[0]),
+        pickPhoto(`${d.slug}-3`, d.categories[0]),
+      ],
       original_price: d.original,
       discounted_price: d.discounted,
       city: d.city,
