@@ -9,6 +9,7 @@ import { RotateCcw, Send, Sparkles } from 'lucide-react';
 import { ChatMessage } from '@/components/kesfet/chat-message';
 import { NearbyCarousel } from '@/components/kesfet/nearby-carousel';
 import { useHomeStage } from '@/components/home/home-stage-context';
+import { SaveSearchButton } from '@/components/saved-searches/save-search-button';
 import { buttonVariants } from '@/components/ui/button';
 import type { DealShape } from '@/lib/ai/tools';
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
@@ -95,6 +96,21 @@ export function ChatContainer({ welcomeDeals = [], city }: ChatContainerProps = 
     stage?.setAiSuggestedDeals(null);
   }
 
+  // Aramayı kaydet butonu için en son user mesajının text'i.
+  const lastUserQuery = (() => {
+    for (let i = messages.length - 1; i >= 0; i--) {
+      const m = messages[i];
+      if (m.role !== 'user') continue;
+      const text = m.parts
+        .filter((p) => p.type === 'text')
+        .map((p) => ('text' in p ? p.text : ''))
+        .join(' ')
+        .trim();
+      if (text.length >= 3 && text.length <= 300) return text;
+    }
+    return '';
+  })();
+
   return (
     <section
       aria-label="AI sohbet"
@@ -136,6 +152,12 @@ export function ChatContainer({ welcomeDeals = [], city }: ChatContainerProps = 
         {isEmpty ? (
           <div className="mb-3">
             <QuickPrompts onPrompt={onQuickPrompt} />
+          </div>
+        ) : null}
+
+        {!isEmpty && lastUserQuery ? (
+          <div className="mb-2 flex justify-end">
+            <SaveSearchButton query={lastUserQuery} />
           </div>
         ) : null}
 

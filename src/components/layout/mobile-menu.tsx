@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import type { User as SupabaseUser } from '@supabase/supabase-js';
-import { Heart, LogOut, Menu, Ticket, User, X } from 'lucide-react';
+import { Bookmark, Heart, LogOut, Menu, Ticket, User, X } from 'lucide-react';
 import { signOutAction } from '@/app/profil/actions';
 import { buttonVariants } from '@/components/ui/button';
 import { CityChip } from '@/components/layout/context-chips';
@@ -123,6 +123,14 @@ export function MobileMenu({ user, avatarUrl, ctx }: Props) {
               >
                 <Ticket className="size-4" aria-hidden="true" />
                 Rezervasyonlarım
+              </Link>
+              <Link
+                href="/profil/aramalar"
+                onClick={close}
+                className="hover:bg-muted flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium"
+              >
+                <Bookmark className="size-4" aria-hidden="true" />
+                Aramalarım
               </Link>
             </div>
           ) : null}

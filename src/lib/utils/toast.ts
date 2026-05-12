@@ -16,6 +16,8 @@ export const TOAST_KEYS = {
   bookingCreated: 'booking-created',
   paymentSuccess: 'payment-success',
   passwordUpdated: 'password-updated',
+  searchSaved: 'search-saved',
+  searchDeleted: 'search-deleted',
 } as const;
 
 export type ToastKey = (typeof TOAST_KEYS)[keyof typeof TOAST_KEYS];
