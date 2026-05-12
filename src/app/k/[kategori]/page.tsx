@@ -1,24 +1,24 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { CategoryFilters } from '@/components/category/category-filters';
 import { DealCard } from '@/components/deal/deal-card';
 import { JsonLd } from '@/components/seo/json-ld';
 import { Container } from '@/components/ui/container';
-import {
-  getCategoryBySlug,
-  listActiveCategorySlugs,
-} from '@/lib/db/queries/categories';
-import { listDeals } from '@/lib/db/queries/deals';
+import { getCategoryBySlug } from '@/lib/db/queries/categories';
+import { listDeals, type DealSort } from '@/lib/db/queries/deals';
 import { SITE } from '@/lib/utils/site-config';
 
-export const revalidate = 900; // 15 minutes
+export const dynamic = 'force-dynamic';
 
 type Params = { kategori: string };
-
-export async function generateStaticParams(): Promise<Params[]> {
-  const slugs = await listActiveCategorySlugs();
-  return slugs.map((kategori) => ({ kategori }));
-}
+type Search = {
+  city?: string;
+  tag?: string | string[];
+  min?: string;
+  max?: string;
+  sort?: string;
+};
 
 export async function generateMetadata({
   params,
@@ -47,12 +47,52 @@ export async function generateMetadata({
   };
 }
 
-export default async function CategoryPage({ params }: { params: Promise<Params> }) {
-  const { kategori } = await params;
+const VALID_SORTS: DealSort[] = ['newest', 'price-asc', 'price-desc', 'popular'];
+
+function parsePrice(value: string | undefined): number | undefined {
+  if (!value) return undefined;
+  const n = Number(value);
+  if (!Number.isFinite(n) || n < 0 || n > 1_000_000) return undefined;
+  return n;
+}
+
+function normalizeTags(tag: string | string[] | undefined): string[] {
+  if (!tag) return [];
+  if (Array.isArray(tag)) return tag.filter((t) => typeof t === 'string' && t.length > 0);
+  return [tag];
+}
+
+export default async function CategoryPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams: Promise<Search>;
+}) {
+  const [{ kategori }, sp] = await Promise.all([params, searchParams]);
   const category = await getCategoryBySlug(kategori);
   if (!category) notFound();
 
-  const deals = await listDeals({ categorySlug: kategori, limit: 48 });
+  const city = sp.city && sp.city.length > 0 ? sp.city : undefined;
+  const tags = normalizeTags(sp.tag);
+  const minPrice = parsePrice(sp.min);
+  const maxPrice = parsePrice(sp.max);
+  const sort = (VALID_SORTS as readonly string[]).includes(sp.sort ?? '')
+    ? (sp.sort as DealSort)
+    : ('newest' as const);
+
+  const hasFilters =
+    Boolean(city) || tags.length > 0 || minPrice !== undefined || maxPrice !== undefined;
+
+  const deals = await listDeals({
+    categorySlug: kategori,
+    city,
+    tags: tags.length > 0 ? tags : undefined,
+    minPrice,
+    maxPrice,
+    sort,
+    limit: 48,
+  });
 
   const breadcrumbLd = {
     '@context': 'https://schema.org',
@@ -98,24 +138,46 @@ export default async function CategoryPage({ params }: { params: Promise<Params>
           </ol>
         </nav>
 
-        <header className="mb-8">
+        <header className="mb-6">
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">{category.name}</h1>
           {category.description ? (
             <p className="text-muted-foreground mt-2 max-w-2xl">{category.description}</p>
           ) : null}
           <p className="text-muted-foreground mt-1 text-sm">
-            {deals.length} fırsat listeleniyor
+            {deals.length} fırsat {hasFilters ? ' (filtreli)' : 'listeleniyor'}
+            {hasFilters ? (
+              <>
+                {' · '}
+                <Link
+                  href={`/k/${kategori}`}
+                  className="text-foreground underline-offset-4 hover:underline"
+                >
+                  Filtreleri temizle
+                </Link>
+              </>
+            ) : null}
           </p>
         </header>
 
+        <div className="mb-6">
+          <CategoryFilters
+            action={`/k/${kategori}`}
+            current={{ city, tags, minPrice, maxPrice, sort }}
+          />
+        </div>
+
         {deals.length === 0 ? (
           <div className="border-border rounded-lg border border-dashed p-12 text-center">
-            <p className="text-muted-foreground">Bu kategoride şu an aktif fırsat yok.</p>
+            <p className="text-muted-foreground">
+              {hasFilters
+                ? 'Uygulanan filtrelerde fırsat bulamadık. Filtreleri biraz gevşetmeyi dene.'
+                : 'Bu kategoride şu an aktif fırsat yok.'}
+            </p>
             <Link
-              href="/"
+              href={hasFilters ? `/k/${kategori}` : '/'}
               className="text-foreground mt-4 inline-block text-sm font-medium underline-offset-4 hover:underline"
             >
-              Ana sayfaya dön
+              {hasFilters ? 'Filtreleri temizle' : 'Ana sayfaya dön'}
             </Link>
           </div>
         ) : (
