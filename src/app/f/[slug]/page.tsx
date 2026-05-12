@@ -2,11 +2,11 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { Clock, Heart, Lock, MapPin, Users } from 'lucide-react';
+import { Calendar, Clock, Heart, MapPin, Users } from 'lucide-react';
 import { FavoriteButton } from '@/components/favorites/favorite-button';
 import { JsonLd } from '@/components/seo/json-ld';
 import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { getDealBySlug, listPublishedDealSlugs } from '@/lib/db/queries/deals';
 import { isFavorite } from '@/lib/db/queries/favorites';
@@ -263,10 +263,23 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                 </div>
               </div>
 
-              <Button variant="primary" size="lg" full disabled>
-                <Lock className="size-4" aria-hidden="true" />
-                Rezervasyon Yap
-              </Button>
+              {user ? (
+                <Link
+                  href={`/rezervasyon/${deal.slug}`}
+                  className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full gap-2')}
+                >
+                  <Calendar className="size-4" aria-hidden="true" />
+                  Rezervasyon Yap
+                </Link>
+              ) : (
+                <Link
+                  href={`/giris?next=/rezervasyon/${deal.slug}`}
+                  className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full gap-2')}
+                >
+                  <Calendar className="size-4" aria-hidden="true" />
+                  Rezervasyon Yap
+                </Link>
+              )}
               {user ? (
                 <FavoriteButton dealId={deal.id} initialFavorited={favorited} />
               ) : (
@@ -279,7 +292,7 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                 </Link>
               )}
               <p className="text-muted-foreground text-center text-xs">
-                Rezervasyon akışı yakında — şimdilik favoriye al, takip et.
+                Mock akış — gerçek ödeme alınmaz, demo rezervasyon kaydı tutulur.
               </p>
 
               {deal.merchant ? (

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ChevronRight, Heart, LogOut, Mail, Settings, User } from 'lucide-react';
+import { ChevronRight, Heart, LogOut, Mail, Settings, Ticket, User } from 'lucide-react';
 import { signOutAction } from '@/app/profil/actions';
 import { Button } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
@@ -65,6 +65,17 @@ export default async function ProfilPage() {
         </dl>
 
         <nav aria-label="Profil menüsü" className="border-border bg-background mb-8 divide-y divide-[var(--border)] rounded-lg border">
+          <Link
+            href="/rezervasyonlarim"
+            className="hover:bg-muted/50 flex items-center gap-4 p-4 transition-colors sm:p-5"
+          >
+            <Ticket className="text-foreground/70 size-5 shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">Rezervasyonlarım</p>
+              <p className="text-muted-foreground text-xs">Aktif ve geçmiş rezervasyonlar</p>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
+          </Link>
           <Link
             href="/favorilerim"
             className="hover:bg-muted/50 flex items-center gap-4 p-4 transition-colors sm:p-5"

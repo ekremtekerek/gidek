@@ -97,3 +97,31 @@ export const onboardingSchema = z
   });
 
 export type OnboardingInput = z.infer<typeof onboardingSchema>;
+
+const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
+const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export const createBookingSchema = z.object({
+  dealId: z.string().uuid('Geçersiz fırsat tanımlayıcısı'),
+  quantity: z.coerce
+    .number()
+    .int('Adet tamsayı olmalı')
+    .min(1, 'En az 1 adet')
+    .max(20, 'En fazla 20 adet'),
+  selected_date: z
+    .string()
+    .regex(isoDateRegex, 'Tarih formatı geçersiz')
+    .refine((d) => {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      return new Date(`${d}T00:00:00`) >= today;
+    }, 'Tarih geçmişte olamaz'),
+  selected_time: z
+    .string()
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : undefined))
+    .refine((v) => v === undefined || timeRegex.test(v), { message: 'Saat formatı HH:MM olmalı' }),
+  notes: optionalText(500),
+});
+
+export type CreateBookingInput = z.infer<typeof createBookingSchema>;
