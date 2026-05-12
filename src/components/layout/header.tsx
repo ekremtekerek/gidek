@@ -3,6 +3,7 @@ import { Sparkles } from 'lucide-react';
 import { Container } from '@/components/ui/container';
 import { MobileMenu } from '@/components/layout/mobile-menu';
 import { UserMenu } from '@/components/layout/user-menu';
+import { getCurrentUser } from '@/lib/security/auth';
 import { SITE } from '@/lib/utils/site-config';
 
 const NAV_LINKS = [
@@ -12,7 +13,14 @@ const NAV_LINKS = [
   { href: '/k/aktivite', label: 'Aktivite' },
 ] as const;
 
-export function Header() {
+// Async server component: one getCurrentUser() per request feeds both the
+// desktop UserMenu and the mobile sheet. Server actions that mutate auth
+// (signIn/signUp/signOut) revalidate the layout, so the very next render
+// already shows the correct state — no client-side staleness, no need for
+// onAuthStateChange to chase server cookie writes.
+export async function Header() {
+  const user = await getCurrentUser();
+
   return (
     <header className="border-border bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
       <Container className="flex h-16 items-center justify-between gap-4">
@@ -23,7 +31,7 @@ export function Header() {
 
         <nav aria-label="Birincil" className="hidden items-center gap-1 md:flex">
           <Link
-            href="/kesfet"
+            href="/"
             className="hover:bg-muted inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-sm font-medium"
           >
             <Sparkles className="size-4" aria-hidden="true" />
@@ -41,8 +49,8 @@ export function Header() {
         </nav>
 
         <div className="flex items-center gap-2">
-          <UserMenu />
-          <MobileMenu />
+          <UserMenu user={user} />
+          <MobileMenu user={user} />
         </div>
       </Container>
     </header>

@@ -3,17 +3,24 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Link from 'next/link';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 import { Heart, LogOut, Menu, Sparkles, Ticket, User, X } from 'lucide-react';
 import { signOutAction } from '@/app/profil/actions';
 import { buttonVariants } from '@/components/ui/button';
-import { useUser } from '@/hooks/use-user';
 import { cn } from '@/lib/utils/cn';
 import { MAIN_CATEGORIES } from '@/lib/utils/constants';
 import { SITE } from '@/lib/utils/site-config';
 
-export function MobileMenu() {
+interface Props {
+  user: SupabaseUser | null;
+}
+
+// User is passed in from the server-rendered Header so the menu reflects
+// the latest cookie-bound auth state immediately after login/logout
+// (the previous useUser() hook lagged because Supabase's browser
+// onAuthStateChange doesn't fire when a server action mutates the cookie).
+export function MobileMenu({ user }: Props) {
   const [open, setOpen] = useState(false);
-  const { user, loading } = useUser();
 
   useEffect(() => {
     if (!open) return;
@@ -76,7 +83,7 @@ export function MobileMenu() {
           className="flex flex-1 flex-col overflow-y-auto px-5 py-6"
         >
           <Link
-            href="/kesfet"
+            href="/"
             onClick={close}
             className="bg-foreground text-background hover:bg-foreground/90 mb-6 inline-flex items-center justify-center gap-2 rounded-md px-4 py-3 text-sm font-medium"
           >
@@ -103,9 +110,7 @@ export function MobileMenu() {
         </nav>
 
         <div className="border-border flex flex-col gap-2 border-t px-5 py-4">
-          {loading ? (
-            <div className="bg-muted h-10 w-full animate-pulse rounded-md" aria-hidden="true" />
-          ) : user ? (
+          {user ? (
             <>
               <Link
                 href="/profil"

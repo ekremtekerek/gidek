@@ -1,22 +1,22 @@
-'use client';
-
 import Link from 'next/link';
+import type { User } from '@supabase/supabase-js';
 import { User as UserIcon } from 'lucide-react';
 import { buttonVariants } from '@/components/ui/button';
-import { useUser } from '@/hooks/use-user';
 import { cn } from '@/lib/utils/cn';
 
+interface Props {
+  user: User | null;
+}
+
 /**
- * Desktop-only auth shortcut in the Header. The mobile sheet (MobileMenu)
- * has its own auth-aware section, so we hide UserMenu below md.
+ * Desktop auth shortcut. Pure server component — receives the resolved user
+ * from <Header>, so login/logout actions that revalidate the layout produce
+ * the correct UI on the next render with no client-side state lag.
+ *
+ * The mobile sheet (MobileMenu) has its own auth-aware section, so we hide
+ * UserMenu below md.
  */
-export function UserMenu() {
-  const { user, loading } = useUser();
-
-  if (loading) {
-    return <div className="hidden h-9 w-24 animate-pulse rounded-md bg-[var(--muted)] md:block" aria-hidden="true" />;
-  }
-
+export function UserMenu({ user }: Props) {
   if (user) {
     const label =
       (user.user_metadata as Record<string, string> | null)?.display_name ??
