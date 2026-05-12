@@ -4,6 +4,7 @@ import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
+import { BLUR_DATA_URL } from '@/lib/utils/blur';
 import { formatTRY } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
 
@@ -32,6 +33,8 @@ export function DealCard({ deal, className, priority = false }: DealCardProps) {
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
           className="object-cover transition-transform duration-300 group-hover:scale-105"
           priority={priority}
+          placeholder="blur"
+          blurDataURL={BLUR_DATA_URL}
         />
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-3">
           {deal.is_featured ? <Badge variant="accent" size="sm">Öne çıkan</Badge> : <span />}

@@ -8,6 +8,7 @@ import { MapPin, Sparkles } from 'lucide-react';
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
 import { Badge } from '@/components/ui/badge';
 import { useHomeStage } from '@/components/home/home-stage-context';
+import { BLUR_DATA_URL } from '@/lib/utils/blur';
 import { formatTRY } from '@/lib/utils/format';
 import { haversineKm } from '@/lib/utils/geo';
 
@@ -96,6 +97,8 @@ function MiniDealCard({
           fill
           sizes="180px"
           className="object-cover transition-transform duration-500 group-hover:scale-105"
+          placeholder="blur"
+          blurDataURL={BLUR_DATA_URL}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-transparent" />
 

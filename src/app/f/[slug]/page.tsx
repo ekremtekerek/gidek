@@ -6,6 +6,7 @@ import { Calendar, Clock, Heart, MapPin, Users } from 'lucide-react';
 import { FavoriteButton } from '@/components/favorites/favorite-button';
 import { ImageGallery } from '@/components/deal/image-gallery';
 import { ReviewsSection } from '@/components/deal/reviews-section';
+import { ShareButtons } from '@/components/share/share-buttons';
 import { ShowOnMap } from '@/components/deal/show-on-map';
 import { SimilarDeals } from '@/components/deal/similar-deals';
 import { JsonLd } from '@/components/seo/json-ld';
@@ -176,7 +177,16 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
               ) : null}
 
               <ul className="text-muted-foreground flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
-                {deal.merchant ? <li>{deal.merchant.name}</li> : null}
+                {deal.merchant ? (
+                  <li>
+                    <Link
+                      href={`/m/${deal.merchant.slug}`}
+                      className="text-foreground hover:underline underline-offset-2"
+                    >
+                      {deal.merchant.name}
+                    </Link>
+                  </li>
+                ) : null}
                 {location ? (
                   <li className="inline-flex items-center gap-1.5">
                     <MapPin className="size-4" aria-hidden="true" />
@@ -308,18 +318,29 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                   Favorilere ekle
                 </Link>
               )}
+              <ShareButtons
+                title={deal.title}
+                text={deal.subtitle ?? deal.title}
+                url={`${SITE.url}/f/${deal.slug}`}
+                className="w-full justify-center"
+              />
               <p className="text-muted-foreground text-center text-xs">
                 Mock akış — gerçek ödeme alınmaz, demo rezervasyon kaydı tutulur.
               </p>
 
               {deal.merchant ? (
-                <div className="border-border border-t pt-4">
+                <Link
+                  href={`/m/${deal.merchant.slug}`}
+                  className="border-border hover:bg-muted/50 group flex flex-col gap-1 border-t pt-4 transition-colors"
+                >
                   <p className="text-muted-foreground text-xs uppercase">İşletme</p>
-                  <p className="mt-1 text-sm font-medium">{deal.merchant.name}</p>
+                  <p className="text-foreground group-hover:underline mt-1 text-sm font-medium underline-offset-2">
+                    {deal.merchant.name} →
+                  </p>
                   {location ? (
                     <p className="text-muted-foreground text-sm">{location}</p>
                   ) : null}
-                </div>
+                </Link>
               ) : null}
             </div>
           </aside>

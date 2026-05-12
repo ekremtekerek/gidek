@@ -5,6 +5,7 @@ import { Toaster } from 'sonner';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
 import { ToastBridge } from '@/components/layout/toast-bridge';
+import { ConsentBanner } from '@/components/legal/consent-banner';
 import { JsonLd } from '@/components/seo/json-ld';
 import { SITE } from '@/lib/utils/site-config';
 import './globals.css';
@@ -56,8 +57,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="tr" className={`${inter.variable} h-full antialiased`}>
       <body className="bg-background text-foreground flex min-h-full flex-col font-sans">
+        <a
+          href="#main-content"
+          className="bg-foreground text-background sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[200] focus:rounded-md focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:shadow-lg"
+        >
+          İçeriğe atla
+        </a>
         <Header />
-        <div className="flex-1">{children}</div>
+        <main id="main-content" className="flex-1">
+          {children}
+        </main>
         <Footer />
         <Toaster position="top-center" richColors closeButton />
         {/* Reads ?toast= query params from server-action redirects.
@@ -65,6 +74,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Suspense fallback={null}>
           <ToastBridge />
         </Suspense>
+        <ConsentBanner />
         <JsonLd data={orgJsonLd} />
       </body>
     </html>

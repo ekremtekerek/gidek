@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { CalendarDays, MapPin, Ticket, Users } from 'lucide-react';
+import { BLUR_DATA_URL } from '@/lib/utils/blur';
 import { generateQrDataUrl } from '@/lib/utils/qr';
 import { formatDate, formatTRY } from '@/lib/utils/format';
 
@@ -47,6 +48,8 @@ export async function ETicket({
             sizes="(min-width: 1024px) 640px, 100vw"
             className="object-cover"
             priority
+            placeholder="blur"
+            blurDataURL={BLUR_DATA_URL}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         </div>

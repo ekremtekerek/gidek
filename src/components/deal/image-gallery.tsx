@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { BLUR_DATA_URL } from '@/lib/utils/blur';
 import { cn } from '@/lib/utils/cn';
 
 interface Props {
@@ -48,6 +49,8 @@ export function ImageGallery({ title, cover, images, discount = 0, isFeatured }:
           sizes="(min-width: 1024px) 60vw, 100vw"
           className="object-cover transition-opacity duration-300"
           priority={index === 0}
+          placeholder="blur"
+          blurDataURL={BLUR_DATA_URL}
         />
 
         {showDiscount ? (
@@ -118,6 +121,8 @@ export function ImageGallery({ title, cover, images, discount = 0, isFeatured }:
                 fill
                 sizes="112px"
                 className="object-cover transition-transform group-hover:scale-105"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
               />
             </button>
           ))}

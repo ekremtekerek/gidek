@@ -4,6 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { getServerClient } from '@/lib/db/server';
+import { sendEmail } from '@/lib/email/send';
+import { bookingConfirmedEmail } from '@/lib/email/templates';
 import { requireUser } from '@/lib/security/auth';
 import { TOAST_KEYS, withToast } from '@/lib/utils/toast';
 
@@ -70,7 +72,9 @@ export async function confirmPaymentAction(
   const supabase = await getServerClient();
   const { data: booking, error: bErr } = await supabase
     .from('bookings')
-    .select('id, user_id, status')
+    .select(
+      'id, user_id, status, quantity, total_amount, selected_date, selected_time, deal:deals ( title )',
+    )
     .eq('booking_code', parsed.data.bookingCode)
     .maybeSingle();
 
@@ -87,6 +91,28 @@ export async function confirmPaymentAction(
       .update({ status: 'confirmed' })
       .eq('id', booking.id);
     if (uErr) return { ok: false, error: 'Ödeme kaydedilemedi.' };
+  }
+
+  // Onay e-postasını fire-and-forget olarak gönder; kullanıcının akışını
+  // bloklamasın, başarısız olursa sessizce log'la.
+  const dealRel = booking.deal as { title: string } | { title: string }[] | null;
+  const dealTitle = Array.isArray(dealRel) ? dealRel[0]?.title : dealRel?.title;
+  if (user.email && dealTitle) {
+    const displayName =
+      (user.user_metadata as Record<string, unknown> | null)?.display_name?.toString() ??
+      user.email.split('@')[0];
+    void sendEmail(
+      bookingConfirmedEmail({
+        to: user.email,
+        name: displayName,
+        bookingCode: parsed.data.bookingCode,
+        dealTitle,
+        selectedDate: booking.selected_date,
+        selectedTime: booking.selected_time,
+        quantity: booking.quantity,
+        totalAmount: booking.total_amount,
+      }),
+    ).catch((err) => console.error('[email] booking confirmed failed:', err));
   }
 
   revalidatePath('/rezervasyonlarim');
