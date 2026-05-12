@@ -22,15 +22,25 @@ export function ChatMessage({ message }: Props) {
       <span
         className={cn(
           'inline-flex size-8 shrink-0 items-center justify-center rounded-full',
-          isUser ? 'bg-foreground text-background' : 'bg-violet-500/15 text-violet-600 dark:text-violet-300',
+          isUser
+            ? 'bg-foreground text-background'
+            : 'bg-violet-500/15 text-violet-600 dark:text-violet-300',
         )}
         aria-hidden="true"
       >
         {isUser ? <User className="size-4" /> : <Sparkles className="size-4" />}
       </span>
 
+      {/*
+        AI column expands wider than user column so tool outputs (deal grids,
+        day plans) can breathe. Text bubbles inside still get their own
+        narrower max-width so they don't span the full column edge-to-edge.
+      */}
       <div
-        className={cn('flex max-w-[85%] min-w-0 flex-col gap-2', isUser ? 'items-end' : 'items-start')}
+        className={cn(
+          'flex min-w-0 flex-col gap-2',
+          isUser ? 'max-w-[85%] items-end' : 'max-w-[92%] flex-1 items-start',
+        )}
       >
         {message.parts.map((part, i) => {
           switch (part.type) {
@@ -40,7 +50,7 @@ export function ChatMessage({ message }: Props) {
                 <p
                   key={i}
                   className={cn(
-                    'rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap',
+                    'max-w-prose rounded-2xl px-4 py-2.5 text-sm leading-relaxed whitespace-pre-wrap',
                     isUser
                       ? 'bg-foreground text-background rounded-tr-sm'
                       : 'bg-muted text-foreground rounded-tl-sm',
@@ -55,7 +65,7 @@ export function ChatMessage({ message }: Props) {
               if (part.state === 'output-available') {
                 const output = part.output as { results: DealShape[]; count: number };
                 return (
-                  <div key={i} className="w-full max-w-md">
+                  <div key={i} className="w-full">
                     <DealResults deals={output.results} />
                   </div>
                 );
@@ -66,10 +76,19 @@ export function ChatMessage({ message }: Props) {
             case 'tool-createDayPlan': {
               if (part.state === 'output-available') {
                 const output = part.output as {
-                  plan: { steps: Array<{ time: string; emoji: string; category: string; rationale: string; deal: DealShape | null }>; totalPrice: number };
+                  plan: {
+                    steps: Array<{
+                      time: string;
+                      emoji: string;
+                      category: string;
+                      rationale: string;
+                      deal: DealShape | null;
+                    }>;
+                    totalPrice: number;
+                  };
                 };
                 return (
-                  <div key={i} className="w-full max-w-md">
+                  <div key={i} className="w-full">
                     <DayPlanDisplay plan={output.plan} />
                   </div>
                 );

@@ -76,7 +76,10 @@ export function ChatContainer() {
   return (
     <section
       aria-label="AI sohbet"
-      className="relative isolate flex min-h-[calc(100svh-4rem)] flex-col"
+      // Fixed height (not min-h) so the inner scroll is the ONLY scroll —
+      // long conversations no longer push the carousel/categories below.
+      // 100svh keeps the box stable when iOS toolbars hide/show.
+      className="relative isolate flex h-[calc(100svh-4rem)] flex-col"
     >
       {/* Decorative radial glow — only in empty state */}
       {isEmpty ? (
