@@ -69,6 +69,21 @@ export function summarisePreferences(p: UserPreferences | null): string | null {
     parts.push(`sevmediği: ${p.dislikes.join(', ')}`);
   }
 
+  if (p.has_car !== null && p.has_car !== undefined) {
+    parts.push(p.has_car ? 'arabası var' : 'arabası yok');
+  }
+  if (p.has_pet !== null && p.has_pet !== undefined) {
+    parts.push(p.has_pet ? 'evcil hayvanı var' : 'evcil hayvanı yok');
+  }
+  if (p.time_preference) {
+    const map: Record<string, string> = {
+      weekday: 'hafta içi tercih ediyor',
+      weekend: 'hafta sonu tercih ediyor',
+      any: 'gün fark etmez',
+    };
+    parts.push(map[p.time_preference] ?? p.time_preference);
+  }
+
   if (parts.length === 0) return null;
   return parts.join(' · ');
 }

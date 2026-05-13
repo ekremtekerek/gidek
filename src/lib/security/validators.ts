@@ -81,6 +81,21 @@ export const onboardingSchema = z
     interests: z.array(z.string().trim().min(1).max(50)).optional().default([]),
     dietary: z.array(z.enum(DIETARY_VALUES)).optional().default([]),
     dislikes: optionalText(500),
+    // Genişletilmiş profil — atlanabilir.
+    has_car: z
+      .union([z.literal('yes'), z.literal('no'), z.literal('')])
+      .optional()
+      .transform((v) => (v === 'yes' ? true : v === 'no' ? false : undefined)),
+    has_pet: z
+      .union([z.literal('yes'), z.literal('no'), z.literal('')])
+      .optional()
+      .transform((v) => (v === 'yes' ? true : v === 'no' ? false : undefined)),
+    time_preference: z
+      .union([z.literal('weekday'), z.literal('weekend'), z.literal('any'), z.literal('')])
+      .optional()
+      .transform((v) =>
+        v === 'weekday' || v === 'weekend' || v === 'any' ? v : undefined,
+      ),
   })
   .superRefine((data, ctx) => {
     if (

@@ -21,6 +21,7 @@ interface Props {
 }
 
 const SORT_OPTIONS = [
+  { value: 'trending', label: 'Trend' },
   { value: 'newest', label: 'En yeni' },
   { value: 'popular', label: 'En popüler' },
   { value: 'price-asc', label: 'Fiyat: artan' },

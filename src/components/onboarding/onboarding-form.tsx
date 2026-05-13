@@ -19,6 +19,9 @@ interface Props {
     interests: string[];
     dietary: string[];
     dislikes: string[];
+    has_car?: boolean | null;
+    has_pet?: boolean | null;
+    time_preference?: string | null;
   } | null;
 }
 
@@ -176,6 +179,49 @@ export function OnboardingForm({ initial }: Props) {
         />
       </Section>
 
+      <Section title="Birkaç pratik soru daha" desc="AI önerilerini daha keskin yapsın diye.">
+        <div className="flex flex-col gap-5">
+          <TriRadio
+            name="has_car"
+            label="Araba var mı?"
+            initial={
+              initial?.has_car === true ? 'yes' : initial?.has_car === false ? 'no' : ''
+            }
+            options={[
+              { value: 'yes', label: 'Var' },
+              { value: 'no', label: 'Yok' },
+            ]}
+          />
+          <TriRadio
+            name="has_pet"
+            label="Evcil hayvanın var mı?"
+            initial={
+              initial?.has_pet === true ? 'yes' : initial?.has_pet === false ? 'no' : ''
+            }
+            options={[
+              { value: 'yes', label: 'Var' },
+              { value: 'no', label: 'Yok' },
+            ]}
+          />
+          <TriRadio
+            name="time_preference"
+            label="Hangi günler daha uygunsun?"
+            initial={
+              initial?.time_preference === 'weekday' ||
+              initial?.time_preference === 'weekend' ||
+              initial?.time_preference === 'any'
+                ? initial.time_preference
+                : ''
+            }
+            options={[
+              { value: 'weekday', label: 'Hafta içi' },
+              { value: 'weekend', label: 'Hafta sonu' },
+              { value: 'any', label: 'Fark etmez' },
+            ]}
+          />
+        </div>
+      </Section>
+
       {state?.error ? (
         <p
           role="alert"
@@ -253,6 +299,50 @@ function ChipCheckbox({
         {label}
       </span>
     </label>
+  );
+}
+
+/**
+ * "Yes/No/Skip" tarzı küçük chip grup — atlamak için hiçbir seçeneği
+ * işaretlemeyebilirsin. Default uncontrolled, native radio davranışı.
+ */
+function TriRadio({
+  name,
+  label,
+  initial,
+  options,
+}: {
+  name: string;
+  label: string;
+  initial: string;
+  options: { value: string; label: string }[];
+}) {
+  return (
+    <fieldset>
+      <legend className="text-sm font-medium">{label}</legend>
+      <div className="mt-2 flex flex-wrap gap-2">
+        {options.map((opt) => (
+          <label key={opt.value} className="cursor-pointer">
+            <input
+              type="radio"
+              name={name}
+              value={opt.value}
+              defaultChecked={initial === opt.value}
+              className="peer sr-only"
+            />
+            <span
+              className={cn(
+                'border-border bg-background hover:border-foreground/30 inline-block rounded-full border px-3.5 py-1.5 text-sm font-medium transition-colors',
+                'peer-checked:bg-foreground peer-checked:text-background peer-checked:border-foreground',
+                'peer-focus-visible:ring-foreground/30 peer-focus-visible:ring-2 peer-focus-visible:ring-offset-2',
+              )}
+            >
+              {opt.label}
+            </span>
+          </label>
+        ))}
+      </div>
+    </fieldset>
   );
 }
 

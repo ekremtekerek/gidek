@@ -1,5 +1,7 @@
 import 'server-only';
 import { getServerClient } from '@/lib/db/server';
+import { getServiceClient } from '@/lib/db/service';
+import { isDealExpired } from '@/lib/utils/deal-status';
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
 
 const FAVORITE_SELECT = `
@@ -32,6 +34,27 @@ export async function listFavoriteDeals(): Promise<DealWithMerchant[]> {
  * Return true if the caller (the cookie-bound user) has favorited `dealId`.
  * Used by the deal detail page to compute the initial toggle state.
  */
+/**
+ * Public share için kullanılır — verilen user'ın aktif favori deal'larını
+ * RLS atlayarak (service role) çeker. Sadece imzalı token'la public route
+ * çağırır; expired deal'lar listeye girmez.
+ */
+export async function listFavoriteDealsForUser(
+  userId: string,
+): Promise<DealWithMerchant[]> {
+  const supabase = getServiceClient();
+  const { data, error } = await supabase
+    .from('favorites')
+    .select(FAVORITE_SELECT)
+    .eq('user_id', userId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  type Row = { deal: DealWithMerchant | null };
+  return ((data ?? []) as unknown as Row[])
+    .map((r) => r.deal)
+    .filter((d): d is DealWithMerchant => d !== null && !isDealExpired(d));
+}
+
 export async function isFavorite(dealId: string): Promise<boolean> {
   const supabase = await getServerClient();
   const { data, error } = await supabase

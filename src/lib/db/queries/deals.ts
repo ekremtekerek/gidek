@@ -28,7 +28,7 @@ const DEAL_SELECT = `
   merchant:merchants ( name, slug, city, district, lat, lng )
 `;
 
-export type DealSort = 'newest' | 'price-asc' | 'price-desc' | 'popular';
+export type DealSort = 'newest' | 'price-asc' | 'price-desc' | 'popular' | 'trending';
 
 /**
  * Yaşam döngüsü filtresi:
@@ -113,6 +113,10 @@ export async function listDeals({
   // Sorting — chained .order() calls compose into a multi-column sort.
   // `id` tiebreaker her zaman en sonda: ties durumunda Postgres'in nondeterministic
   // sıralaması nedeniyle paginated query'lerde page boundaries'te overlap oluşmasın.
+  // NOT: 'trending' burada DB tarafında ORDER edilemiyor (PostgREST function
+  // çağrısı desteklemiyor). DB'den 'popular' gibi geniş çek, dönerken JS'te
+  // trending_score ile yeniden sırala. Bu sayede SQL function ile aynı formül.
+  const useTrending = sort === 'trending';
   switch (sort) {
     case 'price-asc':
       query = query.order('discounted_price', { ascending: true });
@@ -121,6 +125,8 @@ export async function listDeals({
       query = query.order('discounted_price', { ascending: false });
       break;
     case 'popular':
+    case 'trending':
+      // Trending JS'te yeniden sıralanacak; ön-sıralama view+sold (geniş net).
       query = query
         .order('view_count', { ascending: false })
         .order('sold_count', { ascending: false });
@@ -175,7 +181,35 @@ export async function listDeals({
 
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as unknown as DealWithMerchant[];
+  const rows = (data ?? []) as unknown as DealWithMerchant[];
+
+  if (useTrending) {
+    return rows
+      .map((d) => ({ deal: d, score: trendingScore(d) }))
+      .sort((a, b) => b.score - a.score)
+      .map((x) => x.deal);
+  }
+  return rows;
+}
+
+/**
+ * SQL public.deal_trending_score ile birebir aynı formül — DB tarafından
+ * sıralama yapamadığımız için (PostgREST function ORDER BY desteklemiyor)
+ * JS tarafında yeniden sıralıyoruz. View + sold + 14 günlük yarı-ömür.
+ */
+function trendingScore(d: {
+  view_count: number | null;
+  sold_count: number | null;
+  published_at: string | null;
+}): number {
+  const v = Number(d.view_count ?? 0);
+  const s = Number(d.sold_count ?? 0);
+  let recency = 0;
+  if (d.published_at) {
+    const ageSec = (Date.now() - new Date(d.published_at).getTime()) / 1000;
+    if (ageSec >= 0) recency = 50 * Math.exp(-ageSec / (14 * 86400));
+  }
+  return v + s * 5 + recency;
 }
 
 export async function getDealBySlug(slug: string): Promise<DealDetailed | null> {

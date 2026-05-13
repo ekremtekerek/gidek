@@ -9,6 +9,7 @@ import { ToastBridge } from '@/components/layout/toast-bridge';
 import { ConsentBanner } from '@/components/legal/consent-banner';
 import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { RegisterSW } from '@/components/pwa/register-sw';
+import { RefCapture } from '@/components/referral/ref-capture';
 import { JsonLd } from '@/components/seo/json-ld';
 import { SITE } from '@/lib/utils/site-config';
 import './globals.css';
@@ -83,6 +84,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ConsentBanner />
         <InstallPrompt />
         <RegisterSW />
+        <Suspense fallback={null}>
+          <RefCapture />
+        </Suspense>
         <JsonLd data={orgJsonLd} />
       </body>
     </html>

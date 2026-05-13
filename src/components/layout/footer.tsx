@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { NewsletterForm } from '@/components/newsletter/newsletter-form';
 import { Container } from '@/components/ui/container';
 import { MAIN_CATEGORIES } from '@/lib/utils/constants';
 import { FOOTER_LEGAL_LINKS, SITE } from '@/lib/utils/site-config';
@@ -15,6 +16,12 @@ export function Footer() {
           <p className="text-muted-foreground mt-3 max-w-sm text-sm leading-relaxed">
             {SITE.description}
           </p>
+          <div className="mt-5 max-w-sm">
+            <p className="text-foreground mb-2 text-sm font-semibold">
+              Haftalık öne çıkan fırsatları yolla
+            </p>
+            <NewsletterForm source="footer" />
+          </div>
         </div>
 
         <nav aria-label="Kategoriler">

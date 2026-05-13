@@ -17,7 +17,7 @@ export default async function OnboardingPage() {
   const { data: prefs } = await supabase
     .from('user_preferences')
     .select(
-      'city, district, household_type, kids_age_groups, budget_min, budget_max, interests, dietary, dislikes',
+      'city, district, household_type, kids_age_groups, budget_min, budget_max, interests, dietary, dislikes, has_car, has_pet, time_preference',
     )
     .eq('user_id', user.id)
     .maybeSingle();
@@ -33,6 +33,9 @@ export default async function OnboardingPage() {
         interests: prefs.interests ?? [],
         dietary: prefs.dietary ?? [],
         dislikes: prefs.dislikes ?? [],
+        has_car: prefs.has_car ?? null,
+        has_pet: prefs.has_pet ?? null,
+        time_preference: prefs.time_preference ?? null,
       }
     : null;
 

@@ -51,7 +51,7 @@ export async function generateMetadata({
   };
 }
 
-const VALID_SORTS: DealSort[] = ['newest', 'price-asc', 'price-desc', 'popular'];
+const VALID_SORTS: DealSort[] = ['newest', 'price-asc', 'price-desc', 'popular', 'trending'];
 
 function parsePrice(value: string | undefined): number | undefined {
   if (!value) return undefined;

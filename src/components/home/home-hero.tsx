@@ -23,11 +23,14 @@ interface Props {
  */
 export async function HomeHero({ conversationId }: Props = {}) {
   const ctx = await getUserContext();
+  // Önce sabit "öne çıkan" bayrağına bak; en az 4 yoksa trending skoruna
+  // göre otomatik doldur. Bu sayede admin manuel sabitleme yapmasa bile
+  // anasayfa hareketli ve "popüler" döner.
   const featuredCity = await listDeals({ city: ctx.city, featured: true, limit: 8 });
   const welcomeDeals =
     featuredCity.length >= 4
       ? featuredCity
-      : await listDeals({ city: ctx.city, limit: 8 });
+      : await listDeals({ city: ctx.city, sort: 'trending', limit: 8 });
 
   const welcomeContent = buildWelcomeContent({
     city: ctx.city,

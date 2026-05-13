@@ -606,6 +606,33 @@ export type Database = {
         }
         Relationships: []
       }
+      newsletter_subscribers: {
+        Row: {
+          confirmed_at: string | null
+          email: string
+          id: number
+          source: string
+          subscribed_at: string
+          unsubscribed_at: string | null
+        }
+        Insert: {
+          confirmed_at?: string | null
+          email: string
+          id?: number
+          source?: string
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+        }
+        Update: {
+          confirmed_at?: string | null
+          email?: string
+          id?: number
+          source?: string
+          subscribed_at?: string
+          unsubscribed_at?: string | null
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -633,6 +660,86 @@ export type Database = {
           onboarding_done?: boolean
           phone?: string | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth_secret: string
+          created_at: string
+          endpoint: string
+          id: number
+          last_used_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth_secret: string
+          created_at?: string
+          endpoint: string
+          id?: number
+          last_used_at?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth_secret?: string
+          created_at?: string
+          endpoint?: string
+          id?: number
+          last_used_at?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      referral_claims: {
+        Row: {
+          claimed_at: string
+          code: string
+          id: number
+          redeemer_id: string
+        }
+        Insert: {
+          claimed_at?: string
+          code: string
+          id?: number
+          redeemer_id: string
+        }
+        Update: {
+          claimed_at?: string
+          code?: string
+          id?: number
+          redeemer_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referral_claims_code_fkey"
+            columns: ["code"]
+            isOneToOne: false
+            referencedRelation: "referrals"
+            referencedColumns: ["code"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          code: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -714,11 +821,14 @@ export type Database = {
           dislikes: string[] | null
           district: string | null
           embedding: string | null
+          has_car: boolean | null
+          has_pet: boolean | null
           household_type: string | null
           interests: string[] | null
           kids_age_groups: string[] | null
           language: string
           preferred_times: Json | null
+          time_preference: string | null
           updated_at: string
           user_id: string
         }
@@ -731,11 +841,14 @@ export type Database = {
           dislikes?: string[] | null
           district?: string | null
           embedding?: string | null
+          has_car?: boolean | null
+          has_pet?: boolean | null
           household_type?: string | null
           interests?: string[] | null
           kids_age_groups?: string[] | null
           language?: string
           preferred_times?: Json | null
+          time_preference?: string | null
           updated_at?: string
           user_id: string
         }
@@ -748,11 +861,14 @@ export type Database = {
           dislikes?: string[] | null
           district?: string | null
           embedding?: string | null
+          has_car?: boolean | null
+          has_pet?: boolean | null
           household_type?: string | null
           interests?: string[] | null
           kids_age_groups?: string[] | null
           language?: string
           preferred_times?: Json | null
+          time_preference?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -799,6 +915,15 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      deal_trending_score: {
+        Args: {
+          published_at_in: string
+          sold_count_in: number
+          view_count_in: number
+        }
+        Returns: number
+      }
+      gen_referral_code: { Args: never; Returns: string }
       generate_booking_code: { Args: never; Returns: string }
       match_ai_cache: {
         Args: { query_embedding: string; threshold?: number }

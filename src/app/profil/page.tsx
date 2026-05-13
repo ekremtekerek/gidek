@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import {
   ChevronRight,
+  Gift,
   Heart,
   LogOut,
   Mail,
@@ -12,6 +13,7 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { signOutAction } from '@/app/profil/actions';
+import { PushOptIn } from '@/components/pwa/push-opt-in';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { getServerClient } from '@/lib/db/server';
@@ -154,7 +156,31 @@ export default async function ProfilPage() {
             </div>
             <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
           </Link>
+          <Link
+            href="/davet"
+            className="hover:bg-muted/50 flex items-center gap-4 p-4 transition-colors sm:p-5"
+          >
+            <Gift className="size-5 shrink-0 text-amber-500" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">Arkadaşını davet et</p>
+              <p className="text-muted-foreground text-xs">
+                İkiniz de 100 TL kupon kazanın
+              </p>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
+          </Link>
         </nav>
+
+        {/* PWA push opt-in — VAPID env yoksa component kendini gizler. */}
+        <div className="mb-8 flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-medium">Bildirimler</p>
+            <p className="text-muted-foreground text-xs">
+              Rezervasyonun yarın ise hatırlatma, favori fırsatın bitmek üzereyse uyarı.
+            </p>
+          </div>
+          <PushOptIn />
+        </div>
 
         <form action={signOutAction}>
           <Button type="submit" variant="outline" size="md">

@@ -29,6 +29,42 @@ self.addEventListener('activate', (event) => {
   );
 });
 
+/**
+ * Push handler — server VAPID üzerinden push gönderince burada karşılarız.
+ * Payload JSON: { title, body, url?, icon? }. Sahte payload'a karşı try/catch.
+ */
+self.addEventListener('push', (event) => {
+  if (!event.data) return;
+  let data;
+  try {
+    data = event.data.json();
+  } catch {
+    data = { title: 'gidek', body: event.data.text() };
+  }
+  const title = data.title ?? 'gidek';
+  const options = {
+    body: data.body ?? '',
+    icon: data.icon ?? '/icon-192.png',
+    badge: '/icon-192.png',
+    data: { url: data.url ?? '/' },
+    vibrate: [60, 30, 60],
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = event.notification.data?.url ?? '/';
+  event.waitUntil(
+    (async () => {
+      const all = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const focused = all.find((c) => c.url.includes(target));
+      if (focused) return focused.focus();
+      return self.clients.openWindow(target);
+    })(),
+  );
+});
+
 self.addEventListener('fetch', (event) => {
   const req = event.request;
   if (req.method !== 'GET') return;
