@@ -26,12 +26,21 @@ export function ScrollToTop() {
   const [hasEntered, setHasEntered] = useState(false);
   const [fill, setFill] = useState(0);
   const [shooting, setShooting] = useState(false);
+  const [isMd, setIsMd] = useState(false);
   const rafRef = useRef<number | null>(null);
 
   // İlk visible olduğunda enter animasyonunu tetikle, sonra bir daha tetikleme.
   useEffect(() => {
     if (visible && !hasEntered) setHasEntered(true);
   }, [visible, hasEntered]);
+
+  // Viewport genişliği — md breakpoint (768px) için.
+  useEffect(() => {
+    const compute = () => setIsMd(window.innerWidth >= 768);
+    compute();
+    window.addEventListener('resize', compute);
+    return () => window.removeEventListener('resize', compute);
+  }, []);
 
   useEffect(() => {
     const compute = () => {
@@ -68,28 +77,34 @@ export function ScrollToTop() {
     window.setTimeout(() => setShooting(false), 900);
   }
 
+  // Pozisyon ve görünürlük inline style ile — Tailwind v4 + arbitrary value
+  // kombinasyonu bazı durumlarda kayboluyordu, inline style %100 deterministic.
+  // Mobile'de BottomNav üstünde (88px), desktop'ta sağ-alt 24px.
+  const positionStyle: React.CSSProperties = {
+    position: 'fixed',
+    right: isMd ? 24 : 16,
+    bottom: isMd ? 24 : 88,
+    zIndex: 40,
+    // Görünürlük + kayma — scroll progress'le orantılı yumuşak fade.
+    opacity: visible ? 1 : 0,
+    transform: visible ? 'translateY(0)' : 'translateY(12px)',
+    transition: 'opacity 280ms ease, transform 280ms ease',
+    pointerEvents: visible ? 'auto' : 'none',
+  };
+
   return (
     <button
       type="button"
       aria-label="Sayfa başına git"
       onClick={handleClick}
-      style={{ ['--gidek-fill' as never]: fill }}
+      style={{ ...positionStyle, ['--gidek-fill' as never]: fill }}
       className={cn(
-        // Konum: BottomNav (md altı h-16) üzerinde, sağ kenar.
-        'fixed right-4 z-40 bottom-[88px] md:right-6 md:bottom-6',
-        // Görünürlük geçişi.
-        'transition-all duration-300',
-        visible
-          ? 'translate-y-0 opacity-100 pointer-events-auto'
-          : 'translate-y-3 opacity-0 pointer-events-none',
         // İlk belirme — bir kez bounce ile dikkat çek.
         hasEntered && visible ? 'gidek-fab-enter' : null,
         // Pill kabı.
         'border-border bg-background/85 hover:bg-background',
         'shadow-lg shadow-black/10 dark:shadow-black/40 backdrop-blur',
         'group relative flex h-32 w-12 flex-col items-center justify-between rounded-full border py-2.5',
-        // Hover'da hafif kalk.
-        'hover:-translate-y-0.5',
       )}
     >
       {/* Hedef pini — amber/rose gradient, idle pulse / click land. */}
