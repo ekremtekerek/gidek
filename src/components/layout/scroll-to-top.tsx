@@ -23,9 +23,15 @@ import { cn } from '@/lib/utils/cn';
  */
 export function ScrollToTop() {
   const [visible, setVisible] = useState(false);
+  const [hasEntered, setHasEntered] = useState(false);
   const [fill, setFill] = useState(0);
   const [shooting, setShooting] = useState(false);
   const rafRef = useRef<number | null>(null);
+
+  // İlk visible olduğunda enter animasyonunu tetikle, sonra bir daha tetikleme.
+  useEffect(() => {
+    if (visible && !hasEntered) setHasEntered(true);
+  }, [visible, hasEntered]);
 
   useEffect(() => {
     const compute = () => {
@@ -33,7 +39,10 @@ export function ScrollToTop() {
       const docH = document.documentElement.scrollHeight - window.innerHeight;
       const progress = docH > 0 ? Math.min(1, Math.max(0, sy / docH)) : 0;
       setFill(progress);
-      setVisible(sy > 400);
+      // 200px scroll = yarım hero yüksekliği. Anasayfada hero h-[100svh-4rem];
+      // hero tam ekran olduğundan eskiden 400px bekliyorduk ama mobilde
+      // hero altına geçmeden de görünmesini tercih ediyoruz.
+      setVisible(sy > 200);
     };
     const onScroll = () => {
       if (rafRef.current !== null) return;
@@ -73,6 +82,8 @@ export function ScrollToTop() {
         visible
           ? 'translate-y-0 opacity-100 pointer-events-auto'
           : 'translate-y-3 opacity-0 pointer-events-none',
+        // İlk belirme — bir kez bounce ile dikkat çek.
+        hasEntered && visible ? 'gidek-fab-enter' : null,
         // Pill kabı.
         'border-border bg-background/85 hover:bg-background',
         'shadow-lg shadow-black/10 dark:shadow-black/40 backdrop-blur',
