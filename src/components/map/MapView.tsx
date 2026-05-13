@@ -199,7 +199,10 @@ export function MapView({
     }
   }, [light, styleReady]);
 
-  // GeoJSON source verisini güncelle — AI deal'larını dışla.
+  // GeoJSON source verisini güncelle — AI deal'larını dışla. Aynı koordinata
+  // düşen fırsatları (aynı merchant'ın birden fazla deal'ı) çevresinde küçük
+  // bir daire üzerine dağıt ki harita pin'i üst üste binmesin. Jitter ~25m,
+  // şehir zoom'unda fark edilmez ama yüksek zoom'da pin'leri ayırır.
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !layersReady) return;
@@ -207,19 +210,53 @@ export function MapView({
     if (!source) return;
 
     const aiSet = aiHighlightIds ?? new Set<string>();
-    const features = deals
-      .filter((d) => !aiSet.has(d.id))
-      .map((d) => ({
-        type: 'Feature' as const,
-        properties: {
-          id: d.id,
-          price: Math.round(Number(d.discounted_price) || 0),
-        },
-        geometry: {
-          type: 'Point' as const,
-          coordinates: [d.lng, d.lat] as [number, number],
-        },
-      }));
+    const filtered = deals.filter((d) => !aiSet.has(d.id));
+
+    // Aynı (lat,lng)'ye düşenleri grupla.
+    const byKey = new Map<string, MapDeal[]>();
+    for (const d of filtered) {
+      const k = `${d.lat.toFixed(6)},${d.lng.toFixed(6)}`;
+      const arr = byKey.get(k);
+      if (arr) arr.push(d);
+      else byKey.set(k, [d]);
+    }
+
+    const features = [] as Array<{
+      type: 'Feature';
+      properties: { id: string; price: number };
+      geometry: { type: 'Point'; coordinates: [number, number] };
+    }>;
+    const RADIUS_DEG = 0.00022; // ~25m lat; lng için cos ile düzeltiyoruz aşağıda
+
+    for (const [, group] of byKey) {
+      if (group.length === 1) {
+        const d = group[0];
+        features.push({
+          type: 'Feature',
+          properties: { id: d.id, price: Math.round(Number(d.discounted_price) || 0) },
+          geometry: { type: 'Point', coordinates: [d.lng, d.lat] },
+        });
+        continue;
+      }
+      // Aynı koordinata düşen N pin: ortalanmış bir daire üzerine deterministik
+      // yayım — sıra her renderda aynı kalsın diye id'ye göre sıralıyoruz.
+      const sorted = [...group].sort((a, b) => a.id.localeCompare(b.id));
+      const center = { lat: sorted[0].lat, lng: sorted[0].lng };
+      const lngScale = Math.cos((center.lat * Math.PI) / 180);
+      for (let i = 0; i < sorted.length; i++) {
+        const angle = (2 * Math.PI * i) / sorted.length;
+        const lat = center.lat + Math.sin(angle) * RADIUS_DEG;
+        const lng = center.lng + (Math.cos(angle) * RADIUS_DEG) / Math.max(lngScale, 0.2);
+        features.push({
+          type: 'Feature',
+          properties: {
+            id: sorted[i].id,
+            price: Math.round(Number(sorted[i].discounted_price) || 0),
+          },
+          geometry: { type: 'Point', coordinates: [lng, lat] },
+        });
+      }
+    }
 
     source.setData({ type: 'FeatureCollection', features });
   }, [deals, aiHighlightIds, layersReady]);
@@ -439,7 +476,9 @@ function installLayers(map: mapboxgl.Map) {
     },
   });
 
-  // Unclustered nokta — beyaz pill + fiyat metni.
+  // Unclustered nokta — yumuşak beyaz daire + ince fiyat metni. Zoom'la
+  // ortaya çıkan pin'ler nefes alsın diye text-allow-overlap=false ile
+  // Mapbox'a deconflict yetkisi veriyoruz; text-padding nefes payı bırakır.
   map.addLayer({
     id: LAYER_POINT_BG,
     type: 'circle',
@@ -447,9 +486,17 @@ function installLayers(map: mapboxgl.Map) {
     filter: ['!', ['has', 'point_count']],
     paint: {
       'circle-color': '#ffffff',
-      'circle-stroke-color': '#0a0a0a',
-      'circle-stroke-width': 1.5,
-      'circle-radius': 18,
+      'circle-stroke-color': 'rgba(10,10,10,0.85)',
+      'circle-stroke-width': 1,
+      'circle-radius': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        12, 12,
+        15, 16,
+        18, 20,
+      ],
+      'circle-opacity': 0.96,
     },
   });
 
@@ -460,9 +507,19 @@ function installLayers(map: mapboxgl.Map) {
     filter: ['!', ['has', 'point_count']],
     layout: {
       'text-field': ['concat', '₺', ['to-string', ['get', 'price']]],
-      'text-size': 11,
-      'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
-      'text-allow-overlap': true,
+      'text-size': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        12, 9,
+        15, 11,
+        18, 12,
+      ],
+      // Standard style'da Medium genelde mevcut; Regular fallback.
+      'text-font': ['DIN Pro Medium', 'Open Sans Regular', 'Arial Unicode MS Regular'],
+      'text-allow-overlap': false,
+      'text-ignore-placement': false,
+      'text-padding': 3,
     },
     paint: {
       'text-color': '#0a0a0a',
