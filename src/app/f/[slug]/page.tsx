@@ -9,6 +9,7 @@ import { ReviewsSection } from '@/components/deal/reviews-section';
 import { ShareButtons } from '@/components/share/share-buttons';
 import { ShowOnMap } from '@/components/deal/show-on-map';
 import { SimilarDeals } from '@/components/deal/similar-deals';
+import { StickyCta } from '@/components/deal/sticky-cta';
 import { JsonLd } from '@/components/seo/json-ld';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
@@ -400,6 +401,15 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
 
       <JsonLd data={breadcrumbLd} />
       <JsonLd data={offerLd} />
+
+      <StickyCta
+        dealSlug={deal.slug}
+        isAuthenticated={Boolean(user)}
+        expired={expired}
+        originalPrice={deal.original_price}
+        discountedPrice={deal.discounted_price}
+        discountPercent={deal.discount_percent}
+      />
     </>
   );
 }

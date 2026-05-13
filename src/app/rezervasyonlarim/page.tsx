@@ -5,8 +5,11 @@ import { CalendarDays, ChevronRight, MapPin, Ticket } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/ui/container';
 import { EmptyState } from '@/components/feedback/empty-state';
+import { SuggestedPicks } from '@/components/feedback/suggested-picks';
 import { listBookings } from '@/lib/db/queries/bookings';
+import { listDeals } from '@/lib/db/queries/deals';
 import { requireUser } from '@/lib/security/auth';
+import { getUserContext } from '@/lib/security/user-context-server';
 import { BOOKING_STATUS_BADGE, BOOKING_STATUS_LABEL } from '@/lib/utils/booking-status';
 import type { BookingStatus } from '@/lib/utils/constants';
 import { formatDate, formatTRY } from '@/lib/utils/format';
@@ -21,7 +24,11 @@ export const dynamic = 'force-dynamic';
 
 export default async function RezervasyonlarimPage() {
   await requireUser();
-  const bookings = await listBookings();
+  const ctx = await getUserContext();
+  const [bookings, picks] = await Promise.all([
+    listBookings(),
+    listDeals({ city: ctx.city, sort: 'trending', limit: 3 }),
+  ]);
 
   return (
     <Container className="py-12 sm:py-16">
@@ -38,13 +45,20 @@ export default async function RezervasyonlarimPage() {
       </header>
 
       {bookings.length === 0 ? (
-        <EmptyState
-          icon={Ticket}
-          title="Henüz rezervasyon yok"
-          description="Beğendiğin bir fırsata git, “Rezervasyon Yap” de — onay kodun burada görünecek."
-          primaryAction={{ label: 'Fırsatları keşfet', href: '/' }}
-          secondaryAction={{ label: 'AI ile öneri al', href: '/?q=Bug%C3%BCn+ne+yapsam' }}
-        />
+        <>
+          <EmptyState
+            icon={Ticket}
+            title="Henüz rezervasyon yok"
+            description="Beğendiğin bir fırsata git, “Rezervasyon Yap” de — onay kodun burada görünecek."
+            primaryAction={{ label: 'Fırsatları keşfet', href: '/' }}
+            secondaryAction={{ label: 'AI ile öneri al', href: '/?q=Bug%C3%BCn+ne+yapsam' }}
+          />
+          <SuggestedPicks
+            deals={picks}
+            title="Hemen rezerve edilebilir"
+            subtitle="Şu an öne çıkan fırsatlar — birinden başla."
+          />
+        </>
       ) : (
         <ul className="flex flex-col gap-3">
           {bookings.map((b) => (

@@ -2,6 +2,7 @@ import { Suspense } from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from 'sonner';
+import { BottomNav } from '@/components/layout/bottom-nav';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
 import { NavigationProgress } from '@/components/layout/navigation-progress';
@@ -71,10 +72,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <NavigationProgress />
         </Suspense>
         <Header />
-        <main id="main-content" className="flex-1">
+        <main id="main-content" className="flex-1 pb-16 md:pb-0">
           {children}
         </main>
         <Footer />
+        <BottomNav />
         <Toaster position="top-center" richColors closeButton />
         {/* Reads ?toast= query params from server-action redirects.
             useSearchParams requires a Suspense boundary in Next.js 15+. */}
