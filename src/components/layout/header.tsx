@@ -3,9 +3,8 @@ import { Container } from '@/components/ui/container';
 import { CityChip } from '@/components/layout/context-chips';
 import { HeaderSearch } from '@/components/layout/header-search';
 import { MobileMenu } from '@/components/layout/mobile-menu';
-import { UpcomingBell } from '@/components/booking/upcoming-bell';
+import { NotificationBell } from '@/components/layout/notification-bell';
 import { UserMenu } from '@/components/layout/user-menu';
-import { listUpcomingBookings } from '@/lib/db/queries/bookings';
 import { getServerClient } from '@/lib/db/server';
 import { getCurrentUser } from '@/lib/security/auth';
 import { getUserContext } from '@/lib/security/user-context-server';
@@ -22,15 +21,14 @@ export async function Header() {
   const [user, ctx] = await Promise.all([getCurrentUser(), getUserContext()]);
 
   let avatarUrl: string | null = null;
-  let upcomingBookings: Awaited<ReturnType<typeof listUpcomingBookings>> = [];
   if (user) {
     const supabase = await getServerClient();
-    const [profileRes, bookings] = await Promise.all([
-      supabase.from('profiles').select('avatar_url').eq('id', user.id).maybeSingle(),
-      listUpcomingBookings(5),
-    ]);
+    const profileRes = await supabase
+      .from('profiles')
+      .select('avatar_url')
+      .eq('id', user.id)
+      .maybeSingle();
     avatarUrl = profileRes.data?.avatar_url ?? null;
-    upcomingBookings = bookings;
   }
 
   return (
@@ -55,7 +53,7 @@ export async function Header() {
         <div className="flex shrink-0 items-center gap-1">
           {user ? (
             <div className="hidden md:block">
-              <UpcomingBell bookings={upcomingBookings} />
+              <NotificationBell isAuthenticated />
             </div>
           ) : null}
           <UserMenu user={user} avatarUrl={avatarUrl} />

@@ -58,9 +58,26 @@ const orgJsonLd = {
   sameAs: [SITE.social.instagram, SITE.social.x],
 };
 
+/**
+ * No-flash tema scripti — paint öncesi çalışır, localStorage'ten seçimi
+ * okuyup <html>'e .light / .dark sınıfı ekler. Yoksa hiç class eklemez ve
+ * @media prefers-color-scheme devreye girer (auto mode).
+ */
+const themeBootstrapScript = `
+try {
+  var v = localStorage.getItem('gidek-theme');
+  if (v === 'light' || v === 'dark') {
+    document.documentElement.classList.add(v);
+  }
+} catch (e) {}
+`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="tr" className={`${inter.variable} h-full antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
+      </head>
       <body className="bg-background text-foreground flex min-h-full flex-col font-sans">
         <a
           href="#main-content"

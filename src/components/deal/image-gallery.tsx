@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Maximize2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { BLUR_DATA_URL } from '@/lib/utils/blur';
 import { cn } from '@/lib/utils/cn';
@@ -23,16 +23,28 @@ interface Props {
 export function ImageGallery({ title, cover, images, discount = 0, isFeatured }: Props) {
   const all = [cover, ...(images ?? []).filter((i) => i && i !== cover)];
   const [index, setIndex] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
 
   useEffect(() => {
-    if (all.length < 2) return;
     const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && lightbox) setLightbox(false);
+      if (all.length < 2) return;
       if (e.key === 'ArrowRight') setIndex((i) => Math.min(i + 1, all.length - 1));
       if (e.key === 'ArrowLeft') setIndex((i) => Math.max(i - 1, 0));
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [all.length]);
+  }, [all.length, lightbox]);
+
+  // Lightbox açıkken body scroll lock.
+  useEffect(() => {
+    if (!lightbox) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = prev;
+    };
+  }, [lightbox]);
 
   const active = all[index] ?? cover;
   const hasMultiple = all.length > 1;
@@ -40,7 +52,12 @@ export function ImageGallery({ title, cover, images, discount = 0, isFeatured }:
 
   return (
     <div className="flex flex-col gap-3">
-      <div className="border-border bg-muted relative aspect-[4/3] w-full overflow-hidden rounded-xl border">
+      <button
+        type="button"
+        onClick={() => setLightbox(true)}
+        aria-label="Görseli büyüt"
+        className="border-border bg-muted group relative aspect-[4/3] w-full overflow-hidden rounded-xl border"
+      >
         <Image
           key={active}
           src={active}
@@ -52,6 +69,9 @@ export function ImageGallery({ title, cover, images, discount = 0, isFeatured }:
           placeholder="blur"
           blurDataURL={BLUR_DATA_URL}
         />
+        <span className="bg-background/85 text-foreground absolute right-3 top-3 inline-flex size-9 items-center justify-center rounded-full opacity-0 backdrop-blur transition-opacity group-hover:opacity-100 group-focus-visible:opacity-100">
+          <Maximize2 className="size-4" aria-hidden="true" />
+        </span>
 
         {showDiscount ? (
           <div className="absolute top-4 left-4">
@@ -70,24 +90,52 @@ export function ImageGallery({ title, cover, images, discount = 0, isFeatured }:
 
         {hasMultiple ? (
           <>
-            <button
-              type="button"
-              onClick={() => setIndex((i) => Math.max(0, i - 1))}
-              disabled={index === 0}
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIndex((i) => Math.max(0, i - 1));
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setIndex((i) => Math.max(0, i - 1));
+                }
+              }}
               aria-label="Önceki görsel"
-              className="bg-background/85 hover:bg-background absolute top-1/2 left-3 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full shadow-md backdrop-blur transition-all disabled:opacity-40"
+              aria-disabled={index === 0}
+              className={cn(
+                'bg-background/85 hover:bg-background absolute top-1/2 left-3 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full shadow-md backdrop-blur transition-all',
+                index === 0 ? 'pointer-events-none opacity-40' : '',
+              )}
             >
               <ChevronLeft className="size-5" aria-hidden="true" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setIndex((i) => Math.min(all.length - 1, i + 1))}
-              disabled={index === all.length - 1}
+            </span>
+            <span
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                setIndex((i) => Math.min(all.length - 1, i + 1));
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setIndex((i) => Math.min(all.length - 1, i + 1));
+                }
+              }}
               aria-label="Sonraki görsel"
-              className="bg-background/85 hover:bg-background absolute top-1/2 right-3 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full shadow-md backdrop-blur transition-all disabled:opacity-40"
+              aria-disabled={index === all.length - 1}
+              className={cn(
+                'bg-background/85 hover:bg-background absolute top-1/2 right-3 inline-flex size-10 -translate-y-1/2 items-center justify-center rounded-full shadow-md backdrop-blur transition-all',
+                index === all.length - 1 ? 'pointer-events-none opacity-40' : '',
+              )}
             >
               <ChevronRight className="size-5" aria-hidden="true" />
-            </button>
+            </span>
 
             <div
               aria-hidden="true"
@@ -97,7 +145,7 @@ export function ImageGallery({ title, cover, images, discount = 0, isFeatured }:
             </div>
           </>
         ) : null}
-      </div>
+      </button>
 
       {hasMultiple ? (
         <div className="gidek-scroll-x flex gap-2 overflow-x-auto pb-1">
@@ -126,6 +174,64 @@ export function ImageGallery({ title, cover, images, discount = 0, isFeatured }:
               />
             </button>
           ))}
+        </div>
+      ) : null}
+
+      {lightbox ? (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label={`${title} — büyük görsel`}
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/95 p-3 sm:p-8"
+          onClick={() => setLightbox(false)}
+        >
+          <button
+            type="button"
+            onClick={() => setLightbox(false)}
+            aria-label="Kapat"
+            className="bg-background/90 text-foreground absolute top-3 right-3 inline-flex size-10 items-center justify-center rounded-full backdrop-blur"
+          >
+            <X className="size-5" aria-hidden="true" />
+          </button>
+          <div
+            className="relative h-full max-h-[92vh] w-full max-w-6xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Image
+              key={`lb-${active}`}
+              src={active}
+              alt={`${title} — ${index + 1}/${all.length}`}
+              fill
+              sizes="100vw"
+              className="object-contain"
+              priority
+            />
+            {hasMultiple ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIndex((i) => Math.max(0, i - 1))}
+                  disabled={index === 0}
+                  aria-label="Önceki"
+                  className="bg-background/90 hover:bg-background absolute top-1/2 left-3 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full shadow-md backdrop-blur disabled:opacity-40"
+                >
+                  <ChevronLeft className="size-6" aria-hidden="true" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIndex((i) => Math.min(all.length - 1, i + 1))}
+                  disabled={index === all.length - 1}
+                  aria-label="Sonraki"
+                  className="bg-background/90 hover:bg-background absolute top-1/2 right-3 inline-flex size-12 -translate-y-1/2 items-center justify-center rounded-full shadow-md backdrop-blur disabled:opacity-40"
+                >
+                  <ChevronRight className="size-6" aria-hidden="true" />
+                </button>
+                <span className="bg-background/85 text-foreground absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-xs font-medium backdrop-blur">
+                  {index + 1} / {all.length}
+                </span>
+              </>
+            ) : null}
+          </div>
         </div>
       ) : null}
     </div>

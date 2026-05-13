@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { NewsletterForm } from '@/components/newsletter/newsletter-form';
+import { ThemeToggle } from '@/components/layout/theme-toggle';
 import { Container } from '@/components/ui/container';
 import { MAIN_CATEGORIES } from '@/lib/utils/constants';
 import { FOOTER_LEGAL_LINKS, SITE } from '@/lib/utils/site-config';
@@ -77,11 +78,14 @@ export function Footer() {
       </Container>
 
       <div className="border-border border-t">
-        <Container className="text-muted-foreground flex flex-col items-center justify-between gap-2 py-4 text-xs sm:flex-row">
+        <Container className="text-muted-foreground flex flex-col items-center justify-between gap-3 py-4 text-xs sm:flex-row">
           <p>
             © {new Date().getFullYear()} {SITE.name}. Tüm hakları saklıdır.
           </p>
-          <p>{SITE.domain}</p>
+          <div className="flex items-center gap-4">
+            <ThemeToggle />
+            <p>{SITE.domain}</p>
+          </div>
         </Container>
       </div>
     </footer>

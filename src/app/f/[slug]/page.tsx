@@ -9,6 +9,7 @@ import { ReviewsSection } from '@/components/deal/reviews-section';
 import { ShareButtons } from '@/components/share/share-buttons';
 import { ShowOnMap } from '@/components/deal/show-on-map';
 import { SimilarDeals } from '@/components/deal/similar-deals';
+import { SocialProof } from '@/components/deal/social-proof';
 import { StickyCta } from '@/components/deal/sticky-cta';
 import { JsonLd } from '@/components/seo/json-ld';
 import { Badge } from '@/components/ui/badge';
@@ -221,6 +222,14 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                     </li>
                   ))}
                 </ul>
+              ) : null}
+
+              {!expired ? (
+                <SocialProof
+                  soldCount={deal.sold_count ?? 0}
+                  viewCount={deal.view_count ?? 0}
+                  className="flex flex-wrap gap-2 pt-1"
+                />
               ) : null}
 
               {deal.merchant?.lat !== null && deal.merchant?.lat !== undefined &&
