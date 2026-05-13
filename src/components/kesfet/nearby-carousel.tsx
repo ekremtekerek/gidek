@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import useEmblaCarousel from 'embla-carousel-react';
@@ -19,9 +19,11 @@ interface Props {
 
 /**
  * Welcome state'te chat üstünde sergilenen "yakınınızdaki fırsatlar"
- * carousel'ı. Kullanıcı geolocation izni vermişse fırsatlar konumdan
- * uzaklığa göre sıralanır (yakından uzağa). Konum yoksa SSR'deki featured
- * sıralaması korunur.
+ * carousel'ı.
+ * - Konum yoksa SSR'den gelen featured listesini gösterir.
+ * - Konum geldiğinde /api/deals/nearby ile gerçek yakın fırsatları çeker,
+ *   featured ön-seçimi by-pass eder. Featured 8 deal şehrin her yerine
+ *   dağıldığı için aksi halde "en yakın" yine 17 km olabiliyordu.
  */
 export function NearbyCarousel({ deals, city }: Props) {
   const [emblaRef, emblaApi] = useEmblaCarousel({ loop: false, align: 'start', dragFree: true });
@@ -32,6 +34,34 @@ export function NearbyCarousel({ deals, city }: Props) {
   };
   const stage = useHomeStage();
   const userLocation = stage?.userLocation ?? null;
+
+  // Konum geldiğinde gerçek "en yakın" fırsatları sunucudan iste — featured
+  // ön seçim Bostancı gibi yakın olanı es geçebiliyor.
+  const [nearbyDeals, setNearbyDeals] = useState<DealWithMerchant[] | null>(null);
+  useEffect(() => {
+    if (!userLocation) {
+      setNearbyDeals(null);
+      return;
+    }
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        const params = new URLSearchParams({
+          lat: String(userLocation.lat),
+          lng: String(userLocation.lng),
+          limit: '8',
+          city,
+        });
+        const res = await fetch(`/api/deals/nearby?${params}`, { signal: ctrl.signal });
+        if (!res.ok) return;
+        const data = (await res.json()) as { deals: DealWithMerchant[] };
+        setNearbyDeals(data.deals);
+      } catch {
+        /* sessiz — featured fallback'i kullanılmaya devam eder */
+      }
+    })();
+    return () => ctrl.abort();
+  }, [userLocation, city]);
 
   // Mouse wheel'i embla'nın slide-bazlı navigasyonuna bağla.
   useEffect(() => {
@@ -59,19 +89,27 @@ export function NearbyCarousel({ deals, city }: Props) {
   }, [emblaApi]);
 
   const ordered = useMemo(() => {
-    if (!userLocation) return deals;
-    const withDist = deals.map((d) => {
-      const lat = d.merchant?.lat;
-      const lng = d.merchant?.lng;
-      const km =
-        lat !== null && lat !== undefined && lng !== null && lng !== undefined
-          ? haversineKm(userLocation, { lat: Number(lat), lng: Number(lng) })
-          : Number.POSITIVE_INFINITY;
-      return { deal: d, km };
-    });
-    withDist.sort((a, b) => a.km - b.km);
-    return withDist.map((x) => x.deal);
-  }, [deals, userLocation]);
+    // Konum + nearby fetch sonucu varsa onu kullan (zaten yakından uzağa).
+    if (userLocation && nearbyDeals && nearbyDeals.length > 0) {
+      return nearbyDeals;
+    }
+    // Konum var ama henüz fetch dönmediyse, mevcut listeyi mesafeye göre sırala
+    // (kullanıcı bir an gerçeksiz "uzaktan yakına" görse de boş kalmasın).
+    if (userLocation) {
+      const withDist = deals.map((d) => {
+        const lat = d.merchant?.lat;
+        const lng = d.merchant?.lng;
+        const km =
+          lat !== null && lat !== undefined && lng !== null && lng !== undefined
+            ? haversineKm(userLocation, { lat: Number(lat), lng: Number(lng) })
+            : Number.POSITIVE_INFINITY;
+        return { deal: d, km };
+      });
+      withDist.sort((a, b) => a.km - b.km);
+      return withDist.map((x) => x.deal);
+    }
+    return deals;
+  }, [deals, nearbyDeals, userLocation]);
 
   if (ordered.length === 0) return null;
 
