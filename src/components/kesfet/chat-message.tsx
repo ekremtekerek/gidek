@@ -4,6 +4,7 @@ import type { UIMessage } from 'ai';
 import { Loader2, Sparkles, User } from 'lucide-react';
 import { DealResults } from '@/components/kesfet/deal-results';
 import { DayPlanDisplay } from '@/components/kesfet/day-plan-display';
+import { SwappedStepCard } from '@/components/kesfet/swapped-step-card';
 import type { DealShape } from '@/lib/ai/tools';
 import { cn } from '@/lib/utils/cn';
 
@@ -111,6 +112,27 @@ export function ChatMessage({ message }: Props) {
                 );
               }
               return <ToolThinking key={i} label="Gün planı kuruluyor…" />;
+            }
+
+            case 'tool-replaceDayPlanStep': {
+              if (part.state === 'output-available') {
+                const output = part.output as {
+                  replaced: boolean;
+                  step: {
+                    time: string;
+                    emoji: string;
+                    category: string;
+                    rationale: string;
+                    deal: DealShape | null;
+                  } | null;
+                };
+                return (
+                  <div key={i} className="w-full">
+                    <SwappedStepCard step={output.step} replaced={output.replaced} />
+                  </div>
+                );
+              }
+              return <ToolThinking key={i} label="Adım değiştiriliyor…" />;
             }
 
             default:

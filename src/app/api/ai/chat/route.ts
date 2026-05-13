@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { getBudgetStatus, estimateCostUsd, recordSpend } from '@/lib/ai/budget';
 import { lookupCache, writeCache } from '@/lib/ai/cache';
 import { CHAT_SYSTEM_PROMPT, buildTimeContextLine } from '@/lib/ai/chat-prompt';
+import { inferAndMergeProfile } from '@/lib/ai/profile-extract';
 import { CHAT_MODEL, google } from '@/lib/ai/sdk';
 import { buildChatTools } from '@/lib/ai/tools';
 import { getServiceClient } from '@/lib/db/service';
@@ -155,6 +156,16 @@ export async function POST(req: Request) {
       }
 
       await recordSpend(cost);
+
+      // Profil inference — sadece auth'lu ve niyetli (tool çağırılmış) turlarda.
+      // Conservative merge: mevcut alanları ezmez, array'lara ekler. Fire-and-forget.
+      if (user && calledTool && lastUserText.length >= 20) {
+        void inferAndMergeProfile({
+          userId: user.id,
+          userText: lastUserText,
+          existingHint: prefsContext,
+        });
+      }
 
       const supabase = getServiceClient();
       await supabase.from('ai_query_logs').insert({

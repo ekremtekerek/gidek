@@ -7,7 +7,10 @@ import { JsonLd } from '@/components/seo/json-ld';
 import { Container } from '@/components/ui/container';
 import { getCategoryBySlug } from '@/lib/db/queries/categories';
 import { listDeals, type DealSort } from '@/lib/db/queries/deals';
+import { AUDIENCE } from '@/lib/utils/constants';
 import { SITE } from '@/lib/utils/site-config';
+
+const AUDIENCE_SLUGS = new Set(AUDIENCE.map((a) => a.slug));
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +18,7 @@ type Params = { kategori: string };
 type Search = {
   city?: string;
   tag?: string | string[];
+  aud?: string | string[];
   min?: string;
   max?: string;
   sort?: string;
@@ -62,6 +66,11 @@ function normalizeTags(tag: string | string[] | undefined): string[] {
   return [tag];
 }
 
+function normalizeAudience(aud: string | string[] | undefined): string[] {
+  const raw = !aud ? [] : Array.isArray(aud) ? aud : [aud];
+  return raw.filter((a) => typeof a === 'string' && AUDIENCE_SLUGS.has(a as never));
+}
+
 export default async function CategoryPage({
   params,
   searchParams,
@@ -75,6 +84,7 @@ export default async function CategoryPage({
 
   const city = sp.city && sp.city.length > 0 ? sp.city : undefined;
   const tags = normalizeTags(sp.tag);
+  const audience = normalizeAudience(sp.aud);
   const minPrice = parsePrice(sp.min);
   const maxPrice = parsePrice(sp.max);
   const sort = (VALID_SORTS as readonly string[]).includes(sp.sort ?? '')
@@ -82,12 +92,17 @@ export default async function CategoryPage({
     : ('newest' as const);
 
   const hasFilters =
-    Boolean(city) || tags.length > 0 || minPrice !== undefined || maxPrice !== undefined;
+    Boolean(city) ||
+    tags.length > 0 ||
+    audience.length > 0 ||
+    minPrice !== undefined ||
+    maxPrice !== undefined;
 
   const deals = await listDeals({
     categorySlug: kategori,
     city,
     tags: tags.length > 0 ? tags : undefined,
+    audience: audience.length > 0 ? audience : undefined,
     minPrice,
     maxPrice,
     sort,
@@ -162,7 +177,7 @@ export default async function CategoryPage({
         <div className="mb-6">
           <CategoryFilters
             action={`/k/${kategori}`}
-            current={{ city, tags, minPrice, maxPrice, sort }}
+            current={{ city, tags, audience, minPrice, maxPrice, sort }}
           />
         </div>
 

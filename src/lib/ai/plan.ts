@@ -9,6 +9,31 @@ export type DayPlanStep = {
   rationale: string;
 };
 
+/** Sabit slot metadatası — replaceStep aynı sıraya yeni deal yerleştirir. */
+const PLAN_SLOTS = [
+  {
+    time: '10:00',
+    emoji: '☕',
+    category: 'Kahvaltı',
+    queryPrefix: 'sabah kahvaltı',
+    rationale: 'Güne yavaş başlamak için sakin bir kahvaltı.',
+  },
+  {
+    time: '14:00',
+    emoji: '🚶',
+    category: 'Aktivite',
+    queryPrefix: 'öğleden sonra aktivite veya tur',
+    rationale: 'Sindirim sonrası hareketli bir bölüm.',
+  },
+  {
+    time: '19:00',
+    emoji: '🍽',
+    category: 'Akşam yemeği',
+    queryPrefix: 'akşam yemeği',
+    rationale: 'Günü güzel bir yemekle kapat.',
+  },
+] as const;
+
 export type DayPlan = {
   steps: DayPlanStep[];
   totalPrice: number;
@@ -75,29 +100,77 @@ export async function buildDayPlan(input: BuildDayPlanInput): Promise<DayPlan> {
     (d?.discounted_price ? Number(d.discounted_price) : 0);
 
   return {
-    steps: [
-      {
-        time: '10:00',
-        emoji: '☕',
-        category: 'Kahvaltı',
-        deal: b,
-        rationale: 'Güne yavaş başlamak için sakin bir kahvaltı.',
-      },
-      {
-        time: '14:00',
-        emoji: '🚶',
-        category: 'Aktivite',
-        deal: a,
-        rationale: 'Sindirim sonrası hareketli bir bölüm.',
-      },
-      {
-        time: '19:00',
-        emoji: '🍽',
-        category: 'Akşam yemeği',
-        deal: d,
-        rationale: 'Günü güzel bir yemekle kapat.',
-      },
-    ],
+    steps: PLAN_SLOTS.map((slot, i) => ({
+      time: slot.time,
+      emoji: slot.emoji,
+      category: slot.category,
+      deal: [b, a, d][i],
+      rationale: slot.rationale,
+    })),
     totalPrice,
+  };
+}
+
+export interface ReplaceDayPlanStepInput {
+  /** 0=kahvaltı, 1=aktivite, 2=akşam yemeği. */
+  stepIndex: number;
+  /** Kullanıcının "neyi değiştirmek istiyor" ipucu. */
+  whatToChange: string;
+  audience?: BuildDayPlanInput['audience'];
+  city?: string;
+  /** Tek slot için bütçe TL — verilmezse kısıt yok. */
+  budget?: number;
+  /** Aynı turda atlanacak deal id'ler — önceki seçimi tekrar önermesin. */
+  excludeDealIds?: string[];
+}
+
+/**
+ * Plan'ın TEK bir adımını yeniden ara. Kullanıcı "2. adımı değiştir, biraz
+ * daha cep dostu olsun" dediğinde tools.replaceDayPlanStep bunu çağırır.
+ */
+export async function replaceDayPlanStep(
+  input: ReplaceDayPlanStepInput,
+): Promise<DayPlanStep | null> {
+  const idx = Math.max(0, Math.min(PLAN_SLOTS.length - 1, Math.trunc(input.stepIndex)));
+  const slot = PLAN_SLOTS[idx];
+  const city = input.city ?? 'İstanbul';
+  const audienceHint = ((): string => {
+    switch (input.audience) {
+      case 'couple':
+        return 'eşimle romantik';
+      case 'family':
+        return 'ailecek çocuklu';
+      case 'group':
+        return 'arkadaş grubuyla eğlenceli';
+      case 'solo':
+        return 'tek başıma rahat';
+      default:
+        return '';
+    }
+  })();
+
+  const query = [city, slot.queryPrefix, audienceHint, input.whatToChange]
+    .filter((s) => s && s.trim().length > 0)
+    .join(' — ');
+
+  const candidates = await searchDealsByQuery(query, {
+    maxResults: 6,
+    filterCity: city,
+  });
+
+  const exclude = new Set(input.excludeDealIds ?? []);
+  const usable = candidates.filter((c) => !exclude.has(c.id));
+  if (usable.length === 0) return null;
+
+  const pick = input.budget
+    ? usable.find((d) => Number(d.discounted_price) <= input.budget!) ?? usable[0]
+    : usable[0];
+
+  return {
+    time: slot.time,
+    emoji: slot.emoji,
+    category: slot.category,
+    deal: pick,
+    rationale: slot.rationale,
   };
 }

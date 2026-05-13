@@ -1,6 +1,6 @@
 import { tool } from 'ai';
 import { z } from 'zod';
-import { buildDayPlan } from '@/lib/ai/plan';
+import { buildDayPlan, replaceDayPlanStep } from '@/lib/ai/plan';
 import { searchDealsByQuery } from '@/lib/ai/search-core';
 
 /**
@@ -83,6 +83,60 @@ export function buildChatTools(ctx: ChatToolContext = {}) {
         return {
           count: deals.length,
           results: deals.map(shapeDeal),
+        };
+      },
+    }),
+
+    replaceDayPlanStep: tool({
+      description:
+        'Mevcut bir gün planının TEK BİR adımını değiştir. Kullanıcı "2. adımı değiştir", "kahvaltıyı başka bir yer yap", "akşamı daha cep dostu yap", "aktiviteyi çocuk dostu yap" gibi şeyler söylediğinde kullan. Önceki turda createDayPlan çağrılmış olmalı; aksi halde önce createDayPlan kullan.',
+      inputSchema: z.object({
+        stepIndex: z
+          .number()
+          .int()
+          .min(0)
+          .max(2)
+          .describe('Hangi adım: 0=Kahvaltı, 1=Aktivite, 2=Akşam yemeği.'),
+        whatToChange: z
+          .string()
+          .min(2)
+          .max(200)
+          .describe(
+            'Kullanıcının istediği değişiklik. Örnek: "daha cep dostu", "deniz manzaralı", "vegan menü", "çocuk dostu", "yürüyüş yerine müze".',
+          ),
+        audience: z.enum(['couple', 'family', 'solo', 'group']).optional(),
+        city: z.string().optional(),
+        budget: z
+          .number()
+          .int()
+          .min(0)
+          .optional()
+          .describe('Tek slot için maks. TL (yoksa kısıt yok).'),
+        excludeDealIds: z
+          .array(z.string())
+          .max(8)
+          .optional()
+          .describe('Önceki turda aynı slotta seçilmiş deal id(ler)i — tekrar önerme.'),
+      }),
+      execute: async ({ stepIndex, whatToChange, audience, city, budget, excludeDealIds }) => {
+        const step = await replaceDayPlanStep({
+          stepIndex,
+          whatToChange,
+          audience,
+          city,
+          budget,
+          excludeDealIds,
+        });
+        if (!step) return { replaced: false, step: null };
+        return {
+          replaced: true,
+          step: {
+            time: step.time,
+            emoji: step.emoji,
+            category: step.category,
+            rationale: step.rationale,
+            deal: step.deal ? shapeDeal(step.deal) : null,
+          },
         };
       },
     }),

@@ -3,7 +3,7 @@ import { Filter } from 'lucide-react';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DEAL_TAGS, SUPPORTED_CITIES } from '@/lib/utils/constants';
+import { AUDIENCE, DEAL_TAGS, SUPPORTED_CITIES } from '@/lib/utils/constants';
 import { cn } from '@/lib/utils/cn';
 
 interface Props {
@@ -13,6 +13,7 @@ interface Props {
   current: {
     city?: string;
     tags?: string[];
+    audience?: string[];
     minPrice?: number;
     maxPrice?: number;
     sort?: string;
@@ -33,6 +34,7 @@ const SORT_OPTIONS = [
  */
 export function CategoryFilters({ action, current }: Props) {
   const selectedTags = new Set(current.tags ?? []);
+  const selectedAudience = new Set(current.audience ?? []);
 
   return (
     <details className="border-border bg-background overflow-hidden rounded-lg border">
@@ -109,6 +111,32 @@ export function CategoryFilters({ action, current }: Props) {
                   )}
                 >
                   {opt.label}
+                </span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2">
+          <Label>Kimler için</Label>
+          <p className="text-muted-foreground text-xs">Seçtiğin gruplardan en az birine uyan fırsatlar.</p>
+          <div className="flex flex-wrap gap-2">
+            {AUDIENCE.map((a) => (
+              <label key={a.slug} className="cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="aud"
+                  value={a.slug}
+                  defaultChecked={selectedAudience.has(a.slug)}
+                  className="peer sr-only"
+                />
+                <span
+                  className={cn(
+                    'border-border bg-background hover:border-foreground/30 inline-block rounded-full border px-3 py-1.5 text-xs font-medium transition-colors sm:text-sm',
+                    'peer-checked:bg-foreground peer-checked:text-background peer-checked:border-foreground',
+                  )}
+                >
+                  {a.label}
                 </span>
               </label>
             ))}

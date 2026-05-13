@@ -3,6 +3,7 @@
 import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import { AddressAutocomplete } from '@/components/admin/address-autocomplete';
+import { SingleImageUploader } from '@/components/admin/single-image-uploader';
 import {
   createMerchantAction,
   updateMerchantAction,
@@ -85,13 +86,17 @@ export function MerchantForm({ initial }: Props) {
           rows={3}
           error={err?.description}
         />
-        <Field
-          label="Logo URL (opsiyonel)"
-          name="logo_url"
-          type="url"
-          defaultValue={initial?.logo_url ?? ''}
-          error={err?.logo_url}
-        />
+        <div className="flex flex-col gap-1.5">
+          <Label>Logo</Label>
+          <SingleImageUploader
+            name="logo_url"
+            initialUrl={initial?.logo_url}
+            label="Logo"
+          />
+          {err?.logo_url ? (
+            <p className="text-sm text-rose-600 dark:text-rose-400">{err.logo_url[0]}</p>
+          ) : null}
+        </div>
       </Section>
 
       <Section title="İletişim">

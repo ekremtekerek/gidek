@@ -47,6 +47,11 @@ export interface ListDealsParams {
   city?: string;
   /** Filter by tags — every tag must be present on the deal (AND). */
   tags?: string[];
+  /**
+   * Filter by audience — kullanıcı en az birini seçtiyse, deal'ın audience
+   * dizisinin verilen liste ile kesişimi varsa eşleşir (overlaps).
+   */
+  audience?: string[];
   /** Inclusive lower bound on discounted_price. */
   minPrice?: number;
   /** Inclusive upper bound on discounted_price. */
@@ -70,6 +75,7 @@ export async function listDeals({
   categorySlug,
   city,
   tags,
+  audience,
   minPrice,
   maxPrice,
   featured,
@@ -130,6 +136,7 @@ export async function listDeals({
   if (dealIdsByCategory) query = query.in('id', dealIdsByCategory);
   if (city) query = query.eq('city', city);
   if (tags && tags.length > 0) query = query.contains('tags', tags);
+  if (audience && audience.length > 0) query = query.overlaps('audience', audience);
   if (minPrice !== undefined) query = query.gte('discounted_price', minPrice);
   if (maxPrice !== undefined) query = query.lte('discounted_price', maxPrice);
   if (featured) query = query.eq('is_featured', true);
