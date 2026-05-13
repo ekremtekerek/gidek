@@ -19,7 +19,16 @@ export interface CachedResponse {
   ageSeconds: number;
 }
 
-const SEMANTIC_THRESHOLD = 0.92; // cosine similarity — yukarısı "aynı niyet"
+/**
+ * Semantic (vector) lookup şu an KAPALI — Gemini embedding-001 kısa Türkçe
+ * metinlerde alakasız iki sorgu için bile 0.92+ cosine üretebiliyor
+ * (false positive). Yanlış cevap servis etmektense ekstra LLM çağrısını
+ * tercih ediyoruz. Aynı sorgu birebir tekrarlanırsa exact-hash hala kapsıyor.
+ *
+ * V2: niyet sınıflandırması ekleyince (arama mı sohbet mi) tekrar açılabilir.
+ */
+const ENABLE_SEMANTIC_LOOKUP = false;
+const SEMANTIC_THRESHOLD = 0.97;
 const TTL_HOURS = 24;
 
 function normalize(q: string): string {
@@ -65,12 +74,17 @@ export async function lookupCache(query: string): Promise<CacheLookupResult> {
     };
   }
 
-  // Hash kaçtı — embedding-based fuzzy lookup.
+  // Semantic lookup kapalı — Gemini Türkçe kısa metinlerde alakasız sorgular
+  // arasında yüksek cosine üretiyor, false positive üretti. Sadece exact hash
+  // miss durumunda LLM'e düşüyoruz.
+  if (!ENABLE_SEMANTIC_LOOKUP) {
+    return { hit: null, queryEmbedding: null, queryHash };
+  }
+
   let embedding: number[];
   try {
     embedding = await embed(normalize(query));
   } catch {
-    // Embedding yapamadıysak cache miss say, akış devam etsin.
     return { hit: null, queryEmbedding: null, queryHash };
   }
 
