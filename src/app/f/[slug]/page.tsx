@@ -14,7 +14,7 @@ import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { Skeleton } from '@/components/ui/skeleton';
-import { getDealBySlug, listPublishedDealSlugs } from '@/lib/db/queries/deals';
+import { getDealBySlug, isDealExpired, listPublishedDealSlugs } from '@/lib/db/queries/deals';
 import { isFavorite } from '@/lib/db/queries/favorites';
 import { getCurrentUser } from '@/lib/security/auth';
 import { cn } from '@/lib/utils/cn';
@@ -73,6 +73,7 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
 
   const user = await getCurrentUser();
   const favorited = user ? await isFavorite(deal.id) : false;
+  const expired = isDealExpired(deal);
 
   const primaryCategory = deal.categories[0];
   const location = [deal.district, deal.city].filter(Boolean).join(', ');
@@ -108,7 +109,9 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
     url: `${SITE.url}/f/${deal.slug}`,
     priceCurrency: deal.currency,
     price: deal.discounted_price,
-    availability: 'https://schema.org/InStock',
+    availability: expired
+      ? 'https://schema.org/SoldOut'
+      : 'https://schema.org/InStock',
     validFrom: deal.valid_from,
     priceValidUntil: deal.valid_until,
     seller: deal.merchant
@@ -274,6 +277,35 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
           {/* Right: price + CTA, sticky on desktop */}
           <aside className="lg:sticky lg:top-20 lg:self-start">
             <div className="border-border bg-background flex flex-col gap-4 rounded-xl border p-6 shadow-sm">
+              {expired ? (
+                <div className="border-amber-500/40 bg-amber-500/10 flex flex-col gap-1 rounded-lg border p-3">
+                  <p className="text-sm font-semibold">Bu fırsat kaçtı</p>
+                  <p className="text-muted-foreground text-xs">
+                    Satış kapandı, rezervasyon alınmıyor. Arşivde içeriği koruyoruz —
+                    benzer bir fırsat çıktığında haberdar olmak için{' '}
+                    <Link href="/gecmis-firsatlar" className="hover:underline underline-offset-2 font-medium text-foreground">
+                      tüm arşivi
+                    </Link>{' '}
+                    veya{' '}
+                    {primaryCategory ? (
+                      <>
+                        <Link
+                          href={`/k/${primaryCategory.slug}`}
+                          className="hover:underline underline-offset-2 font-medium text-foreground"
+                        >
+                          {primaryCategory.name} kategorisini
+                        </Link>{' '}
+                        gezebilirsin.
+                      </>
+                    ) : (
+                      <Link href="/" className="hover:underline underline-offset-2 font-medium text-foreground">
+                        anasayfaya
+                      </Link>
+                    )}
+                  </p>
+                </div>
+              ) : null}
+
               <div className="flex flex-col gap-1">
                 {showDiscount ? (
                   <span className="text-muted-foreground text-sm line-through">
@@ -281,16 +313,21 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                   </span>
                 ) : null}
                 <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-semibold">
+                  <span
+                    className={cn(
+                      'text-3xl font-semibold',
+                      expired ? 'text-muted-foreground' : null,
+                    )}
+                  >
                     {formatTRY(deal.discounted_price)}
                   </span>
-                  {showDiscount ? (
+                  {showDiscount && !expired ? (
                     <Badge variant="discount" size="md">%{discount} indirim</Badge>
                   ) : null}
                 </div>
               </div>
 
-              {user ? (
+              {expired ? null : user ? (
                 <Link
                   href={`/rezervasyon/${deal.slug}`}
                   className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full gap-2')}
@@ -307,7 +344,7 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                   Rezervasyon Yap
                 </Link>
               )}
-              {user ? (
+              {expired ? null : user ? (
                 <FavoriteButton dealId={deal.id} initialFavorited={favorited} />
               ) : (
                 <Link
@@ -324,9 +361,11 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                 url={`${SITE.url}/f/${deal.slug}`}
                 className="w-full justify-center"
               />
-              <p className="text-muted-foreground text-center text-xs">
-                Mock akış — gerçek ödeme alınmaz, demo rezervasyon kaydı tutulur.
-              </p>
+              {expired ? null : (
+                <p className="text-muted-foreground text-center text-xs">
+                  Mock akış — gerçek ödeme alınmaz, demo rezervasyon kaydı tutulur.
+                </p>
+              )}
 
               {deal.merchant ? (
                 <Link

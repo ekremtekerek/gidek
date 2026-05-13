@@ -30,6 +30,16 @@ const DEAL_SELECT = `
 
 export type DealSort = 'newest' | 'price-asc' | 'price-desc' | 'popular';
 
+/**
+ * Yaşam döngüsü filtresi:
+ * - 'active' (varsayılan): is_active=true, valid_until>now, published_at<=now.
+ *   Anasayfa, kategori sayfaları, harita ve API her zaman bunu kullanır.
+ * - 'expired': süresi dolmuş VEYA admin tarafından deaktive edilmiş ama
+ *   bir kez yayınlanmış. /gecmis-firsatlar arşiv sayfası için.
+ * - 'all': bir kez yayınlanmış olan her şey — sitemap için.
+ */
+export type DealStatus = 'active' | 'expired' | 'all';
+
 export interface ListDealsParams {
   /** Filter by main category slug (joins through deal_categories). */
   categorySlug?: string;
@@ -49,7 +59,12 @@ export interface ListDealsParams {
   limit?: number;
   /** Offset for simple pagination. */
   offset?: number;
+  /** Yaşam döngüsü filtresi — varsayılan 'active'. */
+  status?: DealStatus;
 }
+
+// Geriye uyum: server tarafından da kullanılabilsin diye re-export.
+export { isDealExpired } from '@/lib/utils/deal-status';
 
 export async function listDeals({
   categorySlug,
@@ -61,6 +76,7 @@ export async function listDeals({
   sort,
   limit = 24,
   offset = 0,
+  status = 'active',
 }: ListDealsParams = {}): Promise<DealWithMerchant[]> {
   const supabase = getPublicClient();
 
@@ -118,6 +134,38 @@ export async function listDeals({
   if (maxPrice !== undefined) query = query.lte('discounted_price', maxPrice);
   if (featured) query = query.eq('is_featured', true);
 
+  // Yaşam döngüsü filtresi — tüm public listings için varsayılan 'active'.
+  const nowIso = new Date().toISOString();
+  if (status === 'active') {
+    query = query
+      .eq('is_active', true)
+      .lte('published_at', nowIso)
+      .gt('valid_until', nowIso);
+  } else if (status === 'expired') {
+    // PostgREST .or() içine ISO timestamp koymak kırılgan (`:` ayraçla
+    // karışıyor). İki ayrı sorgu yapıp ID seti üzerinden filtre uyguluyoruz.
+    const [byTime, byActive] = await Promise.all([
+      supabase
+        .from('deals')
+        .select('id')
+        .lte('published_at', nowIso)
+        .lte('valid_until', nowIso),
+      supabase
+        .from('deals')
+        .select('id')
+        .lte('published_at', nowIso)
+        .eq('is_active', false),
+    ]);
+    const expiredIds = new Set<string>();
+    for (const r of byTime.data ?? []) expiredIds.add(r.id);
+    for (const r of byActive.data ?? []) expiredIds.add(r.id);
+    if (expiredIds.size === 0) return [];
+    query = query.in('id', Array.from(expiredIds));
+  } else {
+    // 'all' — yayınlanmış her şey
+    query = query.lte('published_at', nowIso);
+  }
+
   const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as unknown as DealWithMerchant[];
@@ -149,7 +197,12 @@ export async function getDealBySlug(slug: string): Promise<DealDetailed | null> 
 
 export async function listPublishedDealSlugs(): Promise<string[]> {
   const supabase = getPublicClient();
-  const { data, error } = await supabase.from('deals').select('slug');
+  // Sitemap için bir kez yayınlanmış (published_at <= now) her deal'ın
+  // slug'ı yeterli — süresi dolmuş olanlar da arşiv olarak SEO yer kazanır.
+  const { data, error } = await supabase
+    .from('deals')
+    .select('slug')
+    .lte('published_at', new Date().toISOString());
   if (error) throw error;
   return (data ?? []).map((d) => d.slug);
 }
@@ -197,6 +250,7 @@ export async function getDealsInBounds(
     if (dealIdsByCategory.length === 0) return [];
   }
 
+  const nowIso = new Date().toISOString();
   let query = supabase
     .from('deals')
     .select(
@@ -209,6 +263,10 @@ export async function getDealsInBounds(
     .filter('merchant.lat', 'lte', bounds.ne.lat)
     .filter('merchant.lng', 'gte', bounds.sw.lng)
     .filter('merchant.lng', 'lte', bounds.ne.lng)
+    // Harita yalnızca aktif fırsatları gösterir — arşiv haritada yok.
+    .eq('is_active', true)
+    .lte('published_at', nowIso)
+    .gt('valid_until', nowIso)
     .order('sort_priority', { ascending: false })
     .order('published_at', { ascending: false })
     .limit(limit);

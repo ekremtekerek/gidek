@@ -33,8 +33,27 @@ export function Footer() {
           </ul>
         </nav>
 
-        <nav aria-label="Yasal">
-          <h2 className="text-foreground mb-3 text-sm font-semibold">Yasal</h2>
+        <nav aria-label="Keşfet">
+          <h2 className="text-foreground mb-3 text-sm font-semibold">Keşfet</h2>
+          <ul className="space-y-2 text-sm">
+            <li>
+              <Link
+                href="/gecmis-firsatlar"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Geçmiş fırsatlar
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/favorilerim"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Favorilerim
+              </Link>
+            </li>
+          </ul>
+          <h2 className="text-foreground mt-6 mb-3 text-sm font-semibold">Yasal</h2>
           <ul className="space-y-2 text-sm">
             {FOOTER_LEGAL_LINKS.map((l) => (
               <li key={l.href}>

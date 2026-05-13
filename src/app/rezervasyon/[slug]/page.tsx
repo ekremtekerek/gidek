@@ -6,7 +6,7 @@ import { MapPin } from 'lucide-react';
 import { BookingForm } from '@/components/booking/booking-form';
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/ui/container';
-import { getDealBySlug } from '@/lib/db/queries/deals';
+import { getDealBySlug, isDealExpired } from '@/lib/db/queries/deals';
 import { getCurrentUser } from '@/lib/security/auth';
 import { formatTRY } from '@/lib/utils/format';
 
@@ -28,6 +28,9 @@ export default async function RezervasyonPage({ params }: { params: Promise<Para
 
   const deal = await getDealBySlug(slug);
   if (!deal) notFound();
+  // Sona ermiş fırsata rezervasyon yapılamaz — kullanıcı doğrudan URL'le
+  // gelse bile detail sayfasına geri at, banner orada gösterilir.
+  if (isDealExpired(deal)) redirect(`/f/${deal.slug}`);
 
   const location = [deal.district, deal.city].filter(Boolean).join(', ');
   const validUntilDate = new Date(deal.valid_until).toISOString().slice(0, 10);
