@@ -75,7 +75,15 @@ try {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="tr" className={`${inter.variable} h-full antialiased`}>
+    // suppressHydrationWarning — themeBootstrapScript paint öncesi <html>'e
+    // .light / .dark sınıfı ekler. Server bu sınıfı bilmediği için React
+    // hidrasyonunda className uyuşmazlığı uyarısı çıkar; bilinçli yapılan
+    // bir mismatch olduğu için bayrağı koyuyoruz (Next.js önerisi).
+    <html
+      lang="tr"
+      className={`${inter.variable} h-full antialiased`}
+      suppressHydrationWarning
+    >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
