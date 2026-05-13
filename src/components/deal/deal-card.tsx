@@ -1,8 +1,12 @@
+'use client';
+
+import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { MapPin } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
+import { DealQuickView, QuickViewButton } from '@/components/deal/deal-quick-view';
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
 import { isDealExpired } from '@/lib/utils/deal-status';
 import { BLUR_DATA_URL } from '@/lib/utils/blur';
@@ -18,9 +22,18 @@ interface DealCardProps {
    * sonucuna düşer. /gecmis-firsatlar zaten expired deal'larla gelir.
    */
   expired?: boolean;
+  /** Hızlı bak butonu — true ise hover'da görünür, varsayılan true. */
+  quickView?: boolean;
 }
 
-export function DealCard({ deal, className, priority = false, expired }: DealCardProps) {
+export function DealCard({
+  deal,
+  className,
+  priority = false,
+  expired,
+  quickView = true,
+}: DealCardProps) {
+  const [qvOpen, setQvOpen] = useState(false);
   const discount = deal.discount_percent ?? 0;
   const showDiscount = discount > 0 && deal.discounted_price < deal.original_price;
   const location = [deal.district, deal.city].filter(Boolean).join(', ');
@@ -68,7 +81,14 @@ export function DealCard({ deal, className, priority = false, expired }: DealCar
             <Badge variant="discount" size="md">%{discount} indirim</Badge>
           ) : null}
         </div>
+        {quickView && !isExpired ? (
+          <div className="absolute inset-x-0 bottom-3 flex justify-center opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-within:opacity-100">
+            <QuickViewButton onClick={() => setQvOpen(true)} />
+          </div>
+        ) : null}
       </Link>
+
+      {qvOpen ? <DealQuickView deal={deal} onClose={() => setQvOpen(false)} /> : null}
 
       <CardContent className="flex flex-1 flex-col gap-2 pt-4">
         <Link href={`/f/${deal.slug}`} className="hover:underline">

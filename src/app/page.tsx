@@ -1,12 +1,15 @@
 import { CategoryGrid } from '@/components/home/category-grid';
+import { EndingSoon } from '@/components/home/ending-soon';
 import { FeaturedCarousel } from '@/components/home/featured-carousel';
 import { HomeHero } from '@/components/home/home-hero';
 import { HomeStageProvider } from '@/components/home/home-stage-context';
 import { HowItWorks } from '@/components/home/how-it-works';
 import { InfiniteDeals } from '@/components/home/infinite-deals';
+import { SocialProofStrip } from '@/components/home/social-proof-strip';
 import { QueryProvider } from '@/components/providers/query-provider';
 import { Container } from '@/components/ui/container';
 import { listDeals } from '@/lib/db/queries/deals';
+import { getPlatformStats, listEndingSoonDeals } from '@/lib/db/queries/stats';
 import { getUserContext } from '@/lib/security/user-context-server';
 
 // ?c= query'sini okumak için her istek tazelenmeli — ISR yerine dinamik.
@@ -19,9 +22,11 @@ interface PageProps {
 export default async function HomePage({ searchParams }: PageProps) {
   const ctx = await getUserContext();
   const { c: conversationId } = await searchParams;
-  const [featured, recent] = await Promise.all([
+  const [featured, recent, endingSoon, stats] = await Promise.all([
     listDeals({ city: ctx.city, featured: true, limit: 12 }),
     listDeals({ city: ctx.city, limit: 12 }),
+    listEndingSoonDeals({ city: ctx.city, withinDays: 14, limit: 8 }),
+    getPlatformStats(),
   ]);
 
   const carouselDeals = featured.length >= 4 ? featured : recent.slice(0, 12);
@@ -32,7 +37,9 @@ export default async function HomePage({ searchParams }: PageProps) {
 
       <FeaturedCarousel deals={carouselDeals} />
       <HowItWorks />
+      <EndingSoon deals={endingSoon as never} />
       <CategoryGrid />
+      <SocialProofStrip stats={stats} />
 
       <section aria-labelledby="all-heading" className="py-10 sm:py-12">
         <Container>
@@ -52,4 +59,3 @@ export default async function HomePage({ searchParams }: PageProps) {
     </HomeStageProvider>
   );
 }
-
