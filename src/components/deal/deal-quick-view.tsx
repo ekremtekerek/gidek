@@ -3,9 +3,9 @@
 import { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, MapPin, Star, X } from 'lucide-react';
+import { ArrowRight, Eye, MapPin, Star, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { buttonVariants } from '@/components/ui/button';
 import { isDealExpired } from '@/lib/utils/deal-status';
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
 import { formatTRY } from '@/lib/utils/format';
@@ -167,21 +167,41 @@ export function DealQuickView({ deal, onClose }: Props) {
   );
 }
 
-/** "Quick view" button — DealCard'ın üzerinde overlay olarak gösterilir. */
+/**
+ * "Quick view" butonu — DealCard görseli üzerinde hover'da belirir.
+ *
+ * Tasarım: glassmorphism pill + amber→rose gradient eye iconu + shimmer
+ * overlay (hover'da yıldız parıltısı gibi diagonal kayar) + soft glow.
+ * Active state'te hafif basılır. Branded ama overpowering değil — card'ın
+ * kendi linkiyle yarışmıyor.
+ */
 export function QuickViewButton({ onClick }: { onClick: () => void }) {
   return (
-    <Button
+    <button
       type="button"
-      variant="outline"
-      size="sm"
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
         onClick();
       }}
-      className="bg-background/95 backdrop-blur"
+      aria-label="Hızlı bak"
+      className="group/qv border-foreground/15 bg-background/85 hover:bg-background relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border px-3.5 py-1.5 text-xs font-semibold shadow-lg shadow-black/10 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:shadow-rose-500/25 active:scale-100 dark:shadow-black/30"
     >
-      Hızlı bak
-    </Button>
+      {/* Eye icon — gradient daire içinde, hover'da hafif zoom */}
+      <span className="relative inline-flex size-5 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-amber-400 to-rose-500 text-white shadow-sm transition-transform duration-300 group-hover/qv:scale-110">
+        <Eye className="size-3" aria-hidden="true" />
+      </span>
+
+      {/* Metin — gradient renkli */}
+      <span className="bg-gradient-to-r from-amber-600 to-rose-600 bg-clip-text text-transparent dark:from-amber-400 dark:to-rose-400">
+        Hızlı bak
+      </span>
+
+      {/* Shimmer overlay — hover'da diagonal beyaz parıltı kayar */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 -translate-x-full skew-x-12 bg-gradient-to-r from-transparent via-white/40 to-transparent transition-transform duration-700 group-hover/qv:translate-x-full dark:via-white/15"
+      />
+    </button>
   );
 }
