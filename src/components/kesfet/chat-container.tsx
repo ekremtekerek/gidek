@@ -12,6 +12,7 @@ import { NearbyCarousel } from '@/components/kesfet/nearby-carousel';
 import { VoiceInputButton } from '@/components/kesfet/voice-input-button';
 import { useHomeStage } from '@/components/home/home-stage-context';
 import { SaveSearchButton } from '@/components/saved-searches/save-search-button';
+import { TurnstileWidget } from '@/components/security/turnstile-widget';
 import { buttonVariants } from '@/components/ui/button';
 import type { DealShape } from '@/lib/ai/tools';
 import { enrichForLocation, type WelcomeContent } from '@/lib/ai/welcome';
@@ -116,6 +117,10 @@ export function ChatContainer({
   const userLocationRef = useRef(effectiveLocation);
   userLocationRef.current = effectiveLocation;
 
+  // Turnstile token — anon kullanıcılar için. Widget callback bunu set eder;
+  // transport her POST anında ref'ten okur ve bir kez kullanır.
+  const turnstileTokenRef = useRef<string>('');
+
   // Konum → semt çevirisi: WelcomeHero "Yakınımda (Maltepe)" chip'i göstersin
   // diye Mapbox reverse'ü server'dan iste. Aynı koordinat tekrar gelirse
   // bu endpoint LRU'da cache'liyor, bedava.
@@ -156,11 +161,13 @@ export function ChatContainer({
         api: '/api/ai/chat',
         prepareSendMessagesRequest: ({ messages }) => {
           const loc = userLocationRef.current;
+          const turnstileToken = turnstileTokenRef.current;
           return {
             body: {
               messages,
               conversationId,
               ...(loc ? { lat: loc.lat, lng: loc.lng } : null),
+              ...(turnstileToken ? { turnstileToken } : null),
             },
           };
         },
@@ -361,6 +368,19 @@ export function ChatContainer({
           onReset={messages.length > 0 ? reset : undefined}
           disabled={isLoading}
         />
+
+        {/* Anon kullanıcılar için Turnstile — managed mode, çoğu kullanıcı
+            hiçbir şey görmez; bot/şüpheli trafikte challenge çıkar. Site key
+            yoksa widget null döner ve API anon erişimine izin verir. */}
+        {!isAuthenticated ? (
+          <div className="mt-2 flex justify-center">
+            <TurnstileWidget
+              onToken={(t) => {
+                turnstileTokenRef.current = t;
+              }}
+            />
+          </div>
+        ) : null}
 
         <p className="text-muted-foreground/70 mt-2 text-center text-[11px]">
           gidek AI{' '}

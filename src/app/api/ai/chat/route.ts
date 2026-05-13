@@ -11,6 +11,7 @@ import { getUserPreferences, summarisePreferences } from '@/lib/db/queries/prefe
 import { reverseGeocode } from '@/lib/maps/reverse-geocode';
 import { getCurrentUser } from '@/lib/security/auth';
 import { checkAiRateLimit } from '@/lib/security/rate-limit';
+import { isTurnstileEnabled, verifyTurnstileToken } from '@/lib/security/turnstile';
 import { getUserContext } from '@/lib/security/user-context-server';
 
 export const maxDuration = 30;
@@ -19,6 +20,8 @@ const bodySchema = z.object({
   messages: z.array(z.unknown()),
   lat: z.number().finite().min(-90).max(90).optional(),
   lng: z.number().finite().min(-180).max(180).optional(),
+  /** Cloudflare Turnstile token — anon kullanıcılar için zorunlu. */
+  turnstileToken: z.string().max(2048).optional(),
 });
 
 const MAX_OUTPUT_TOKENS = 800;
@@ -64,6 +67,24 @@ export async function POST(req: Request) {
     return Response.json({ error: 'Geçersiz istek.', code: 'INVALID_INPUT' }, { status: 400 });
   }
   const messages = parsed.messages as UIMessage[];
+
+  // Turnstile bot koruması — anon kullanıcılarda zorunlu. Auth'lu kullanıcılar
+  // zaten hesabıyla bağlı olduğundan widget göstermiyoruz; rate limit + budget
+  // koruması yeterli.
+  if (!user && isTurnstileEnabled()) {
+    const remoteIp = req.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ?? null;
+    const ts = await verifyTurnstileToken(parsed.turnstileToken, remoteIp);
+    if (!ts.ok) {
+      return Response.json(
+        {
+          error:
+            'Bot kontrolü başarısız. Sayfayı yenileyip tekrar dener misin?',
+          code: 'TURNSTILE_FAILED',
+        },
+        { status: 403 },
+      );
+    }
+  }
 
   const prefsContext = user ? summarisePreferences(await getUserPreferences(user.id)) : null;
   const ctx = await getUserContext();

@@ -39,15 +39,15 @@ function partOfDay(hour: number): PartOfDay {
 function greetingFor(part: PartOfDay): string {
   switch (part) {
     case 'sabah':
-      return 'Günaydın!';
+      return 'Günün aydın olsun! Kahvaltını nerede yapacağına karar verdin mi?';
     case 'öğle':
-      return 'İyi günler!';
+      return 'İyi günler! Öğle yemeğinde bugün kendine bir güzellik yapmaya ne dersin?';
     case 'oglesonra':
-      return 'İyi öğleden sonralar!';
+      return 'Öğleden sonra enerjisi! Çevrendeki aktivite ve indirimleri kaçırma.';
     case 'akşam':
-      return 'İyi akşamlar!';
+      return 'İyi akşamlar! İş çıkışı stres atmak için harika önerilerimiz var.';
     case 'gece':
-      return 'İyi geceler!';
+      return 'Geceyi boş geçme! Geç saatlere kadar süren eğlence ve lezzet durakları burada.';
   }
 }
 
