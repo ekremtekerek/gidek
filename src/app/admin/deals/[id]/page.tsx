@@ -11,7 +11,7 @@ export default async function AdminDealEditPage({ params }: { params: Promise<Pa
   const { data: deal } = await supabase
     .from('deals')
     .select(
-      'id, slug, title, subtitle, description, merchant_id, cover_image, original_price, discounted_price, city, district, venue_name, duration_minutes, valid_from, valid_until, max_per_user, tags, audience, highlights, is_active, is_featured, published_at',
+      'id, slug, title, subtitle, description, merchant_id, cover_image, images, original_price, discounted_price, city, district, venue_name, duration_minutes, valid_from, valid_until, max_per_user, tags, audience, highlights, is_active, is_featured, published_at',
     )
     .eq('id', id)
     .maybeSingle();
@@ -19,7 +19,11 @@ export default async function AdminDealEditPage({ params }: { params: Promise<Pa
   if (!deal) notFound();
 
   const [merchantsRes, dealCatsRes] = await Promise.all([
-    supabase.from('merchants').select('id, name, city').eq('is_active', true).order('name'),
+    supabase
+      .from('merchants')
+      .select('id, name, city, district')
+      .eq('is_active', true)
+      .order('name'),
     supabase.from('deal_categories').select('category:categories(slug)').eq('deal_id', deal.id),
   ]);
 
@@ -55,6 +59,7 @@ export default async function AdminDealEditPage({ params }: { params: Promise<Pa
           merchant_id: deal.merchant_id,
           categories,
           cover_image: deal.cover_image,
+          images: deal.images ?? [],
           original_price: Number(deal.original_price),
           discounted_price: Number(deal.discounted_price),
           city: deal.city,

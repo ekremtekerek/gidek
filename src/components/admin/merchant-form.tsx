@@ -1,7 +1,8 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import Link from 'next/link';
+import { AddressAutocomplete } from '@/components/admin/address-autocomplete';
 import {
   createMerchantAction,
   updateMerchantAction,
@@ -42,6 +43,26 @@ export function MerchantForm({ initial }: Props) {
     : createMerchantAction;
   const [state, formAction, pending] = useActionState(action, INITIAL);
   const err = state && 'fieldErrors' in state ? state.fieldErrors : undefined;
+
+  // Controlled konum alanları — AddressAutocomplete bunları auto-fill eder,
+  // manuel düzenleme de açık. Submit'te form bunlardan beslenir.
+  const [address, setAddress] = useState(initial?.address ?? '');
+  const [city, setCity] = useState(initial?.city ?? '');
+  const [district, setDistrict] = useState(initial?.district ?? '');
+  const [lat, setLat] = useState(
+    initial?.lat !== null && initial?.lat !== undefined ? String(initial.lat) : '',
+  );
+  const [lng, setLng] = useState(
+    initial?.lng !== null && initial?.lng !== undefined ? String(initial.lng) : '',
+  );
+
+  function applyAddress(s: { address: string; city?: string; district?: string; lat: number; lng: number }) {
+    setAddress(s.address);
+    if (s.city) setCity(s.city);
+    if (s.district) setDistrict(s.district);
+    setLat(s.lat.toFixed(6));
+    setLng(s.lng.toFixed(6));
+  }
 
   return (
     <form action={formAction} className="flex flex-col gap-6" noValidate>
@@ -90,30 +111,94 @@ export function MerchantForm({ initial }: Props) {
             defaultValue={initial?.website ?? ''}
             error={err?.website}
           />
-          <Field label="Adres" name="address" defaultValue={initial?.address ?? ''} error={err?.address} />
         </div>
       </Section>
 
       <Section title="Konum">
+        <div className="flex flex-col gap-1.5">
+          <Label>Adres ara (Mapbox)</Label>
+          <AddressAutocomplete
+            defaultValue={initial?.address ?? ''}
+            onSelect={applyAddress}
+            placeholder="Örn. Kuruçeşme Kuruçeşme Cd. veya Bağdat Caddesi 100"
+          />
+          <p className="text-muted-foreground text-xs">
+            Bir öneri seç → adres, şehir, ilçe ve koordinatlar otomatik dolar. İstersen aşağıda manuel düzenle.
+          </p>
+        </div>
+
+        <div className="flex flex-col gap-1.5">
+          <Label htmlFor="address">Adres</Label>
+          <Input
+            id="address"
+            name="address"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            placeholder="Sokak / cadde / numara"
+            aria-invalid={err?.address ? 'true' : undefined}
+          />
+          {err?.address ? (
+            <p className="text-sm text-rose-600 dark:text-rose-400">{err.address[0]}</p>
+          ) : null}
+        </div>
+
         <div className="grid gap-4 sm:grid-cols-4">
-          <Field label="Şehir" name="city" defaultValue={initial?.city ?? ''} error={err?.city} />
-          <Field label="İlçe" name="district" defaultValue={initial?.district ?? ''} error={err?.district} />
-          <Field
-            label="Enlem (lat)"
-            name="lat"
-            type="number"
-            step="any"
-            defaultValue={initial?.lat ?? ''}
-            error={err?.lat}
-          />
-          <Field
-            label="Boylam (lng)"
-            name="lng"
-            type="number"
-            step="any"
-            defaultValue={initial?.lng ?? ''}
-            error={err?.lng}
-          />
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="city">Şehir</Label>
+            <Input
+              id="city"
+              name="city"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              aria-invalid={err?.city ? 'true' : undefined}
+            />
+            {err?.city ? (
+              <p className="text-sm text-rose-600 dark:text-rose-400">{err.city[0]}</p>
+            ) : null}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="district">İlçe</Label>
+            <Input
+              id="district"
+              name="district"
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+              aria-invalid={err?.district ? 'true' : undefined}
+            />
+            {err?.district ? (
+              <p className="text-sm text-rose-600 dark:text-rose-400">{err.district[0]}</p>
+            ) : null}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="lat">Enlem</Label>
+            <Input
+              id="lat"
+              name="lat"
+              type="number"
+              step="any"
+              value={lat}
+              onChange={(e) => setLat(e.target.value)}
+              aria-invalid={err?.lat ? 'true' : undefined}
+            />
+            {err?.lat ? (
+              <p className="text-sm text-rose-600 dark:text-rose-400">{err.lat[0]}</p>
+            ) : null}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="lng">Boylam</Label>
+            <Input
+              id="lng"
+              name="lng"
+              type="number"
+              step="any"
+              value={lng}
+              onChange={(e) => setLng(e.target.value)}
+              aria-invalid={err?.lng ? 'true' : undefined}
+            />
+            {err?.lng ? (
+              <p className="text-sm text-rose-600 dark:text-rose-400">{err.lng[0]}</p>
+            ) : null}
+          </div>
         </div>
       </Section>
 

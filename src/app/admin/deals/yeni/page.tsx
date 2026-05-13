@@ -5,7 +5,7 @@ export default async function AdminDealCreatePage() {
   const supabase = getServiceClient();
   const { data: merchants } = await supabase
     .from('merchants')
-    .select('id, name, city')
+    .select('id, name, city, district')
     .eq('is_active', true)
     .order('name');
 

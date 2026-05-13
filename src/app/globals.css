@@ -132,6 +132,84 @@ body {
   animation: gidek-mic-pulse 1.4s ease-out infinite;
 }
 
+/* Marka logo shimmer — soldan sağa rose'a doğru kayan parıltı. Logo "yola
+ * çıkıyor" hissi pin animasyonuyla senkron. */
+@keyframes gidek-shimmer {
+  0% {
+    background-position: 200% center;
+  }
+  100% {
+    background-position: -200% center;
+  }
+}
+.gidek-shimmer-text {
+  background-image: linear-gradient(
+    90deg,
+    var(--foreground) 0%,
+    var(--foreground) 35%,
+    rgba(244, 63, 94, 0.9) 50%,
+    var(--foreground) 65%,
+    var(--foreground) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+  animation: gidek-shimmer 2.4s linear infinite;
+}
+
+/* Marka loader — pin sola yakınken yumuşak görünür, sağa kayarken hafifçe
+ * yukarı zıplar, sağ uçta kaybolur ve baştan başlar. "Gidiyor" hissi. */
+@keyframes gidek-traveler {
+  0% {
+    left: 0;
+    transform: translateY(2px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  40% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(0);
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    left: calc(100% - 1.25rem);
+    transform: translateY(2px);
+    opacity: 0;
+  }
+}
+.gidek-traveler {
+  animation: gidek-traveler 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* Üst nav progress şeridi — route geçişlerinde 600ms görünür, soldan sağa
+ * hızla kayar, sonra fade out. */
+@keyframes gidek-nav-progress {
+  0% {
+    transform: translateX(-100%) scaleX(0.5);
+    opacity: 1;
+  }
+  60% {
+    transform: translateX(20%) scaleX(0.9);
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(110%) scaleX(0.6);
+    opacity: 0;
+  }
+}
+.gidek-nav-progress {
+  animation: gidek-nav-progress 700ms cubic-bezier(0.22, 0.61, 0.36, 1);
+  transform-origin: left;
+}
+
 /* Print CSS — e-bilet yazdırılırken sadece bilet kartı görünür kalır */
 @media print {
   .gidek-no-print,

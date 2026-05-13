@@ -1,16 +1,22 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useState } from 'react';
 import Link from 'next/link';
 import { createDealAction, updateDealAction, type DealFormState } from '@/app/admin/deals/actions';
 import { Button } from '@/components/ui/button';
 import { DateTimeField } from '@/components/ui/datetime-field';
+import { ImageUploader } from '@/components/admin/image-uploader';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AUDIENCE, DEAL_TAGS, MAIN_CATEGORIES } from '@/lib/utils/constants';
 import { cn } from '@/lib/utils/cn';
 
-type MerchantOption = { id: string; name: string; city: string | null };
+type MerchantOption = {
+  id: string;
+  name: string;
+  city: string | null;
+  district?: string | null;
+};
 type DealRecord = {
   id: string;
   slug: string;
@@ -20,6 +26,7 @@ type DealRecord = {
   merchant_id: string;
   categories: string[];
   cover_image: string;
+  images: string[];
   original_price: number;
   discounted_price: number;
   city: string;
@@ -55,6 +62,16 @@ export function DealForm({ merchants, initial }: Props) {
     ? (state: DealFormState, formData: FormData) =>
         updateDealAction(initial!.id, state, formData)
     : createDealAction;
+
+  // Merchant değişince city/district otomatik dolsun — kullanıcı isterse override eder.
+  const [city, setCity] = useState(initial?.city ?? 'İstanbul');
+  const [district, setDistrict] = useState(initial?.district ?? '');
+  function onMerchantChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const m = merchants.find((x) => x.id === e.target.value);
+    if (!m) return;
+    if (m.city) setCity(m.city);
+    if (m.district) setDistrict(m.district);
+  }
   const [state, formAction, pending] = useActionState(action, INITIAL);
 
   const err = state?.fieldErrors;
@@ -98,6 +115,7 @@ export function DealForm({ merchants, initial }: Props) {
             id="merchant_id"
             name="merchant_id"
             defaultValue={initial?.merchant_id ?? ''}
+            onChange={onMerchantChange}
             required
             className="border-border bg-background focus:border-foreground/50 h-11 rounded-md border px-3.5 text-sm"
           >
@@ -123,14 +141,16 @@ export function DealForm({ merchants, initial }: Props) {
       </Section>
 
       <Section title="Görsel & fiyat">
-        <Field
-          label="Kapak resmi URL"
-          name="cover_image"
-          defaultValue={initial?.cover_image}
-          required
-          placeholder="https://…"
-          error={err?.cover_image}
-        />
+        <div className="flex flex-col gap-2">
+          <Label>Fotoğraflar</Label>
+          <ImageUploader
+            initialCover={initial?.cover_image}
+            initialImages={initial?.images}
+          />
+          {err?.cover_image ? (
+            <p className="text-sm text-rose-600 dark:text-rose-400">{err.cover_image[0]}</p>
+          ) : null}
+        </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <Field
             label="Normal fiyat (₺)"
@@ -156,15 +176,33 @@ export function DealForm({ merchants, initial }: Props) {
       </Section>
 
       <Section title="Konum & süre">
+        <p className="text-muted-foreground -mt-2 text-xs">
+          Tedarikçi seçince şehir ve semt otomatik dolar — istersen elle düzenle.
+        </p>
         <div className="grid gap-4 sm:grid-cols-3">
-          <Field
-            label="Şehir"
-            name="city"
-            defaultValue={initial?.city ?? 'İstanbul'}
-            required
-            error={err?.city}
-          />
-          <Field label="Semt" name="district" defaultValue={initial?.district ?? ''} />
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="city">Şehir</Label>
+            <Input
+              id="city"
+              name="city"
+              value={city}
+              onChange={(e) => setCity(e.target.value)}
+              required
+              aria-invalid={err?.city ? 'true' : undefined}
+            />
+            {err?.city ? (
+              <p className="text-sm text-rose-600 dark:text-rose-400">{err.city[0]}</p>
+            ) : null}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="district">Semt</Label>
+            <Input
+              id="district"
+              name="district"
+              value={district}
+              onChange={(e) => setDistrict(e.target.value)}
+            />
+          </div>
           <Field
             label="Mekan adı"
             name="venue_name"

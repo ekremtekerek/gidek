@@ -4,6 +4,7 @@ import { Inter } from 'next/font/google';
 import { Toaster } from 'sonner';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
+import { NavigationProgress } from '@/components/layout/navigation-progress';
 import { ToastBridge } from '@/components/layout/toast-bridge';
 import { ConsentBanner } from '@/components/legal/consent-banner';
 import { InstallPrompt } from '@/components/pwa/install-prompt';
@@ -65,6 +66,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           İçeriğe atla
         </a>
+        <Suspense fallback={null}>
+          <NavigationProgress />
+        </Suspense>
         <Header />
         <main id="main-content" className="flex-1">
           {children}
