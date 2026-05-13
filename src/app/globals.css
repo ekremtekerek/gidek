@@ -239,6 +239,78 @@ body {
   transform-origin: left;
 }
 
+/* ── Scroll-to-top FAB — "hedefe yolculuk" animasyonları ─────────────────
+ * Pill içinde dikey track + üstte hedef pini + alt bölgede gidek harfi.
+ * Idle'da pin nazikçe pulsler; click'te traveler aşağıdan yukarı fırlar,
+ * track gradient'le dolar, pin zıplar. Reduced-motion'da hepsi durur. */
+
+/* Hedef pini idle pulse — amber halka çevresinde nefes alır gibi. */
+@keyframes gidek-pin-pulse {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-2px) scale(1.06); }
+}
+.gidek-fab-pin {
+  animation: gidek-pin-pulse 2.6s ease-in-out infinite;
+}
+
+/* Tıklama anında pin "geldim" zıplaması — biraz daha şiddetli. */
+@keyframes gidek-pin-land {
+  0%   { transform: translateY(0) scale(1); }
+  35%  { transform: translateY(-6px) scale(1.18); }
+  70%  { transform: translateY(0) scale(0.94); }
+  100% { transform: translateY(0) scale(1); }
+}
+.gidek-fab-pin-landed {
+  animation: gidek-pin-land 700ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Traveler — track üzerinde aşağıdan yukarı seyahat. Idle'da hafifçe
+ * sürünür (parlama), tıklamada full track'i 600ms'de geçer. */
+@keyframes gidek-fab-traveler-idle {
+  0%   { transform: translateY(0); opacity: 0.55; }
+  50%  { transform: translateY(-2px); opacity: 1; }
+  100% { transform: translateY(0); opacity: 0.55; }
+}
+.gidek-fab-traveler {
+  animation: gidek-fab-traveler-idle 2.4s ease-in-out infinite;
+}
+
+@keyframes gidek-fab-traveler-shoot {
+  0%   { top: calc(100% - 14px); opacity: 1; transform: translateX(-50%) scale(1); }
+  60%  { top: 4px; opacity: 1; transform: translateX(-50%) scale(1.15); }
+  100% { top: -8px; opacity: 0; transform: translateX(-50%) scale(0.6); }
+}
+.gidek-fab-traveler-shooting {
+  animation: gidek-fab-traveler-shoot 700ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Track içindeki gradient dolgu — scroll progress ile arttıkça pillin
+ * içindeki track yukarı doğru dolar. CSS var'i (--gidek-fill) JS'ten
+ * günceller; 0 → 1. */
+.gidek-fab-track-fill {
+  transform-origin: bottom;
+  transform: scaleY(var(--gidek-fill, 0));
+  transition: transform 80ms linear;
+}
+
+/* Click'te track tamamen gradientle dolup yukarıya akar. */
+@keyframes gidek-fab-track-rush {
+  0%   { transform: scaleY(var(--gidek-fill, 0)); opacity: 0.8; }
+  60%  { transform: scaleY(1); opacity: 1; }
+  100% { transform: scaleY(1); opacity: 0.7; }
+}
+.gidek-fab-track-rushing {
+  animation: gidek-fab-track-rush 600ms cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gidek-fab-pin,
+  .gidek-fab-traveler,
+  .gidek-fab-pin-landed,
+  .gidek-fab-traveler-shooting,
+  .gidek-fab-track-rushing { animation: none !important; }
+}
+
 /* Print CSS — e-bilet yazdırılırken sadece bilet kartı görünür kalır */
 @media print {
   .gidek-no-print,

@@ -11,6 +11,7 @@ import { ConsentBanner } from '@/components/legal/consent-banner';
 import { InstallPrompt } from '@/components/pwa/install-prompt';
 import { RegisterSW } from '@/components/pwa/register-sw';
 import { RefCapture } from '@/components/referral/ref-capture';
+import { ScrollToTop } from '@/components/layout/scroll-to-top';
 import { JsonLd } from '@/components/seo/json-ld';
 import { SITE } from '@/lib/utils/site-config';
 import './globals.css';
@@ -94,6 +95,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </main>
         <Footer />
         <BottomNav />
+        <ScrollToTop />
         <Toaster position="top-center" richColors closeButton />
         {/* Reads ?toast= query params from server-action redirects.
             useSearchParams requires a Suspense boundary in Next.js 15+. */}
