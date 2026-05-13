@@ -1091,23 +1091,30 @@ const CATEGORY_PHOTOS: Record<string, string[]> = {
     '1459749411175-04bf5292ceea', '1429962714451-bb934ecdc4ec',
   ],
   'stand-up': [
-    '1564613302700-94b6a8b3ab74', '1597173115256-d49e6f2cf60d', '1531058020387-3be344556be6',
+    // 1564613302700-94b6a8b3ab74 ve 1597173115256-d49e6f2cf60d Unsplash'tan
+    // kaldırıldı (Mayıs 2026 fix). Yerine konser havuzundan canlı sahne karelerini ekledik.
+    '1531058020387-3be344556be6', '1501386761578-eac5c94b800a', '1493225457124-a3eb161ffa5f',
   ],
   aktivite: [
-    '1502780402662-acc01917738e', '1448375240586-882707db888b',
+    // 1502780402662-acc01917738e kaldırıldı; yerine outdoor benzeri.
+    '1448375240586-882707db888b',
     '1517649763962-0c623066013b', '1518609878373-06d740f60d8b',
+    '1502602898657-3e91760cbb34',
   ],
   masaj: [
     '1540555700478-4be289fbecef', '1544161515-4ab6ce6db874',
     '1583416750470-965b2707b355', '1487412947147-5cebf100ffc2',
   ],
   guzellik: [
-    '1522337360788-8b13dee7a37e', '1607008829749-c0f284a49841',
+    // 1607008829749-c0f284a49841 kaldırıldı.
+    '1522337360788-8b13dee7a37e',
     '1487412947147-5cebf100ffc2', '1532635241-17e820acc59f',
   ],
   turlar: [
-    '1564501049412-61c2a3083791', '1538430480410-c2f3ec5f7bc6',
-    '1518509562904-e7ef99cddc85', '1604610040716-37cc093d3a91',
+    // 3 kare kaldırıldı; sehir-otelleri havuzundaki cityscape'leri ekledik
+    // ve picsum'da olan stabil bir-iki ID.
+    '1564501049412-61c2a3083791', '1551882547-ff40c63fe5fa',
+    '1542314831-068cd1dbfeeb', '1549294413-26f195200c16',
   ],
   'sehir-otelleri': [
     '1551882547-ff40c63fe5fa', '1542314831-068cd1dbfeeb',
