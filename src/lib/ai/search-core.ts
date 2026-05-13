@@ -27,11 +27,16 @@ export type MatchedDeal = {
   lat: number | null;
   lng: number | null;
   similarity: number;
+  /** Kullanıcı konumu verildiyse mesafe km — yoksa null. */
+  distance_km: number | null;
 };
 
 export interface SearchOptions {
   maxResults?: number;
   filterCity?: string | null;
+  /** Konum bağlamı — verilirse match_deals hibrit (similarity + yakınlık) sıralar. */
+  nearLat?: number | null;
+  nearLng?: number | null;
 }
 
 export async function searchDealsByQuery(
@@ -48,6 +53,8 @@ export async function searchDealsByQuery(
     query_embedding: toPgVector(vector),
     match_count: Math.max(1, Math.min(options.maxResults ?? 5, 12)),
     filter_city: options.filterCity ?? null,
+    near_lat: options.nearLat ?? null,
+    near_lng: options.nearLng ?? null,
   });
 
   if (error) {

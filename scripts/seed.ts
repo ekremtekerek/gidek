@@ -7,6 +7,7 @@
  * `slug`; running this multiple times will update existing rows in place.
  */
 import { createClient } from '@supabase/supabase-js';
+import { dealEmbeddingText, embed, toPgVector } from '../src/lib/ai/embeddings';
 import { MAIN_CATEGORIES } from '../src/lib/utils/constants';
 import { CITY_CENTROIDS, ISTANBUL_CENTER, type LatLng } from '../src/lib/utils/geo';
 import type { Database } from '../src/types/supabase';
@@ -1267,6 +1268,79 @@ async function seedMerchants() {
   console.log(`  merchants:  ${rows.length}`);
 }
 
+/**
+ * Concurrent embedding generator — N=5 paralel istek ile Gemini'yi rahat
+ * çağırır. Hata olursa o deal `embedding: null` döner; sonra ai:backfill ile
+ * tamamlanır. Anahtar yoksa hiç çağırmaz, sessizce null geçer.
+ */
+async function embedDealRows<T extends ReturnType<typeof buildEmbedSeed>>(
+  rows: T[],
+): Promise<Array<T & { embedding: string | null }>> {
+  if (!process.env.GEMINI_API_KEY) {
+    console.log('  embeddings: skipped (GEMINI_API_KEY yok — sonra `npm run ai:backfill`)');
+    return rows.map((r) => ({ ...r, embedding: null }));
+  }
+
+  const out: Array<T & { embedding: string | null }> = new Array(rows.length);
+  const CONCURRENCY = 5;
+  let next = 0;
+  let ok = 0;
+  let fail = 0;
+
+  async function worker() {
+    while (true) {
+      const i = next++;
+      if (i >= rows.length) return;
+      const row = rows[i];
+      try {
+        const vec = await embed(
+          dealEmbeddingText({
+            title: row.title,
+            subtitle: row.subtitle,
+            description: row.description,
+            tags: row.tags,
+            audience: row.audience,
+            city: row.city,
+            district: row.district,
+            venue_name: row.venue_name,
+          }),
+        );
+        out[i] = { ...row, embedding: toPgVector(vec) };
+        ok++;
+      } catch (err) {
+        fail++;
+        console.error(
+          `  embed fail [${row.slug}]: ${err instanceof Error ? err.message : String(err)}`,
+        );
+        out[i] = { ...row, embedding: null };
+      }
+    }
+  }
+
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  console.log(`  embeddings: ok=${ok} fail=${fail}${fail ? ' — sonra `npm run ai:backfill`' : ''}`);
+  return out;
+}
+
+/**
+ * Type helper — embedDealRows imza inferensi için. dealRows'un asıl şekli
+ * `seedDeals` içinde literal — fonksiyonu generic tutmak yerine bu yardımcı
+ * üzerinden tipi çekiyoruz.
+ */
+function buildEmbedSeed() {
+  return {
+    slug: '' as string,
+    title: '' as string,
+    subtitle: null as string | null,
+    description: '' as string,
+    tags: [] as string[],
+    audience: [] as string[],
+    city: '' as string,
+    district: null as string | null,
+    venue_name: null as string | null,
+  };
+}
+
 async function seedDeals() {
   const { data: cats, error: catErr } = await supabase.from('categories').select('id, slug');
   if (catErr) throw catErr;
@@ -1308,7 +1382,14 @@ async function seedDeals() {
     };
   });
 
-  const { error: dealErr } = await supabase.from('deals').upsert(dealRows, { onConflict: 'slug' });
+  // RAG için her deal'a embedding üret — pgvector araması ancak embedding'i
+  // olan satırları görür. GEMINI_API_KEY yoksa embedsiz devam ederiz ama AI
+  // sohbeti boş döner; uyarı bas, sonra ai:backfill ile tamamlanabilir.
+  const dealsWithEmbeddings = await embedDealRows(dealRows);
+
+  const { error: dealErr } = await supabase
+    .from('deals')
+    .upsert(dealsWithEmbeddings, { onConflict: 'slug' });
   if (dealErr) throw dealErr;
   console.log(`  deals:      ${dealRows.length}`);
 

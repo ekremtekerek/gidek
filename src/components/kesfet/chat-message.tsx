@@ -14,6 +14,18 @@ interface Props {
 export function ChatMessage({ message }: Props) {
   const isUser = message.role === 'user';
 
+  // Gemini ara sıra hiç içerik üretmeden bitiriyor — parts'ta sadece
+  // step-start kalıyor. Kullanıcı sessizliği "donmuş" sanmasın diye boş
+  // assistant turunda fallback baloncuk gösteriyoruz.
+  const isAssistantEmpty =
+    !isUser &&
+    !message.parts.some(
+      (p) =>
+        (p.type === 'text' && 'text' in p && typeof p.text === 'string' && p.text.trim().length > 0) ||
+        p.type === 'tool-searchDeals' ||
+        p.type === 'tool-createDayPlan',
+    );
+
   return (
     <article
       aria-label={isUser ? 'Sen' : 'gidek'}
@@ -42,6 +54,11 @@ export function ChatMessage({ message }: Props) {
           isUser ? 'max-w-[85%] items-end' : 'max-w-[92%] flex-1 items-start',
         )}
       >
+        {isAssistantEmpty ? (
+          <p className="bg-muted text-muted-foreground max-w-prose rounded-2xl rounded-tl-sm px-4 py-2.5 text-sm leading-relaxed">
+            Bir şey üretemedim — son mesajını başka kelimelerle tekrar yazar mısın?
+          </p>
+        ) : null}
         {message.parts.map((part, i) => {
           switch (part.type) {
             case 'text': {

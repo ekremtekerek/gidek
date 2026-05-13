@@ -14,27 +14,31 @@ import { useHomeStage } from '@/components/home/home-stage-context';
 import { SaveSearchButton } from '@/components/saved-searches/save-search-button';
 import { buttonVariants } from '@/components/ui/button';
 import type { DealShape } from '@/lib/ai/tools';
+import { enrichForLocation, type WelcomeContent } from '@/lib/ai/welcome';
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
 import { cn } from '@/lib/utils/cn';
-
-const QUICK_PROMPTS = [
-  { label: 'Kadıköy pazar kahvaltı', text: 'Kadıköy çevresinde pazar sabahı kahvaltı önerir misin?' },
-  { label: 'Cumartesi romantik akşam', text: 'Cumartesi akşamı eşimle romantik bir akşam yemeği' },
-  { label: 'Ailecek bir gün planı', text: 'Pazar günü ailecek baştan sona bir gün planı kurar mısın?' },
-  { label: 'Yorgunum, rahatlatıcı', text: 'Yorgunum, pazar günü rahatlatıcı bir şey öner — masaj ya da huzurlu' },
-  { label: 'Çocukla hafta sonu', text: 'Çocuğumla hafta sonu birlikte yapabileceğimiz bir aktivite' },
-  { label: 'Bodrum hafta sonu', text: "Bodrum'da hafta sonu için tatil oteli ve aktivite" },
-];
 
 interface ChatContainerProps {
   welcomeDeals?: DealWithMerchant[];
   city?: string;
+  /** Server'dan gelen dinamik karşılama içeriği (saat/gün/fırsat odaklı). */
+  welcomeContent?: WelcomeContent;
   /** Server'dan gelen geçmiş sohbet — varsa o id ile mount olur. */
   initialConversationId?: string;
   initialMessages?: UIMessage[];
   /** Caller giriş yapmışsa true; persist endpoint sadece auth'ta yazar. */
   isAuthenticated?: boolean;
 }
+
+const FALLBACK_WELCOME: WelcomeContent = {
+  greeting: 'Merhaba!',
+  subtitle: 'Aklındakini yaz — birkaç fırsat seçeyim, neden uyduğunu anlatayım.',
+  chips: [
+    { label: 'Bugün için bir şey öner', text: 'Bugün için keyifli bir şey önerir misin?' },
+    { label: 'Hafta sonu plan', text: 'Hafta sonu için baştan sona bir gün planı kurar mısın?' },
+    { label: 'Çift için romantik', text: 'Eşimle romantik bir akşam yemeği önerir misin?' },
+  ],
+};
 
 function newConversationId(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) return crypto.randomUUID();
@@ -45,6 +49,7 @@ function newConversationId(): string {
 export function ChatContainer({
   welcomeDeals = [],
   city,
+  welcomeContent = FALLBACK_WELCOME,
   initialConversationId,
   initialMessages,
   isAuthenticated = false,
@@ -59,12 +64,106 @@ export function ChatContainer({
   );
   const [input, setInput] = useState('');
 
+  // Chat → harita coupling: en son AI tool sonuçlarını (searchDeals veya
+  // createDayPlan içindeki deal'lar) HomeStage context'e ilet. Hero dışında
+  // mount edildiyse stage null gelir, no-op.
+  const stage = useHomeStage();
+
+  // /kesfet gibi harita olmayan sayfalarda da konum alalım — stage yoksa
+  // ChatContainer kendi başına bir kez izin ister, sessiz başarısız olur.
+  const [standaloneLocation, setStandaloneLocation] = useState<{
+    lat: number;
+    lng: number;
+  } | null>(null);
+  useEffect(() => {
+    if (stage) return; // map zaten konum alıyor, çift istek yapma
+    if (typeof window === 'undefined' || !('geolocation' in navigator)) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        if ('permissions' in navigator) {
+          const status = await navigator.permissions.query({ name: 'geolocation' });
+          if (status.state === 'denied') return;
+        }
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            if (!cancelled) {
+              setStandaloneLocation({
+                lat: pos.coords.latitude,
+                lng: pos.coords.longitude,
+              });
+            }
+          },
+          () => {
+            /* sessiz */
+          },
+          { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 },
+        );
+      } catch {
+        /* Permissions API problemi — sessizce geç */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [stage]);
+
+  const effectiveLocation = stage?.userLocation ?? standaloneLocation;
+
+  // Konumu ref'te tutuyoruz ki transport her konum tick'inde yeniden kurulup
+  // mevcut chat session'ını sıfırlamasın. prepareSendMessagesRequest her POST
+  // anında ref'ten okur — anlık değer her zaman taze gelir.
+  const userLocationRef = useRef(effectiveLocation);
+  userLocationRef.current = effectiveLocation;
+
+  // Konum → semt çevirisi: WelcomeHero "Yakınımda (Maltepe)" chip'i göstersin
+  // diye Mapbox reverse'ü server'dan iste. Aynı koordinat tekrar gelirse
+  // bu endpoint LRU'da cache'liyor, bedava.
+  const [userDistrict, setUserDistrict] = useState<string | null>(null);
+  useEffect(() => {
+    if (!effectiveLocation) {
+      setUserDistrict(null);
+      return;
+    }
+    const ctrl = new AbortController();
+    (async () => {
+      try {
+        const res = await fetch(
+          `/api/geo/reverse?lat=${effectiveLocation.lat}&lng=${effectiveLocation.lng}`,
+          { signal: ctrl.signal },
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as { district: string | null };
+        setUserDistrict(data.district);
+      } catch {
+        // sessiz — chip yine de generic kalır
+      }
+    })();
+    return () => ctrl.abort();
+  }, [effectiveLocation]);
+
+  const liveWelcome = useMemo(
+    () => enrichForLocation(welcomeContent, userDistrict),
+    [welcomeContent, userDistrict],
+  );
+
   // Transport conversationId değişince yeniden kurulur — body params güncel olsun.
+  // prepareSendMessagesRequest her POST anında çağırılır → lat/lng'yi ref'ten
+  // okuyarak transport'u yeniden kurmadan taze konum gönderiyoruz.
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
         api: '/api/ai/chat',
-        body: { conversationId },
+        prepareSendMessagesRequest: ({ messages }) => {
+          const loc = userLocationRef.current;
+          return {
+            body: {
+              messages,
+              conversationId,
+              ...(loc ? { lat: loc.lat, lng: loc.lng } : null),
+            },
+          };
+        },
       }),
     [conversationId],
   );
@@ -101,11 +200,8 @@ export function ChatContainer({
     });
   }
 
-  // Chat → harita coupling: en son AI tool sonuçlarını (searchDeals veya
-  // createDayPlan içindeki deal'lar) HomeStage context'e ilet. Hero dışında
-  // mount edildiyse stage null gelir, no-op. stage'i ref'le tutuyoruz, aksi
-  // halde context value her güncellendiğinde effect tekrar tetiklenir → loop.
-  const stage = useHomeStage();
+  // stage'i ref'le tutuyoruz, aksi halde context value her güncellendiğinde
+  // effect tekrar tetiklenir → loop.
   const stageRef = useRef(stage);
   stageRef.current = stage;
   useEffect(() => {
@@ -214,7 +310,7 @@ export function ChatContainer({
       {/* Main area — welcome (empty) or scrollable message list (active) */}
       {isEmpty ? (
         <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-14">
-          <WelcomeHero welcomeDeals={welcomeDeals} city={city} />
+          <WelcomeHero welcomeDeals={welcomeDeals} city={city} welcome={liveWelcome} />
         </div>
       ) : (
         <div
@@ -236,7 +332,7 @@ export function ChatContainer({
 
         {isEmpty ? (
           <div className="mb-3">
-            <QuickPrompts onPrompt={onQuickPrompt} />
+            <QuickPrompts chips={liveWelcome.chips} onPrompt={onQuickPrompt} />
           </div>
         ) : null}
 
@@ -280,9 +376,11 @@ export function ChatContainer({
 function WelcomeHero({
   welcomeDeals,
   city,
+  welcome,
 }: {
   welcomeDeals: DealWithMerchant[];
   city?: string;
+  welcome: WelcomeContent;
 }) {
   return (
     <div className="flex w-full flex-col items-center gap-6 text-center sm:gap-8">
@@ -291,11 +389,10 @@ function WelcomeHero({
       ) : null}
       <div className="flex flex-col items-center gap-4">
         <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
-          Merhaba, ne yapmak istersin?
+          {welcome.greeting}
         </h1>
-        <p className="text-muted-foreground max-w-md text-balance sm:text-lg">
-          Aklındakini yaz — birkaç fırsat seçeyim, neden uyduğunu anlatayım. İstersen tüm bir
-          günü baştan sona kurarım.
+        <p className="text-muted-foreground max-w-xl text-balance sm:text-lg">
+          {welcome.subtitle}
         </p>
       </div>
     </div>
@@ -393,13 +490,19 @@ function ChatInputBar({
   );
 }
 
-function QuickPrompts({ onPrompt }: { onPrompt: (t: string) => void }) {
+function QuickPrompts({
+  chips,
+  onPrompt,
+}: {
+  chips: WelcomeContent['chips'];
+  onPrompt: (t: string) => void;
+}) {
   return (
     <ul
       aria-label="Hızlı başlangıç"
       className="flex w-full flex-wrap justify-center gap-2"
     >
-      {QUICK_PROMPTS.map((p) => (
+      {chips.map((p) => (
         <li key={p.label}>
           <button
             type="button"

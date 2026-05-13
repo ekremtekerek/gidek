@@ -3,6 +3,7 @@ import type { UIMessage } from 'ai';
 import { ChatContainer } from '@/components/kesfet/chat-container';
 import { HomeMapSection } from '@/components/map/HomeMapSection';
 import { Skeleton } from '@/components/ui/skeleton';
+import { buildWelcomeContent } from '@/lib/ai/welcome';
 import { getConversationWithMessages } from '@/lib/db/queries/conversations';
 import { listDeals } from '@/lib/db/queries/deals';
 import { getCurrentUser } from '@/lib/security/auth';
@@ -27,6 +28,15 @@ export async function HomeHero({ conversationId }: Props = {}) {
     featuredCity.length >= 4
       ? featuredCity
       : await listDeals({ city: ctx.city, limit: 8 });
+
+  const welcomeContent = buildWelcomeContent({
+    city: ctx.city,
+    deals: welcomeDeals.map((d) => ({
+      title: d.title,
+      district: d.district,
+      discountPct: d.discount_percent,
+    })),
+  });
 
   const user = await getCurrentUser();
   let initialMessages: UIMessage[] | undefined;
@@ -56,6 +66,7 @@ export async function HomeHero({ conversationId }: Props = {}) {
           <ChatContainer
             welcomeDeals={welcomeDeals}
             city={ctx.city}
+            welcomeContent={welcomeContent}
             initialConversationId={resolvedConversationId}
             initialMessages={initialMessages}
             isAuthenticated={Boolean(user)}

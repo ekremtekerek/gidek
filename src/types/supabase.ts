@@ -800,33 +800,74 @@ export type Database = {
         }
       }
       generate_booking_code: { Args: never; Returns: string }
-      match_deals: {
-        Args: {
-          filter_city?: string
-          match_count?: number
-          query_embedding: string
-        }
+      match_ai_cache: {
+        Args: { query_embedding: string; threshold?: number }
         Returns: {
-          audience: string[]
-          city: string
-          cover_image: string
-          description: string
-          discount_percent: number
-          discounted_price: number
-          district: string
-          duration_minutes: number
-          id: string
-          lat: number
-          lng: number
-          original_price: number
+          created_at: string
+          hit_count: number
+          id: number
+          response: Json
           similarity: number
-          slug: string
-          subtitle: string
-          tags: string[]
-          title: string
-          venue_name: string
         }[]
       }
+      match_deals:
+        | {
+            Args: {
+              filter_city?: string
+              match_count?: number
+              query_embedding: string
+            }
+            Returns: {
+              audience: string[]
+              city: string
+              cover_image: string
+              description: string
+              discount_percent: number
+              discounted_price: number
+              district: string
+              duration_minutes: number
+              id: string
+              lat: number
+              lng: number
+              original_price: number
+              similarity: number
+              slug: string
+              subtitle: string
+              tags: string[]
+              title: string
+              venue_name: string
+            }[]
+          }
+        | {
+            Args: {
+              filter_city?: string
+              match_count?: number
+              near_lat?: number
+              near_lng?: number
+              query_embedding: string
+            }
+            Returns: {
+              audience: string[]
+              city: string
+              cover_image: string
+              description: string
+              discount_percent: number
+              discounted_price: number
+              distance_km: number
+              district: string
+              duration_minutes: number
+              id: string
+              lat: number
+              lng: number
+              original_price: number
+              similarity: number
+              slug: string
+              subtitle: string
+              tags: string[]
+              title: string
+              venue_name: string
+            }[]
+          }
       refresh_deal_rating: { Args: { deal_uuid: string }; Returns: undefined }
     }
     Enums: {
