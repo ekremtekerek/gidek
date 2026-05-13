@@ -30,12 +30,25 @@ const MAPBOX_TOKEN = process.env.NEXT_PUBLIC_MAPBOX_TOKEN ?? '';
 type LightPreset = 'day' | 'dusk' | 'night';
 const LIGHT_STORAGE_KEY = 'gidek-map-light';
 
+const SOURCE_DEALS = 'gidek-deals';
+const LAYER_CLUSTERS = 'gidek-clusters';
+const LAYER_CLUSTER_COUNT = 'gidek-cluster-count';
+const LAYER_POINT_BG = 'gidek-point-bg';
+const LAYER_POINT_LABEL = 'gidek-point-label';
+
 function readStoredLight(): LightPreset {
   if (typeof window === 'undefined') return 'day';
   const v = window.localStorage.getItem(LIGHT_STORAGE_KEY);
   return v === 'dusk' || v === 'night' || v === 'day' ? v : 'day';
 }
 
+/**
+ * Aktif harita gösterimi. Native pgvector kullanımı gibi haritada da native
+ * Mapbox clustering kullanıyoruz: kalın trafik ağırlıklı semtlerde 50+
+ * pin tek bir baloncuğa toplanıyor, zoom'la dağılıyor. AI'nın önerdiği
+ * fırsatlar ayrı bir DOM marker katmanında kalıyor — kullanıcı asla
+ * kaybolmasın diye kümeye girmez.
+ */
 export function MapView({
   deals,
   selectedDeal,
@@ -48,12 +61,13 @@ export function MapView({
 }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const markersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
+  const aiMarkersRef = useRef<Map<string, mapboxgl.Marker>>(new Map());
   const userMarkerRef = useRef<mapboxgl.Marker | null>(null);
   const popupRef = useRef<mapboxgl.Popup | null>(null);
   const [popupContainer, setPopupContainer] = useState<HTMLDivElement | null>(null);
   const [light, setLight] = useState<LightPreset>('day');
   const [styleReady, setStyleReady] = useState(false);
+  const [layersReady, setLayersReady] = useState(false);
 
   const onBoundsChangeRef = useRef(onBoundsChange);
   const onSelectDealRef = useRef(onSelectDeal);
@@ -62,6 +76,8 @@ export function MapView({
 
   const dealsRef = useRef<MapDeal[]>(deals);
   dealsRef.current = deals;
+  const aiHighlightIdsRef = useRef<Set<string> | undefined>(aiHighlightIds);
+  aiHighlightIdsRef.current = aiHighlightIds;
 
   // Init map once.
   useEffect(() => {
@@ -96,7 +112,9 @@ export function MapView({
       } catch {
         // ignore
       }
+      installLayers(map);
       setStyleReady(true);
+      setLayersReady(true);
     });
 
     const emitBounds = () => {
@@ -112,14 +130,61 @@ export function MapView({
     map.on('moveend', (e) => {
       if (e.originalEvent) emitBounds();
     });
-    map.on('click', () => onSelectDealRef.current(null));
+    map.on('click', (e) => {
+      // Genel arka plan tıklaması seçimi kapatır — ancak sadece bizim layer
+      // dışında bir yere düştüyse. Layer'a düşen tıkları aşağıdaki spesifik
+      // listener'lar yakalar ve event'i stop'lamasak da öncelik sırası bizi korur.
+      const hits = map.queryRenderedFeatures(e.point, {
+        layers: [LAYER_CLUSTERS, LAYER_POINT_BG, LAYER_POINT_LABEL],
+      });
+      if (hits.length === 0) onSelectDealRef.current(null);
+    });
+
+    // Cluster click → expansion zoom.
+    map.on('click', LAYER_CLUSTERS, (e) => {
+      const feat = e.features?.[0];
+      if (!feat) return;
+      const clusterId = (feat.properties as { cluster_id: number }).cluster_id;
+      const source = map.getSource(SOURCE_DEALS) as mapboxgl.GeoJSONSource;
+      source.getClusterExpansionZoom(clusterId, (err, zoom) => {
+        if (err || typeof zoom !== 'number') return;
+        const geom = feat.geometry as { type: string; coordinates: [number, number] };
+        if (geom.type !== 'Point') return;
+        map.easeTo({
+          center: geom.coordinates,
+          zoom: Math.min(zoom + 0.4, 16),
+          duration: 600,
+        });
+      });
+    });
+
+    // Unclustered point click → seç (popup açılır).
+    const pointClick = (e: mapboxgl.MapMouseEvent) => {
+      const feat = e.features?.[0];
+      if (!feat) return;
+      const id = (feat.properties as { id?: string }).id;
+      if (!id) return;
+      const deal = dealsRef.current.find((d) => d.id === id);
+      if (deal) onSelectDealRef.current(deal);
+    };
+    map.on('click', LAYER_POINT_BG, pointClick);
+    map.on('click', LAYER_POINT_LABEL, pointClick);
+
+    // Cursor pointer üzerinde.
+    const setPointer = () => (map.getCanvas().style.cursor = 'pointer');
+    const resetCursor = () => (map.getCanvas().style.cursor = '');
+    for (const id of [LAYER_CLUSTERS, LAYER_POINT_BG, LAYER_POINT_LABEL]) {
+      map.on('mouseenter', id, setPointer);
+      map.on('mouseleave', id, resetCursor);
+    }
 
     mapRef.current = map;
     return () => {
       map.remove();
       mapRef.current = null;
-      markersRef.current.clear();
+      aiMarkersRef.current.clear();
       setStyleReady(false);
+      setLayersReady(false);
     };
   }, []);
 
@@ -134,49 +199,76 @@ export function MapView({
     }
   }, [light, styleReady]);
 
-  // Sync markers.
+  // GeoJSON source verisini güncelle — AI deal'larını dışla.
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map || !layersReady) return;
+    const source = map.getSource(SOURCE_DEALS) as mapboxgl.GeoJSONSource | undefined;
+    if (!source) return;
+
+    const aiSet = aiHighlightIds ?? new Set<string>();
+    const features = deals
+      .filter((d) => !aiSet.has(d.id))
+      .map((d) => ({
+        type: 'Feature' as const,
+        properties: {
+          id: d.id,
+          price: Math.round(Number(d.discounted_price) || 0),
+        },
+        geometry: {
+          type: 'Point' as const,
+          coordinates: [d.lng, d.lat] as [number, number],
+        },
+      }));
+
+    source.setData({ type: 'FeatureCollection', features });
+  }, [deals, aiHighlightIds, layersReady]);
+
+  // AI marker'ları DOM olarak tut — clustering dışında, distinctive görünüm.
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
+    const aiSet = aiHighlightIds ?? new Set<string>();
 
-    const incoming = new Set(deals.map((d) => d.id));
-    for (const [id, marker] of markersRef.current) {
-      if (!incoming.has(id)) {
+    const wanted = new Set<string>();
+    for (const d of deals) if (aiSet.has(d.id)) wanted.add(d.id);
+
+    // Silinmesi gerekenler
+    for (const [id, marker] of aiMarkersRef.current) {
+      if (!wanted.has(id)) {
         marker.remove();
-        markersRef.current.delete(id);
+        aiMarkersRef.current.delete(id);
       }
     }
-
+    // Yeni gelenler
     for (const deal of deals) {
-      if (markersRef.current.has(deal.id)) continue;
+      if (!aiSet.has(deal.id)) continue;
+      if (aiMarkersRef.current.has(deal.id)) continue;
       const el = document.createElement('button');
       el.type = 'button';
-      el.className = 'gidek-marker';
+      el.className = 'gidek-marker is-ai';
       const price = Math.round(deal.discounted_price);
       el.textContent = `₺${price.toLocaleString('tr-TR')}`;
-      el.setAttribute('aria-label', `${deal.title} — ${price}₺`);
+      el.setAttribute('aria-label', `${deal.title} — ${price}₺ (AI önerisi)`);
       el.addEventListener('click', (e) => {
         e.stopPropagation();
         const current = dealsRef.current.find((d) => d.id === deal.id) ?? deal;
         onSelectDealRef.current(current);
       });
-
       const marker = new mapboxgl.Marker(el, { anchor: 'bottom' })
         .setLngLat([deal.lng, deal.lat])
         .addTo(map);
-      markersRef.current.set(deal.id, marker);
+      aiMarkersRef.current.set(deal.id, marker);
     }
-  }, [deals]);
+  }, [deals, aiHighlightIds]);
 
-  // AI highlight + selected state — pure class toggle, doesn't recreate markers.
+  // Seçili AI marker stilini güncelle.
   useEffect(() => {
     const selId = selectedDeal?.id ?? null;
-    for (const [id, marker] of markersRef.current) {
-      const el = marker.getElement();
-      el.classList.toggle('is-selected', id === selId);
-      el.classList.toggle('is-ai', aiHighlightIds?.has(id) ?? false);
+    for (const [id, marker] of aiMarkersRef.current) {
+      marker.getElement().classList.toggle('is-selected', id === selId);
     }
-  }, [selectedDeal, aiHighlightIds, deals]);
+  }, [selectedDeal]);
 
   // Popup + smooth fly-to.
   useEffect(() => {
@@ -282,6 +374,100 @@ export function MapView({
         : null}
     </>
   );
+}
+
+/**
+ * Source + layer kurulumu. Style yenilendiğinde (lightPreset değişince
+ * style aslında reload olmuyor; setConfigProperty kullanıyoruz) yeniden
+ * çağrılması gerekmez. Yine de defensive: addSource'tan önce duplicate kontrolü.
+ */
+function installLayers(map: mapboxgl.Map) {
+  if (map.getSource(SOURCE_DEALS)) return;
+
+  map.addSource(SOURCE_DEALS, {
+    type: 'geojson',
+    data: { type: 'FeatureCollection', features: [] },
+    cluster: true,
+    clusterMaxZoom: 14,
+    clusterRadius: 50,
+  });
+
+  // Cluster baloncuğu — sayı'ya göre renk ve boyut.
+  map.addLayer({
+    id: LAYER_CLUSTERS,
+    type: 'circle',
+    source: SOURCE_DEALS,
+    filter: ['has', 'point_count'],
+    paint: {
+      'circle-color': [
+        'step',
+        ['get', 'point_count'],
+        '#3b82f6', // blue-500 — küçük cluster (<10)
+        10,
+        '#f59e0b', // amber-500 — orta (10–49)
+        50,
+        '#ef4444', // red-500 — büyük (50+)
+      ],
+      'circle-radius': [
+        'step',
+        ['get', 'point_count'],
+        18,
+        10,
+        24,
+        50,
+        30,
+      ],
+      'circle-stroke-color': '#ffffff',
+      'circle-stroke-width': 2,
+      'circle-opacity': 0.92,
+    },
+  });
+
+  map.addLayer({
+    id: LAYER_CLUSTER_COUNT,
+    type: 'symbol',
+    source: SOURCE_DEALS,
+    filter: ['has', 'point_count'],
+    layout: {
+      'text-field': ['get', 'point_count_abbreviated'],
+      'text-size': 13,
+      'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+      'text-allow-overlap': true,
+    },
+    paint: {
+      'text-color': '#ffffff',
+    },
+  });
+
+  // Unclustered nokta — beyaz pill + fiyat metni.
+  map.addLayer({
+    id: LAYER_POINT_BG,
+    type: 'circle',
+    source: SOURCE_DEALS,
+    filter: ['!', ['has', 'point_count']],
+    paint: {
+      'circle-color': '#ffffff',
+      'circle-stroke-color': '#0a0a0a',
+      'circle-stroke-width': 1.5,
+      'circle-radius': 18,
+    },
+  });
+
+  map.addLayer({
+    id: LAYER_POINT_LABEL,
+    type: 'symbol',
+    source: SOURCE_DEALS,
+    filter: ['!', ['has', 'point_count']],
+    layout: {
+      'text-field': ['concat', '₺', ['to-string', ['get', 'price']]],
+      'text-size': 11,
+      'text-font': ['Open Sans Bold', 'Arial Unicode MS Bold'],
+      'text-allow-overlap': true,
+    },
+    paint: {
+      'text-color': '#0a0a0a',
+    },
+  });
 }
 
 function LightToggle({
