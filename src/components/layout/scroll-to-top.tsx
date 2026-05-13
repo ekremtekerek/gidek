@@ -1,57 +1,31 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { MapPin } from 'lucide-react';
-import { cn } from '@/lib/utils/cn';
+import { ArrowUp } from 'lucide-react';
 
 /**
- * Gidek temalı scroll-to-top butonu.
+ * Gidek temalı scroll progress + sayfa başına dön.
  *
- * Konsept: Dikey pill içinde bir "yolculuk" hikayesi —
- *  - Üstte amber/rose MapPin (hedef şehir/sayfanın başı)
- *  - Ortada dashed track + scroll progress'iyle yukarı doğru dolan gradient
- *  - Altta "g" brand markası + nefes alan traveler noktası
+ * Tasarım: GPS rotası gibi. Sağ kenarda fixed dikey track (dashed bg).
+ * Scroll ilerledikçe track'in TOP'undan başlayan amber→rose gradient
+ * aşağı doğru çizilir; trail'in ucunda yukarı-arrow butonu durur. Click'te
+ * window smooth-scroll yapar; bu sırada fill geriye doğru "sarılır" ve
+ * arrow yukarı çıkar — başlangıca dönüş animasyonu doğal olarak oluşur.
  *
- * Etkileşim:
- *  - scrollY > 400 → fade-in olarak belirir
- *  - Idle'da pin pulse + traveler nefes alır
- *  - Click → traveler track boyunca üstte fırlar, pin "geldim" zıplar,
- *           window.scrollTo({ top: 0, behavior: 'smooth' }) ile sayfa scrolllanır
- *
- * Erişilebilirlik: `prefers-reduced-motion` saygılı, klavye odaklanabilir,
- * aria-label "Sayfa başına git". Tab'e takılır.
+ * Konum: header altından başlar, mobile'da BottomNav üstünde biter.
  */
 export function ScrollToTop() {
-  const [visible, setVisible] = useState(false);
-  const [hasEntered, setHasEntered] = useState(false);
-  const [fill, setFill] = useState(0);
-  const [shooting, setShooting] = useState(false);
+  const [fill, setFill] = useState(0); // 0..1 scroll progress
   const [isMd, setIsMd] = useState(false);
   const rafRef = useRef<number | null>(null);
 
-  // İlk visible olduğunda enter animasyonunu tetikle, sonra bir daha tetikleme.
-  useEffect(() => {
-    if (visible && !hasEntered) setHasEntered(true);
-  }, [visible, hasEntered]);
-
-  // Viewport genişliği — md breakpoint (768px) için.
-  useEffect(() => {
-    const compute = () => setIsMd(window.innerWidth >= 768);
-    compute();
-    window.addEventListener('resize', compute);
-    return () => window.removeEventListener('resize', compute);
-  }, []);
-
+  // Scroll → fill progress.
   useEffect(() => {
     const compute = () => {
       const sy = window.scrollY;
       const docH = document.documentElement.scrollHeight - window.innerHeight;
       const progress = docH > 0 ? Math.min(1, Math.max(0, sy / docH)) : 0;
       setFill(progress);
-      // 200px scroll = yarım hero yüksekliği. Anasayfada hero h-[100svh-4rem];
-      // hero tam ekran olduğundan eskiden 400px bekliyorduk ama mobilde
-      // hero altına geçmeden de görünmesini tercih ediyoruz.
-      setVisible(sy > 200);
     };
     const onScroll = () => {
       if (rafRef.current !== null) return;
@@ -70,98 +44,82 @@ export function ScrollToTop() {
     };
   }, []);
 
+  // Breakpoint state.
+  useEffect(() => {
+    const compute = () => setIsMd(window.innerWidth >= 768);
+    compute();
+    window.addEventListener('resize', compute);
+    return () => window.removeEventListener('resize', compute);
+  }, []);
+
   function handleClick() {
-    setShooting(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
-    // Animasyon süresi (700ms) + biraz buffer ile state reset.
-    window.setTimeout(() => setShooting(false), 900);
   }
 
-  // Pozisyon ve görünürlük inline style ile — Tailwind v4 + arbitrary value
-  // kombinasyonu bazı durumlarda kayboluyordu, inline style %100 deterministic.
-  // Mobile'de BottomNav üstünde (88px), desktop'ta sağ-alt 24px.
-  const positionStyle: React.CSSProperties = {
+  // En tepedeyken trail görünmez (anlamsız). Hafif bir threshold sonra fade-in.
+  // 5% scroll progress ~= viewport yarısı kadar; anasayfada chat hero
+  // bittiğinde geçilir.
+  const fillPct = fill * 100;
+  const visible = fill > 0.01;
+
+  // Track'in dikey alanı — fixed positioned, header altı + bottom nav üstü.
+  const wrapperStyle: React.CSSProperties = {
     position: 'fixed',
-    right: isMd ? 24 : 16,
-    bottom: isMd ? 24 : 88,
+    right: isMd ? 20 : 12,
+    top: 96, // header (h-16 = 64px) altı + biraz nefes
+    bottom: isMd ? 80 : 96, // mobile BottomNav (~64px) üstünde, desktop footer'a nefes
+    width: 36, // line + button hit zone
     zIndex: 40,
-    // Görünürlük + kayma — scroll progress'le orantılı yumuşak fade.
+    pointerEvents: 'none',
     opacity: visible ? 1 : 0,
-    transform: visible ? 'translateY(0)' : 'translateY(12px)',
-    transition: 'opacity 280ms ease, transform 280ms ease',
-    pointerEvents: visible ? 'auto' : 'none',
+    transition: 'opacity 320ms ease',
   };
 
   return (
-    <button
-      type="button"
-      aria-label="Sayfa başına git"
-      onClick={handleClick}
-      style={{ ...positionStyle, ['--gidek-fill' as never]: fill }}
-      className={cn(
-        // İlk belirme — bir kez bounce ile dikkat çek.
-        hasEntered && visible ? 'gidek-fab-enter' : null,
-        // Pill kabı.
-        'border-border bg-background/85 hover:bg-background',
-        'shadow-lg shadow-black/10 dark:shadow-black/40 backdrop-blur',
-        'group relative flex h-32 w-12 flex-col items-center justify-between rounded-full border py-2.5',
-      )}
-    >
-      {/* Hedef pini — amber/rose gradient, idle pulse / click land. */}
-      <span
-        aria-hidden="true"
-        className={cn(
-          'relative inline-flex size-7 items-center justify-center rounded-full',
-          'bg-gradient-to-br from-amber-400 to-rose-500 text-white shadow-md shadow-rose-500/30',
-          shooting ? 'gidek-fab-pin-landed' : 'gidek-fab-pin',
-        )}
-      >
-        <MapPin className="size-3.5 fill-current" aria-hidden="true" />
-        {/* Pin'in alt ucundan çıkan minik gölge halkası — derinlik hissi. */}
-        <span className="bg-foreground/15 absolute -bottom-1 h-1 w-3 rounded-full blur-[2px]" />
-      </span>
+    <div aria-hidden={!visible} style={wrapperStyle}>
+      <div className="relative h-full w-full">
+        {/* Dashed background — sayfanın tamamı boyunca rota şeması */}
+        <span
+          aria-hidden="true"
+          className="border-foreground/20 absolute top-0 left-1/2 h-full w-px -translate-x-1/2 border-l border-dashed"
+        />
 
-      {/* Track — dashed background + scroll progress fill. */}
-      <span
-        aria-hidden="true"
-        className="relative my-1 flex h-12 w-px items-start justify-center"
-      >
-        {/* Dashed background (sürekli) */}
+        {/* Trail — scroll progress'iyle top'tan aşağı doğru dolar */}
         <span
-          className="border-foreground/25 absolute inset-y-0 left-1/2 w-px -translate-x-1/2 border-l border-dashed"
+          aria-hidden="true"
+          className="absolute top-0 left-1/2 w-[3px] -translate-x-1/2 rounded-full bg-gradient-to-b from-amber-400 via-rose-400 to-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.35)]"
+          style={{
+            height: `${fillPct}%`,
+            transition: 'height 90ms linear',
+          }}
         />
-        {/* Gradient fill — bottom-to-top, scroll progress'le scale-Y. */}
-        <span
-          className={cn(
-            'absolute inset-y-0 left-1/2 w-[2px] -translate-x-1/2 rounded-full',
-            'bg-gradient-to-t from-amber-400 via-rose-400 to-rose-500',
-            shooting ? 'gidek-fab-track-rushing' : 'gidek-fab-track-fill',
-          )}
-        />
-        {/* Traveler — track üstünde idle, click'te fırlar. */}
-        <span
-          className={cn(
-            'absolute left-1/2 size-2 -translate-x-1/2 rounded-full',
-            'bg-foreground shadow-[0_0_0_2px_var(--background)]',
-            shooting
-              ? 'gidek-fab-traveler-shooting'
-              : 'gidek-fab-traveler',
-          )}
-          style={
-            shooting
-              ? undefined
-              : { top: `calc(100% - ${Math.max(8, fill * 100)}% - 4px)` }
-          }
-        />
-      </span>
 
-      {/* Brand mark — küçük "g.". Aslında hedef kullanıcının çıkış noktası. */}
-      <span
-        aria-hidden="true"
-        className="text-foreground/75 font-semibold text-[11px] leading-none tracking-tight"
-      >
-        gidek
-      </span>
-    </button>
+        {/* Trail başlangıç noktası (top dot — origin marker) */}
+        <span
+          aria-hidden="true"
+          className="border-background absolute top-0 left-1/2 size-2 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 bg-amber-400 shadow-sm"
+        />
+
+        {/* "You are here" indicator + yukarı arrow butonu — trail ucunda */}
+        <button
+          type="button"
+          onClick={handleClick}
+          aria-label="Sayfa başına git"
+          title="Sayfa başına git"
+          className="border-background pointer-events-auto absolute left-1/2 inline-flex size-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 bg-gradient-to-br from-rose-500 to-rose-600 text-white shadow-lg shadow-rose-500/40 transition-all hover:scale-110 hover:shadow-rose-500/60 focus-visible:scale-110 focus-visible:outline-none"
+          style={{
+            top: `${fillPct}%`,
+            transition: 'top 90ms linear, transform 200ms ease, box-shadow 200ms ease',
+          }}
+        >
+          {/* Hafif pulse halkası */}
+          <span
+            aria-hidden="true"
+            className="absolute inset-0 -m-1 rounded-full bg-rose-500/30 animate-ping"
+          />
+          <ArrowUp className="relative size-4" aria-hidden="true" />
+        </button>
+      </div>
+    </div>
   );
 }
