@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Eye, MapPin, Star, X } from 'lucide-react';
@@ -24,6 +25,13 @@ interface Props {
  * blocking durumda da yumuşak görünsün diye.
  */
 export function DealQuickView({ deal, onClose }: Props) {
+  const [mounted, setMounted] = useState(false);
+
+  // Portal hedefini almak için mount sonrası gerçek render. document.body
+  // ancestor'a göre bağımsız konumlandığı için Embla carousel'deki transform
+  // hierarşisinden kurtulup viewport'a göre fixed olarak konumlanır.
+  useEffect(() => setMounted(true), []);
+
   // ESC close.
   useEffect(() => {
     if (!deal) return;
@@ -40,7 +48,7 @@ export function DealQuickView({ deal, onClose }: Props) {
     };
   }, [deal, onClose]);
 
-  if (!deal) return null;
+  if (!deal || !mounted) return null;
 
   const discount = deal.discount_percent ?? 0;
   const showDiscount = discount > 0 && deal.discounted_price < deal.original_price;
@@ -50,7 +58,7 @@ export function DealQuickView({ deal, onClose }: Props) {
   const ratingCount = deal.rating_count ?? 0;
   const hasRating = ratingAvg !== null && ratingCount > 0;
 
-  return (
+  return createPortal(
     <div
       role="dialog"
       aria-modal="true"
@@ -163,7 +171,8 @@ export function DealQuickView({ deal, onClose }: Props) {
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
