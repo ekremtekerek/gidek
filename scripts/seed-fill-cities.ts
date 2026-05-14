@@ -27,9 +27,9 @@ const supabase = createClient<Database>(
 type LatLng = { lat: number; lng: number };
 
 const TARGETS: Record<string, number> = {
-  İstanbul: 100,
-  Ankara: 100,
-  İzmir: 100,
+  İstanbul: 300,
+  Ankara: 300,
+  İzmir: 300,
 };
 
 const NEIGHBORHOODS: Record<string, Record<string, LatLng>> = {

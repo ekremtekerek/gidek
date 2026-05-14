@@ -119,26 +119,30 @@ export function SpinWheel({ alreadySpunToday, todayPrize }: Props) {
                 background: buildConicGradient(),
               }}
             >
-              {/* Dilim etiketleri */}
+              {/* Dilim etiketleri — wrapper rotate + inner ters rotate ile dik durur */}
               {SEGMENTS.map((s, i) => {
                 const angle = i * SEG_DEG + SEG_DEG / 2;
                 return (
                   <div
                     key={s.key}
                     aria-hidden="true"
-                    className="pointer-events-none absolute left-1/2 top-1/2 origin-bottom-left"
-                    style={{
-                      transform: `translate(0, -50%) rotate(${angle}deg) translateY(-40%)`,
-                    }}
+                    className="pointer-events-none absolute inset-0"
+                    style={{ transform: `rotate(${angle}deg)` }}
                   >
-                    <span
-                      className={cn(
-                        'inline-block whitespace-nowrap text-xs font-bold tracking-wide drop-shadow',
-                        s.textCls,
-                      )}
-                    >
-                      {s.short}
-                    </span>
+                    <div className="absolute left-1/2 top-[18%] -translate-x-1/2">
+                      <span
+                        className={cn(
+                          'inline-block whitespace-nowrap text-sm font-extrabold tracking-tight drop-shadow-md sm:text-base',
+                          s.textCls,
+                        )}
+                        style={{
+                          transform: `rotate(${-angle}deg)`,
+                          display: 'inline-block',
+                        }}
+                      >
+                        {s.short}
+                      </span>
+                    </div>
                   </div>
                 );
               })}

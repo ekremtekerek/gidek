@@ -23,9 +23,11 @@ export const revalidate = 600;
 
 type Params = { slug: string };
 
+// Yalnızca ilk 50 merchant slug pre-render — gerisi ISR ile.
+// Procedural seed ile 800+ merchant olabiliyor; build OOM önler.
 export async function generateStaticParams(): Promise<Params[]> {
   const slugs = await listPublishedMerchantSlugs();
-  return slugs.map((slug) => ({ slug }));
+  return slugs.slice(0, 50).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({

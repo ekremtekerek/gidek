@@ -35,9 +35,12 @@ export const revalidate = 300;
 
 type Params = { slug: string };
 
+// Yalnızca ilk 100 slug pre-render — gerisi ISR ile on-demand.
+// 1000+ deal'da build memory'i şişirmemek için. dynamicParams default
+// true; listede olmayan slug ilk istekte render olur, sonra cache'lenir.
 export async function generateStaticParams(): Promise<Params[]> {
   const slugs = await listPublishedDealSlugs();
-  return slugs.map((slug) => ({ slug }));
+  return slugs.slice(0, 100).map((slug) => ({ slug }));
 }
 
 export async function generateMetadata({

@@ -2,34 +2,96 @@
 
 # gidek
 
-**AI ile sana özel fırsatlar**
+### Türkiye'nin AI destekli fırsat keşif platformu
 
-Türkiye için fırsat keşif platformu. Tiyatro, konser, kahvaltı, tatil, masaj, aktivite — ne yapmak istediğini doğal dilde yaz, Gemini destekli sohbet asistanı semantik aramayla 3-5 fırsatı önersin.
+Doğal dille konuş. Gemini RAG ile **961 fırsat** arasından 3-5 öneri.
+Gamification + sosyal + iptal sigortası + cüzdan + adil komisyon.
 
-[Canlı demo](https://gidek.net) · [Mimari](./ARCHITECTURE.md)
+[Demo scripti](./DEMO.md) · [Mimari](./ARCHITECTURE.md) · gidek.net
 
 </div>
 
 ---
 
-## Neden gidek?
+## 🎯 30 saniyede gidek
 
-Türkiye'deki fırsat ekosisteminde iki kronik sorun var:
+**Problem.** 1.000+ kupon, 50+ filtre. Kullanıcı *"Beşiktaş'ta çiftler için romantik bir akşam, bütçe 1500 TL"* yazamaz — tıkla-filtre-kaydır döngüsünde kaybolur. İşletme tarafında ise %30 komisyon, sıfır kişiselleştirme, müşteri verisi işletmeye dönmüyor.
 
-1. **Kullanıcı tarafı**: 1.000+ kupon, 50+ kategori, statik filtreler. Kullanıcı "cumartesi akşam çiftler için romantik bir yer" yazamaz; tıkla-filtre-kaydır döngüsünde kaybolur.
-2. **İşletme tarafı**: Mevcut deal siteleri ortalama **%30 komisyon** alıyor, kişiselleştirme yapmıyor, müşteri datası işletmeye geri dönmüyor.
+**Çözüm.** Doğal dil → **Gemini 2.5 Flash + pgvector RAG** → kişiselleştirilmiş öneri + "neden bu" açıklaması. Üstüne gamification (rozet, streak, şehir bingosu, daily spin), sosyal katman (takip, akış, etkinlik chat odası), iptal sigortası ve cüzdan. **Adil komisyon, dürüst pricing, KVKK uyumlu.**
 
-gidek bunların **ikisini birden** çözmek üzere kuruldu:
+**Durum.** 22 büyük özellik canlı (Paket A-F), 13 migration, 961 fırsat envanter, 4 demo persona. Build temiz, RLS açık. Yeni Next.js 16 (RSC + Turbopack), Supabase, Gemini, Mapbox, Cloudinary.
 
-- **AI sohbet + semantik arama** — kullanıcı bağlamı (şehir, hane, bütçe, diyet, ilgi) ile sorguyu anlayan RAG pipeline
-- **Adil komisyon + işletmeye veri** — düşük komisyon + dashboard'ta gerçek müşteri sinyalleri
-- **KVKK uyumlu, ölçeklenebilir altyapı** — kullanıcı KVKK haklarını uygulayabilir (silme, e-posta değişimi, indirilebilir veri)
+---
+
+## 📦 22 özellik · 6 paket · tek ekosistem
+
+| Paket | Özellikler | Tech |
+|---|---|---|
+| **A** Konuşturucu AI | Mood chips · Negatif tercihler · Anti-overlap booking | onboarding zod + chat container |
+| **B** Sosyal yorumlar | Fotoğraflı yorumlar · Yorum cevapları · Lightbox | Cloudinary + Sharp + createPortal |
+| **C** Gamification | Rozetler · Streak · Şehir bingosu · Daily spin · Liderlik tabs | 4 migration + conic-gradient çark |
+| **D** Sosyal | Takip · Activity feed · Aynı etkinliktekiler · Etkinlik chat | follows + Realtime broadcast |
+| **E** Finansal | Loyalty → otomatik kupon · İade kuponu · Cüzdan | coupons + user_refund_coupons + RPC |
+| **F** Lokasyon + niş | Şu an açık · Last-minute · Trafik ETA · Walk-in baskı · Hediye PDF · Sigorta · +1 kişi | working_hours JSONB + Mapbox Directions |
+
+> Tek tek liste için ↓ **Öne çıkan özellikler** bölümüne bak. Tıklama-tıklama demo akışı için **[DEMO.md](./DEMO.md)**.
+
+---
+
+## 💰 İş modeli
+
+| Aşama | Gelir kaynağı | Komisyon |
+|---|---|---|
+| **V1** (şimdi) | Kendi merchant'larımız | %10-15 (sektör %30, biz dürüst) |
+| **V2** | Affiliate (FırsatBuFırsat API hazır) | Tıklama/satış başı komisyon |
+| **V3** | İşletmelere SaaS dashboard | Aylık SaaS abonelik |
+| Ekstra | İptal sigortası primi (%5), öne çıkarma | Marjı yüksek katma değer |
 
 ---
 
 ## Öne çıkan özellikler
 
-### Kullanıcı
+### ✨ Bu hackathon turunda eklenenler (Paket A-F)
+
+> **Gamification & Sosyal & Finansal & Lokasyon** — kullanıcıyı geri getiren, viral değer üreten, ek gelir kalemleri açan 22 özellik.
+
+**🎮 Gamification (C)**
+- **Rozet sistemi** — 13 rozet (ilk-rezervasyon, kategori ustası, koleksiyoner, gezgin, streak-3...), tier-renkli grid
+- **Streak (haftalık seri)** — ISO hafta tag'i, Flame badge, booking + review tetikler
+- **Şehir bingosu** — aynı şehirde 5 farklı ilçe → özel %15 indirim kuponu
+- **Daily spin (`/cark`)** — conic-gradient çark, 7 dilim, animasyonlu modal ödül
+- **Liderlik tablosu sekmeleri** — haftalık / aylık / yıllık (podium UI)
+
+**👥 Sosyal (D)**
+- **Takip sistemi** — `/u/<slug>` profilinde Twitter-tipi tek yönlü follow, optimistic UI
+- **Activity feed (`/akis`)** — takip ettiklerinin yorum / booking / favori / rozet timeline'ı
+- **Aynı etkinliktekiler** — opt-in attendee list, booking detayında public profiller
+- **Etkinlik chat odası** — Supabase Realtime broadcast, RLS sadece onaylı katılımcılara açık
+
+**💰 Finansal (E)**
+- **Loyalty → otomatik kupon** — 100/250/500/1000 puan eşik → %10/15/20/25 kupon
+- **İade kuponu** — confirmed iptal → ödenen tutarın %50'si fixed kupon (sigortalıda %100)
+- **Cüzdan (`/cuzdan`)** — bingo + spin + loyalty + refund kuponları tek ekranda
+
+**📍 Lokasyon + niş (F)**
+- **"Şu an açık" rozeti** — merchant.working_hours JSONB, Türkiye saatine göre canlı
+- **Last-minute countdown** — bitime <24 saat kala canlı sayaç banner (son 3 saatte urgent)
+- **Trafik tahmini ETA** — Mapbox Directions API, konum opt-in localStorage
+- **Walk-in pressure** — bugünkü onaylı booking sayısı → "şu an hareketli" sinyali
+- **Hediye kartı PDF** — A5 print-ready, QR + zarif gradient tasarım
+- **İptal sigortası** — %5 prim, sigortalıda %100 iade
+- **+1 kişi ekleme** — mevcut booking'e ek katılımcı, max_per_user kontrolü
+
+**🤖 AI keşfi (A) + 📸 Sosyal yorumlar (B)**
+- **Mood chips** — 8 atmosfer chip'i, AI prompt'una doğrudan yansır
+- **Negatif tercihler** — onboarding'de 10 chip + serbest metin, AI öneride kaçınır
+- **Anti-overlap warning** — aynı gün başka booking varsa sarı uyarı + confirm bypass
+- **Fotoğraflı yorumlar** — Cloudinary, max 4 görsel, Sharp/WebP processing
+- **Yorum cevapları** — nested replies + merchant flag + lightbox modal
+
+---
+
+### Kullanıcı (genel)
 
 - **AI sohbet asistanı** — Gemini 2.5 Flash + RAG (pgvector top-30 → re-rank 3-5)
 - **Kişiselleştirme** — onboarding profili (şehir, hane tipi, çocuk yaş grubu, bütçe, diyet, ilgi alanları)

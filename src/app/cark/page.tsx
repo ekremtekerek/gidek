@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import type { SpinPrize } from '@/app/cark/actions';
+import { SpinPromoBanner } from '@/components/cark/spin-promo-banner';
 import { SpinWheel } from '@/components/cark/spin-wheel';
 import { Container } from '@/components/ui/container';
 import { getServiceClient } from '@/lib/db/service';
@@ -63,61 +64,67 @@ export default async function CarkPage() {
 
   return (
     <Container className="py-10 sm:py-14">
-      <div className="mx-auto max-w-xl">
-        <Link
-          href="/profil"
-          className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm"
-        >
-          <ArrowLeft className="size-4" aria-hidden="true" />
-          Profile dön
-        </Link>
+      <Link
+        href="/profil"
+        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm"
+      >
+        <ArrowLeft className="size-4" aria-hidden="true" />
+        Profile dön
+      </Link>
 
-        <header className="mt-4 mb-8 text-center">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            Günlük çark
-          </p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
-            Çevir, kazan
-          </h1>
-          <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm leading-relaxed">
-            Günde bir kez çevirme hakkın var — puan, kupon ya da boş çıkabilir.
-            Her sabah yeniden yenilenir.
-          </p>
-        </header>
+      <div className="mx-auto mt-4 grid max-w-5xl grid-cols-1 gap-8 lg:grid-cols-[280px_1fr] lg:gap-10">
+        {/* Sol: animasyonlu promo banner — lg+ ekranlarda görünür */}
+        <SpinPromoBanner />
 
-        <SpinWheel
-          alreadySpunToday={today !== null}
-          todayPrize={today ? rowToPrize(today) : null}
-        />
+        {/* Sağ: ana çark sütunu */}
+        <div className="min-w-0">
+          <header className="mb-8 text-center">
+            <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+              Günlük çark
+            </p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight sm:text-4xl">
+              Çevir, kazan
+            </h1>
+            <p className="text-muted-foreground mx-auto mt-2 max-w-md text-sm leading-relaxed">
+              Günde bir kez çevirme hakkın var — puan, kupon ya da boş
+              çıkabilir. Her sabah yenilenir.
+            </p>
+          </header>
 
-        {past.length > 0 ? (
-          <section className="mt-12">
-            <h2 className="mb-3 text-sm font-semibold tracking-tight">
-              Son 7 gün
-            </h2>
-            <ul className="divide-border bg-background divide-y rounded-lg border">
-              {past.map((r) => (
-                <li
-                  key={r.spin_date}
-                  className="flex items-center justify-between gap-3 px-4 py-3"
-                >
-                  <span className="text-muted-foreground text-xs">
-                    {formatDate(r.spin_date)}
-                  </span>
-                  <span
-                    className={
-                      r.prize_kind === 'none'
-                        ? 'text-muted-foreground text-xs'
-                        : 'text-sm font-medium'
-                    }
+          <SpinWheel
+            alreadySpunToday={today !== null}
+            todayPrize={today ? rowToPrize(today) : null}
+          />
+
+          {past.length > 0 ? (
+            <section className="mt-12">
+              <h2 className="mb-3 text-sm font-semibold tracking-tight">
+                Son 7 gün
+              </h2>
+              <ul className="divide-border bg-background divide-y rounded-lg border">
+                {past.map((r) => (
+                  <li
+                    key={r.spin_date}
+                    className="flex items-center justify-between gap-3 px-4 py-3"
                   >
-                    {r.label}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : null}
+                    <span className="text-muted-foreground text-xs">
+                      {formatDate(r.spin_date)}
+                    </span>
+                    <span
+                      className={
+                        r.prize_kind === 'none'
+                          ? 'text-muted-foreground text-xs'
+                          : 'text-sm font-medium'
+                      }
+                    >
+                      {r.label}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          ) : null}
+        </div>
       </div>
     </Container>
   );
