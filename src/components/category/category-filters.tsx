@@ -54,10 +54,10 @@ export function CategoryFilters({ action, current }: Props) {
             <select
               id="filter-city"
               name="city"
-              defaultValue={current.city ?? ''}
+              defaultValue={current.city ?? 'all'}
               className="border-border bg-background focus:border-foreground/50 focus:ring-foreground/10 h-11 rounded-md border px-3.5 text-sm focus:ring-2 focus:outline-none"
             >
-              <option value="">Tüm şehirler</option>
+              <option value="all">Tüm şehirler</option>
               {SUPPORTED_CITIES.map((c) => (
                 <option key={c} value={c}>
                   {c}

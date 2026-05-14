@@ -7,6 +7,7 @@ import { JsonLd } from '@/components/seo/json-ld';
 import { Container } from '@/components/ui/container';
 import { getCategoryBySlug } from '@/lib/db/queries/categories';
 import { listDeals, type DealSort } from '@/lib/db/queries/deals';
+import { getUserContext } from '@/lib/security/user-context-server';
 import { AUDIENCE } from '@/lib/utils/constants';
 import { SITE } from '@/lib/utils/site-config';
 
@@ -81,11 +82,24 @@ export default async function CategoryPage({
   params: Promise<Params>;
   searchParams: Promise<Search>;
 }) {
-  const [{ kategori }, sp] = await Promise.all([params, searchParams]);
+  const [{ kategori }, sp, ctx] = await Promise.all([
+    params,
+    searchParams,
+    getUserContext(),
+  ]);
   const category = await getCategoryBySlug(kategori);
   if (!category) notFound();
 
-  const city = sp.city && sp.city.length > 0 ? sp.city : undefined;
+  // Şehir tercihi: URL'de explicit verilmişse onu kullan; "all" bilinçli olarak
+  // "tüm şehirler" anlamına gelir (filtre kapalı). Hiç parametre yoksa
+  // header'daki seçili şehri (cookie) otomatik filtre olarak uygula.
+  const cityParam = sp.city?.trim();
+  const city =
+    cityParam === 'all'
+      ? undefined
+      : cityParam && cityParam.length > 0
+        ? cityParam
+        : ctx.city;
   const tags = normalizeTags(sp.tag);
   const audience = normalizeAudience(sp.aud);
   const minPrice = parsePrice(sp.min);
