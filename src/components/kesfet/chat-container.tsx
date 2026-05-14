@@ -506,39 +506,89 @@ const MOOD_CHIPS: MoodChip[] = [
 ];
 
 /**
- * Hero altında 8 mood chip'i — kullanıcı kelime yazmadan tek tıkla AI'a
- * hazır niyet iletebilsin. Her chip kendi gradient'i + emoji + Türkçe
- * etiket; tıklayınca onQuickPrompt çağırılır → AI hemen yanıt verir.
+ * Hero altında 8 mood chip'i. Viewport yüksekliği dar olduğunda (mobil veya
+ * masaüstü split-screen) otomatik kompakt moda geçer:
+ *   - Yüksek viewport → wrap grid (8 chip 2-3 satıra yayılır, geniş alan)
+ *   - Dar viewport   → tek satır yatay scroll snap, dikey yer kaplamaz
+ *
+ * Eşik 760px (iPhone 14 Pro 852px → wrap; iPhone SE 667px → kompakt).
+ * matchMedia ile sadece bir kez kayıt; resize/orientation değişimi anında
+ * tepki verir.
  */
 function MoodChips({ onSelect }: { onSelect: (prompt: string) => void }) {
+  const [compact, setCompact] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const mq = window.matchMedia('(max-height: 760px)');
+    const update = (e: MediaQueryList | MediaQueryListEvent) =>
+      setCompact(('matches' in e ? e.matches : (e as MediaQueryList).matches));
+    update(mq);
+    const handler = (e: MediaQueryListEvent) => update(e);
+    mq.addEventListener('change', handler);
+    return () => mq.removeEventListener('change', handler);
+  }, []);
+
   return (
-    <div className="flex w-full max-w-3xl flex-col items-center gap-3">
-      <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+    <div className="flex w-full max-w-3xl flex-col items-center gap-2 sm:gap-3">
+      <p className="text-muted-foreground text-[11px] font-semibold tracking-wide uppercase sm:text-xs">
         Bugün için hazır başlangıçlar
       </p>
-      <ul className="flex flex-wrap justify-center gap-2">
-        {MOOD_CHIPS.map((m) => (
-          <li key={m.label}>
-            <button
-              type="button"
-              onClick={() => onSelect(m.prompt)}
-              className={cn(
-                'group/mood inline-flex items-center gap-2 rounded-full border bg-gradient-to-br px-3.5 py-2 text-sm font-medium shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none',
-                m.accent ?? 'from-muted to-muted border-border',
-              )}
-            >
-              <span
-                className="text-base transition-transform duration-300 group-hover/mood:scale-110"
-                aria-hidden="true"
-              >
-                {m.emoji}
-              </span>
-              <span>{m.label}</span>
-            </button>
-          </li>
-        ))}
-      </ul>
+
+      {compact ? (
+        // Kompakt: tek satır yatay scroll, snap ile akıcı kaydırma.
+        // İçeriği saran bir overflow konteyneri full-bleed yap ki side
+        // padding'i kendi içinde yönetsin (parent text-center bozulmasın).
+        <div
+          className="w-full overflow-x-auto overscroll-x-contain [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+          aria-label="Hazır başlangıçlar (yatay kaydır)"
+        >
+          <ul className="flex w-max snap-x snap-mandatory gap-2 px-4 pb-1.5">
+            {MOOD_CHIPS.map((m) => (
+              <li key={m.label} className="snap-start">
+                <MoodChipButton mood={m} onSelect={onSelect} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        // Geniş: klasik wrap grid.
+        <ul className="flex flex-wrap justify-center gap-2">
+          {MOOD_CHIPS.map((m) => (
+            <li key={m.label}>
+              <MoodChipButton mood={m} onSelect={onSelect} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
+  );
+}
+
+function MoodChipButton({
+  mood,
+  onSelect,
+}: {
+  mood: MoodChip;
+  onSelect: (prompt: string) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(mood.prompt)}
+      className={cn(
+        'group/mood inline-flex items-center gap-2 rounded-full border bg-gradient-to-br px-3.5 py-2 text-sm font-medium shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none',
+        mood.accent ?? 'from-muted to-muted border-border',
+      )}
+    >
+      <span
+        className="text-base transition-transform duration-300 group-hover/mood:scale-110"
+        aria-hidden="true"
+      >
+        {mood.emoji}
+      </span>
+      <span className="whitespace-nowrap">{mood.label}</span>
+    </button>
   );
 }
 
