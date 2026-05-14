@@ -316,13 +316,18 @@ export function ChatContainer({
 
       {/* Main area — welcome (empty) or scrollable message list (active) */}
       {isEmpty ? (
-        <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
-          <WelcomeHero
-            welcomeDeals={welcomeDeals}
-            city={city}
-            welcome={liveWelcome}
-            onMoodSelect={onQuickPrompt}
-          />
+        // overflow-y-auto: küçük ekranda hero büyük gelirse hero scroll'lansın,
+        // dış kabuk + alttaki input bar her zaman görünür kalsın.
+        // min-h-full + items-center: hero küçükse dikey olarak ortalanır.
+        <div className="flex-1 overflow-y-auto overscroll-contain">
+          <div className="flex min-h-full items-center justify-center px-4 py-4 sm:px-6 sm:py-8">
+            <WelcomeHero
+              welcomeDeals={welcomeDeals}
+              city={city}
+              welcome={liveWelcome}
+              onMoodSelect={onQuickPrompt}
+            />
+          </div>
         </div>
       ) : (
         <div
@@ -352,8 +357,10 @@ export function ChatContainer({
         </div>
       )}
 
-      {/* Bottom dock: error + quick prompts (empty only) + chat input */}
-      <div className="mx-auto w-full max-w-3xl shrink-0 px-4 pb-4 sm:px-6 sm:pb-6">
+      {/* Bottom dock: error + quick prompts (empty only) + chat input.
+          shrink-0 — flex parent içinde alttan kaybolmaz.
+          pb [max(0.75rem,...)] iOS home indicator çakışmasını engeller. */}
+      <div className="mx-auto w-full max-w-3xl shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6 sm:pb-6">
         {error ? <ErrorBanner error={error} /> : null}
 
         {isEmpty ? (
