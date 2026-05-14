@@ -13,6 +13,7 @@ export interface AdminUserRow {
   bannedUntil: string | null;
   bookingCount: number;
   favoriteCount: number;
+  merchantId: string | null;
 }
 
 /**
@@ -35,7 +36,7 @@ export async function listAdminUsers(limit = 200): Promise<AdminUserRow[]> {
   const [{ data: profiles }, { data: bookings }, { data: favorites }] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, display_name, phone, avatar_url')
+      .select('id, display_name, phone, avatar_url, merchant_id')
       .in('id', ids),
     supabase.from('bookings').select('user_id').in('user_id', ids),
     supabase.from('favorites').select('user_id').in('user_id', ids),
@@ -69,6 +70,7 @@ export async function listAdminUsers(limit = 200): Promise<AdminUserRow[]> {
       bannedUntil: (u as { banned_until?: string | null }).banned_until ?? null,
       bookingCount: bookingCount.get(u.id) ?? 0,
       favoriteCount: favoriteCount.get(u.id) ?? 0,
+      merchantId: p?.merchant_id ?? null,
     };
   });
 }

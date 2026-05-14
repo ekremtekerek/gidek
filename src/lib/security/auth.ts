@@ -46,3 +46,33 @@ export async function requireAdmin(): Promise<User> {
   if (!isAdmin(user)) redirect('/');
   return user;
 }
+
+/**
+ * Merchant identity — kullanıcının yönettiği işletmenin id'sini döner. Yoksa
+ * null. profiles.merchant_id 1:1 ilişkisini okur (service-role değil,
+ * normal session client; RLS owner-only select policy'si gereği kullanıcı
+ * kendi profilini görebilir).
+ */
+export async function getCurrentMerchantId(user?: User | null): Promise<string | null> {
+  const u = user ?? (await getCurrentUser());
+  if (!u) return null;
+  const { getServerClient } = await import('@/lib/db/server');
+  const supabase = await getServerClient();
+  const { data } = await supabase
+    .from('profiles')
+    .select('merchant_id')
+    .eq('id', u.id)
+    .maybeSingle();
+  return data?.merchant_id ?? null;
+}
+
+/**
+ * Guard for /isletme/* — merchant kullanıcısına bağlı bir merchant_id
+ * yoksa /giris'e veya anasayfaya yönlendir.
+ */
+export async function requireMerchant(): Promise<{ user: User; merchantId: string }> {
+  const user = await requireUser('/giris?next=/isletme');
+  const merchantId = await getCurrentMerchantId(user);
+  if (!merchantId) redirect('/');
+  return { user, merchantId };
+}

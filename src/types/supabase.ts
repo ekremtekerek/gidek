@@ -705,6 +705,7 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          merchant_id: string | null
           onboarding_done: boolean
           phone: string | null
           updated_at: string
@@ -714,6 +715,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          merchant_id?: string | null
           onboarding_done?: boolean
           phone?: string | null
           updated_at?: string
@@ -723,6 +725,7 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          merchant_id?: string | null
           onboarding_done?: boolean
           phone?: string | null
           updated_at?: string

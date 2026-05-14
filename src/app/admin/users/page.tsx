@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { Heart, MailCheck, MailWarning, ShieldAlert, Ticket } from 'lucide-react';
+import { MerchantAssignSelect } from '@/components/admin/merchant-assign-select';
 import { UserBanToggle } from '@/components/admin/user-ban-toggle';
 import { Badge } from '@/components/ui/badge';
+import { getServiceClient } from '@/lib/db/service';
 import { listAdminUsers } from '@/lib/db/queries/users';
 
 export const metadata: Metadata = {
@@ -33,7 +35,12 @@ function relTime(iso: string | null): string {
 }
 
 export default async function AdminUsersPage() {
-  const users = await listAdminUsers(200);
+  const supabase = getServiceClient();
+  const [users, { data: merchantOptions }] = await Promise.all([
+    listAdminUsers(200),
+    supabase.from('merchants').select('id, name').eq('is_active', true).order('name'),
+  ]);
+  const merchants = merchantOptions ?? [];
 
   const total = users.length;
   const banned = users.filter((u) => u.bannedUntil && new Date(u.bannedUntil) > new Date()).length;
@@ -116,7 +123,14 @@ export default async function AdminUsersPage() {
                     <span>son giriş {relTime(u.lastSignInAt)}</span>
                   </p>
                 </div>
-                <UserBanToggle id={u.id} banned={isBanned} />
+                <div className="flex shrink-0 flex-col items-end gap-1.5">
+                  <MerchantAssignSelect
+                    userId={u.id}
+                    currentMerchantId={u.merchantId}
+                    merchants={merchants}
+                  />
+                  <UserBanToggle id={u.id} banned={isBanned} />
+                </div>
               </li>
             );
           })}

@@ -10,6 +10,7 @@ import {
   Phone,
   Settings,
   ShieldCheck,
+  Store,
   Ticket,
   User as UserIcon,
 } from 'lucide-react';
@@ -18,6 +19,7 @@ import { PushOptIn } from '@/components/pwa/push-opt-in';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { getServerClient } from '@/lib/db/server';
+import { getServiceClient } from '@/lib/db/service';
 import { requireUser } from '@/lib/security/auth';
 import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/format';
@@ -36,11 +38,25 @@ export default async function ProfilPage() {
   const supabase = await getServerClient();
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, avatar_url, phone, onboarding_done, created_at')
+    .select('display_name, avatar_url, phone, onboarding_done, created_at, merchant_id')
     .eq('id', user.id)
     .maybeSingle();
 
   const displayName = profile?.display_name ?? user.email?.split('@')[0] ?? 'Üye';
+
+  // Eğer kullanıcı bir işletmeye atanmışsa, banner için işletme adını al
+  // (service-role — merchants RLS okumayı kısıtlamıyor ama Türkçe nüansı
+  // tek query'de çekmek temiz).
+  let merchantName: string | null = null;
+  if (profile?.merchant_id) {
+    const admin = getServiceClient();
+    const { data: m } = await admin
+      .from('merchants')
+      .select('name')
+      .eq('id', profile.merchant_id)
+      .maybeSingle();
+    merchantName = m?.name ?? null;
+  }
 
   return (
     <Container className="py-12 sm:py-16">
@@ -78,6 +94,24 @@ export default async function ProfilPage() {
             Düzenle
           </Link>
         </header>
+
+        {profile?.merchant_id ? (
+          <Link
+            href="/isletme"
+            className="border-emerald-500/30 bg-emerald-500/5 hover:bg-emerald-500/10 mb-6 flex items-center gap-4 rounded-xl border p-4 transition-colors sm:p-5"
+          >
+            <span className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 inline-flex size-10 shrink-0 items-center justify-center rounded-full">
+              <Store className="size-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">İşletme paneline geç</p>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                {merchantName ?? 'İşletmeni'} yönet — fırsatlar, rezervasyonlar, AI içerik
+              </p>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
+          </Link>
+        ) : null}
 
         <dl className="border-border bg-background mb-8 divide-y divide-[var(--border)] rounded-lg border">
           <div className="flex items-center gap-4 p-4 sm:p-5">
