@@ -36,19 +36,70 @@ function partOfDay(hour: number): PartOfDay {
   return 'gece';
 }
 
+/**
+ * Her saat dilimi için varyasyon havuzu. Sıkıcı tekrar olmasın diye her sayfa
+ * yüklemesinde rastgele biri seçilir. Hepsi samimi, soru sorucu, davet edici
+ * tonda — kullanıcıyı sohbete yumuşak bir şekilde çekmek için.
+ */
+const GREETINGS: Record<PartOfDay, string[]> = {
+  sabah: [
+    'Günün aydın olsun! Kahvaltını nerede yapacağına karar verdin mi?',
+    'Sabah sabah enerji vakti! Şehrin en güzel kahvaltı tabaklarına bir göz atalım mı?',
+    'İyi sabahlar! Güne lezzetli bir başlangıç yapalım mı?',
+    'Uyandın, kahvenin kokusu geldi mi? Bekleyen kahvaltı yerleri sana göz kırpıyor.',
+    'Günaydın! Brunch mı, klasik serpme mi — bugün hangi havadasın?',
+    'Sabah keyfi başlasın! Sıcak bir kahve eşliğinde tatlı bir kaçamak ister misin?',
+    'Tatlı bir uyanış! İlk işin nasıl bir kahvaltı olsun istiyorsun?',
+    'Güne hangi semtle başlasak? Sabahın bu saatinde en güzel masalar seni bekliyor.',
+  ],
+  öğle: [
+    'İyi günler! Öğle yemeğinde bugün kendine bir güzellik yapmaya ne dersin?',
+    'Öğle arası! İş molasında zihnini dağıtacak güzel bir mekan arıyor musun?',
+    'Gün ortası lezzetleri çağırıyor. Bugün hangi semt, hangi mutfak?',
+    'Acıktın mı? Çevrendeki en hızlı ama lezzetli noktaları çıkarayım mı?',
+    'Saat tam yerinde! Aklında bir mekan var mı, yoksa ben mi söyleyeyim?',
+    'Brunch geç, yemek erken — sen ne dersin, hangisini seçelim?',
+    'Öğle ışığı tam yerinde. Hangi köşede neyi yiyelim sence?',
+    'Kısa bir öğle molası mı, uzun bir yemek mi — bugün hangisi yakışır?',
+  ],
+  oglesonra: [
+    'Öğleden sonra enerjisi! Çevrendeki aktivite ve indirimleri kaçırma.',
+    'İkindi vakti — bir kahve, bir tatlı, bir kaçamak — hangisi olsun?',
+    'Bugün ne yapsam derken vakit geçmesin. Aklındakini söyle, sana göre çıkarayım.',
+    'Tam fırsat saati! Kısa bir mola için seçtiğim yerlere bir göz at.',
+    'İkindi keyfi vakti. Pasta-çay, masaj ya da kısa bir atölye — sen seç.',
+    'Güneş eğilmeye başladı. Bugün ne yapsak diye düşünüyorsan, ben buradayım.',
+    'Bir kahve molası kıvamı. Yakınında nereye gidesin var mı bakalım?',
+    'Öğleden sonra biraz keyif lazım, kabul mü? Söyle, sana göre listeleyim.',
+  ],
+  akşam: [
+    'İyi akşamlar! İş çıkışı stres atmak için harika önerilerim var.',
+    'Gün bitti, eğlence başladı. Bu akşam için aklında ne var?',
+    'Mesaiden kaçmak isteyenlere müjde — bu akşamın planı sende, ben listede.',
+    'Akşam yemeği nereden olsun? Romantik, samimi, kalabalık — hangisi?',
+    'İş çıkışı kaçamak vakti. Konser, tiyatro, masaj — seç beğen, ben bulayım.',
+    'Bugün akşamı boşa harcama. Şehirde seni bekleyen yerler var!',
+    'Hava kararıyor, ışıklar yanıyor. Hadi akşamı şenlendirecek bir şey bulalım.',
+    'Akşamın tadını çıkar! Sen ne istediğini söyle, ben en uygunları çıkarayım.',
+  ],
+  gece: [
+    'Geceyi boş geçme! Geç saatlere kadar süren eğlence ve lezzet durakları burada.',
+    'Şehir uyumadı, sen de uyuma. Gece için planın ne?',
+    'Geç saat mi? Tam zamanı. Hâlâ açık olan en iyi yerleri biliyorum.',
+    'Yıldızlar çıktı, bar saatleri başladı. Bu gece hangi kafa?',
+    'Uyuyamadın mı? Aç bir mekana, geceyi kıvama getirelim.',
+    'Gece kuşları için: stand-up, canlı müzik, geç açık kahvaltı — seçimin?',
+    'Saat ilerledi ama endişelenme — en güzel yerler hâlâ uyanık.',
+    'Gece nöbetinde misin, yoksa eğlencede mi? İkisine de cevabım var.',
+  ],
+};
+
+function pickRandom<T>(arr: readonly T[]): T {
+  return arr[Math.floor(Math.random() * arr.length)];
+}
+
 function greetingFor(part: PartOfDay): string {
-  switch (part) {
-    case 'sabah':
-      return 'Günün aydın olsun! Kahvaltını nerede yapacağına karar verdin mi?';
-    case 'öğle':
-      return 'İyi günler! Öğle yemeğinde bugün kendine bir güzellik yapmaya ne dersin?';
-    case 'oglesonra':
-      return 'Öğleden sonra enerjisi! Çevrendeki aktivite ve indirimleri kaçırma.';
-    case 'akşam':
-      return 'İyi akşamlar! İş çıkışı stres atmak için harika önerilerimiz var.';
-    case 'gece':
-      return 'Geceyi boş geçme! Geç saatlere kadar süren eğlence ve lezzet durakları burada.';
-  }
+  return pickRandom(GREETINGS[part]);
 }
 
 interface FeaturedDeal {
