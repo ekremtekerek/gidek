@@ -25,6 +25,7 @@ export async function updateProfileAction(
     phone: formData.get('phone'),
     public_slug: formData.get('public_slug'),
     is_public: formData.get('is_public'),
+    share_attendance: formData.get('share_attendance'),
   });
 
   if (!parsed.success) {
@@ -50,6 +51,7 @@ export async function updateProfileAction(
       phone: parsed.data.phone,
       public_slug: parsed.data.public_slug,
       is_public: parsed.data.is_public,
+      share_attendance: parsed.data.share_attendance,
     })
     .eq('id', user.id);
 

@@ -15,6 +15,7 @@ export type DealWithMerchant = DealRow & {
     | (Pick<MerchantRow, 'name' | 'slug' | 'city' | 'district'> & {
         lat: number | null;
         lng: number | null;
+        working_hours?: MerchantRow['working_hours'];
       })
     | null;
 };
@@ -25,7 +26,7 @@ export type DealDetailed = DealWithMerchant & {
 
 const DEAL_SELECT = `
   *,
-  merchant:merchants ( name, slug, city, district, lat, lng )
+  merchant:merchants ( name, slug, city, district, lat, lng, working_hours )
 `;
 
 export type DealSort = 'newest' | 'price-asc' | 'price-desc' | 'popular' | 'trending';

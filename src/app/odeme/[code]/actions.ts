@@ -8,6 +8,7 @@ import { sendEmail } from '@/lib/email/send';
 import { bookingConfirmedEmail } from '@/lib/email/templates';
 import { evaluateAndGrantBadges } from '@/lib/gamification/badges';
 import { maybeClaimCityBingo } from '@/lib/gamification/bingo';
+import { evaluateLoyaltyRewards } from '@/lib/gamification/loyalty-rewards';
 import { updateStreak } from '@/lib/gamification/streak';
 import { requireUser } from '@/lib/security/auth';
 import { TOAST_KEYS, withToast } from '@/lib/utils/toast';
@@ -107,6 +108,7 @@ export async function confirmPaymentAction(
       try {
         await updateStreak(user.id);
         await evaluateAndGrantBadges(user.id);
+        await evaluateLoyaltyRewards(user.id);
         if (dealCity) await maybeClaimCityBingo(user.id, dealCity);
       } catch (err) {
         console.error('[gamification] post-confirm failed:', err);

@@ -46,6 +46,7 @@ export async function createBookingAction(
     gift_recipient_email: formData.get('gift_recipient_email'),
     gift_recipient_phone: formData.get('gift_recipient_phone'),
     gift_message: formData.get('gift_message'),
+    insurance: formData.get('insurance'),
   });
 
   if (!parsed.success) {
@@ -103,10 +104,13 @@ export async function createBookingAction(
   }
 
   const unitPrice = Number(deal.discounted_price);
-  const total = unitPrice * parsed.data.quantity;
+  const subtotal = unitPrice * parsed.data.quantity;
+  // Sigorta primi: subtotal'in %5'i (yuvarlanmış). Opt-in, default 0.
+  const insuranceFee = parsed.data.insurance ? Math.round(subtotal * 0.05 * 100) / 100 : 0;
+  const total = subtotal + insuranceFee;
 
   // Kupon, ödeme sayfasında ayrı bir aksiyonla uygulanır — burada her zaman
-  // full subtotal'le insert ediyoruz.
+  // full subtotal+insurance'le insert ediyoruz.
   const { data: booking, error: bErr } = await supabase
     .from('bookings')
     .insert({
@@ -119,12 +123,14 @@ export async function createBookingAction(
       selected_date: parsed.data.selected_date,
       selected_time: parsed.data.selected_time ?? null,
       notes: parsed.data.notes ?? null,
-      status: 'pending', // ödeme adımından sonra 'confirmed'e geçer
+      status: 'pending',
       is_gift: parsed.data.is_gift,
       gift_message: parsed.data.is_gift ? (parsed.data.gift_message ?? null) : null,
       guest_name: parsed.data.is_gift ? (parsed.data.gift_recipient_name ?? null) : null,
       guest_email: parsed.data.is_gift ? (parsed.data.gift_recipient_email ?? null) : null,
       guest_phone: parsed.data.is_gift ? (parsed.data.gift_recipient_phone ?? null) : null,
+      insurance_purchased: parsed.data.insurance,
+      insurance_fee: insuranceFee,
     })
     .select('booking_code')
     .single();

@@ -216,6 +216,30 @@ export type Database = {
         }
         Relationships: []
       }
+      event_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          room_key: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          room_key: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          room_key?: string
+          sender_id?: string
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           created_at: string
@@ -231,6 +255,51 @@ export type Database = {
           created_at?: string
           follower_id?: string
           followee_id?: string
+        }
+        Relationships: []
+      }
+      user_refund_coupons: {
+        Row: {
+          booking_id: string
+          coupon_code: string
+          created_at: string
+          refund_value: number
+          user_id: string
+        }
+        Insert: {
+          booking_id: string
+          coupon_code: string
+          created_at?: string
+          refund_value: number
+          user_id: string
+        }
+        Update: {
+          booking_id?: string
+          coupon_code?: string
+          created_at?: string
+          refund_value?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_loyalty_rewards: {
+        Row: {
+          coupon_code: string
+          granted_at: string
+          threshold: number
+          user_id: string
+        }
+        Insert: {
+          coupon_code: string
+          granted_at?: string
+          threshold: number
+          user_id: string
+        }
+        Update: {
+          coupon_code?: string
+          granted_at?: string
+          threshold?: number
+          user_id?: string
         }
         Relationships: []
       }
@@ -307,6 +376,8 @@ export type Database = {
           guest_name: string | null
           guest_phone: string | null
           id: string
+          insurance_fee: number
+          insurance_purchased: boolean
           is_gift: boolean
           notes: string | null
           quantity: number
@@ -334,6 +405,8 @@ export type Database = {
           guest_name?: string | null
           guest_phone?: string | null
           id?: string
+          insurance_fee?: number
+          insurance_purchased?: boolean
           is_gift?: boolean
           notes?: string | null
           quantity?: number
@@ -361,6 +434,8 @@ export type Database = {
           guest_name?: string | null
           guest_phone?: string | null
           id?: string
+          insurance_fee?: number
+          insurance_purchased?: boolean
           is_gift?: boolean
           notes?: string | null
           quantity?: number
@@ -768,6 +843,7 @@ export type Database = {
           slug: string
           updated_at: string
           website: string | null
+          working_hours: Json | null
         }
         Insert: {
           address?: string | null
@@ -789,6 +865,7 @@ export type Database = {
           slug: string
           updated_at?: string
           website?: string | null
+          working_hours?: Json | null
         }
         Update: {
           address?: string | null
@@ -810,6 +887,7 @@ export type Database = {
           slug?: string
           updated_at?: string
           website?: string | null
+          working_hours?: Json | null
         }
         Relationships: []
       }
@@ -852,6 +930,7 @@ export type Database = {
           onboarding_done: boolean
           phone: string | null
           public_slug: string | null
+          share_attendance: boolean
           streak_last_week: string | null
           streak_weeks: number
           updated_at: string
@@ -867,6 +946,7 @@ export type Database = {
           onboarding_done?: boolean
           phone?: string | null
           public_slug?: string | null
+          share_attendance?: boolean
           streak_last_week?: string | null
           streak_weeks?: number
           updated_at?: string
@@ -882,6 +962,7 @@ export type Database = {
           onboarding_done?: boolean
           phone?: string | null
           public_slug?: string | null
+          share_attendance?: boolean
           streak_last_week?: string | null
           streak_weeks?: number
           updated_at?: string
@@ -1280,6 +1361,41 @@ export type Database = {
           unit_price: number
           user_id: string | null
         }
+      }
+      extend_booking: {
+        Args: { p_booking_id: string }
+        Returns: {
+          id: string
+          booking_code: string
+          quantity: number
+          total_amount: number
+          unit_price: number
+          insurance_fee: number
+          status: string
+          user_id: string | null
+        }
+      }
+      evaluate_loyalty_rewards: {
+        Args: { p_user_id: string }
+        Returns: string[]
+      }
+      build_event_room_key: {
+        Args: { p_deal_id: string; p_date: string | null; p_time: string | null }
+        Returns: string
+      }
+      user_can_access_event_room: {
+        Args: { p_room_key: string }
+        Returns: boolean
+      }
+      attendees_for_booking: {
+        Args: { p_booking_code: string }
+        Returns: {
+          user_id: string
+          public_slug: string | null
+          display_name: string | null
+          avatar_url: string | null
+          quantity: number
+        }[]
       }
       spin_daily: {
         Args: { p_user_id: string }

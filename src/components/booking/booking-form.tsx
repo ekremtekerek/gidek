@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { Calendar, Clock, Gift, Heart, MessageSquare, Users } from 'lucide-react';
+import { Calendar, Clock, Gift, Heart, MessageSquare, ShieldCheck, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DateField } from '@/components/ui/date-field';
 import { Input } from '@/components/ui/input';
@@ -24,7 +24,10 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
   const [state, formAction, pending] = useActionState(createBookingAction, INITIAL);
   const [quantity, setQuantity] = useState(1);
   const [isGift, setIsGift] = useState(false);
-  const total = unitPrice * quantity;
+  const [insurance, setInsurance] = useState(false);
+  const subtotal = unitPrice * quantity;
+  const insuranceFee = insurance ? Math.round(subtotal * 0.05 * 100) / 100 : 0;
+  const total = subtotal + insuranceFee;
   const err = state && 'fieldErrors' in state ? state.fieldErrors : undefined;
   const warning = state && 'warning' in state ? state : null;
 
@@ -219,9 +222,63 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
         </div>
       ) : null}
 
-      <div className="border-border bg-muted/30 flex items-center justify-between rounded-lg border p-4">
-        <span className="text-muted-foreground text-sm">Toplam tutar</span>
-        <span className="text-2xl font-semibold">{formatTRY(total)}</span>
+      {/* İptal sigortası (opt-in, %5 prim) */}
+      <label
+        className={cn(
+          'group relative flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors',
+          insurance
+            ? 'border-emerald-500/40 bg-emerald-500/5'
+            : 'border-border hover:bg-muted/40',
+        )}
+      >
+        <input
+          type="checkbox"
+          name="insurance"
+          checked={insurance}
+          onChange={(e) => setInsurance(e.target.checked)}
+          className="accent-foreground mt-0.5 size-4"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="inline-flex items-center gap-1.5 text-sm font-semibold">
+            <ShieldCheck className="size-4 text-emerald-600" aria-hidden="true" />
+            İptal sigortası ekle
+            <span className="text-muted-foreground text-xs font-normal">
+              +{formatTRY(Math.round(subtotal * 0.05 * 100) / 100)}
+            </span>
+          </p>
+          <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
+            Sigortalı rezervasyonlarda iptal halinde{' '}
+            <strong className="text-foreground">tam tutar</strong> iade kuponu —
+            sigortasız %50.
+          </p>
+        </div>
+      </label>
+
+      <div className="border-border bg-muted/30 flex flex-col gap-1 rounded-lg border p-4">
+        {insuranceFee > 0 ? (
+          <>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Fırsat tutarı</span>
+              <span className="tabular-nums">{formatTRY(subtotal)}</span>
+            </div>
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1">
+                <ShieldCheck className="size-3.5" aria-hidden="true" />
+                İptal sigortası
+              </span>
+              <span className="tabular-nums">+{formatTRY(insuranceFee)}</span>
+            </div>
+            <div className="border-border mt-1 flex items-center justify-between border-t pt-1.5">
+              <span className="text-sm font-medium">Toplam</span>
+              <span className="text-2xl font-semibold tabular-nums">{formatTRY(total)}</span>
+            </div>
+          </>
+        ) : (
+          <div className="flex items-center justify-between">
+            <span className="text-muted-foreground text-sm">Toplam tutar</span>
+            <span className="text-2xl font-semibold">{formatTRY(total)}</span>
+          </div>
+        )}
       </div>
 
       {state && 'error' in state && state.error ? (

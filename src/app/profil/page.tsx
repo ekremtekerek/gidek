@@ -16,6 +16,7 @@ import {
   Ticket,
   User as UserIcon,
   Users,
+  Wallet,
 } from 'lucide-react';
 import { signOutAction } from '@/app/profil/actions';
 import { BadgesGrid } from '@/components/profile/badges-grid';
@@ -24,6 +25,7 @@ import { LoyaltyCard } from '@/components/profile/loyalty-card';
 import { PushOptIn } from '@/components/pwa/push-opt-in';
 import { listBadgesForUser } from '@/lib/gamification/badges';
 import { BINGO_THRESHOLD, listBingoProgress } from '@/lib/gamification/bingo';
+import { listLoyaltyRewards } from '@/lib/gamification/loyalty-rewards';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { getServerClient } from '@/lib/db/server';
@@ -44,7 +46,7 @@ export default async function ProfilPage() {
   const user = await requireUser();
 
   const supabase = await getServerClient();
-  const [{ data: profile }, badges, bingo] = await Promise.all([
+  const [{ data: profile }, badges, bingo, rewards] = await Promise.all([
     supabase
       .from('profiles')
       .select(
@@ -54,6 +56,7 @@ export default async function ProfilPage() {
       .maybeSingle(),
     listBadgesForUser(user.id),
     listBingoProgress(user.id),
+    listLoyaltyRewards(user.id),
   ]);
 
   const displayName = profile?.display_name ?? user.email?.split('@')[0] ?? 'Üye';
@@ -113,6 +116,7 @@ export default async function ProfilPage() {
           <LoyaltyCard
             points={profile?.loyalty_points ?? 0}
             streakWeeks={profile?.streak_weeks ?? 0}
+            rewards={rewards}
           />
         </div>
 
@@ -249,6 +253,19 @@ export default async function ProfilPage() {
                 {profile?.onboarding_done
                   ? 'Şehir, bütçe, ilgi alanları — güncelle'
                   : 'Tamamla — öneriler kişiselleşsin'}
+              </p>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
+          </Link>
+          <Link
+            href="/cuzdan"
+            className="hover:bg-muted/50 flex items-center gap-4 p-4 transition-colors sm:p-5"
+          >
+            <Wallet className="size-5 shrink-0 text-emerald-600" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">Cüzdanım</p>
+              <p className="text-muted-foreground text-xs">
+                Tüm kuponların tek ekranda
               </p>
             </div>
             <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />

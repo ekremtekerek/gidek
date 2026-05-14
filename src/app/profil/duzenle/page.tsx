@@ -20,7 +20,7 @@ export default async function ProfilEditPage() {
   const supabase = await getServerClient();
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, phone, avatar_url, public_slug, is_public')
+    .select('display_name, phone, avatar_url, public_slug, is_public, share_attendance')
     .eq('id', user.id)
     .maybeSingle();
 
@@ -58,6 +58,7 @@ export default async function ProfilEditPage() {
               phone: profile?.phone ?? null,
               public_slug: profile?.public_slug ?? null,
               is_public: profile?.is_public ?? false,
+              share_attendance: profile?.share_attendance ?? false,
             }}
             email={user.email}
           />

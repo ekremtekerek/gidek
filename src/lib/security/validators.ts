@@ -150,6 +150,9 @@ export const createBookingSchema = z
       .or(z.literal('').transform(() => undefined)),
     gift_recipient_phone: optionalText(30),
     gift_message: optionalText(500),
+    insurance: z
+      .union([z.literal('on'), z.literal('true'), z.literal(''), z.null(), z.undefined()])
+      .transform((v) => v === 'on' || v === 'true'),
   })
   .superRefine((data, ctx) => {
     if (data.is_gift) {
@@ -223,6 +226,9 @@ export const profileUpdateSchema = z.object({
     .transform((v) => (v && v.length > 0 ? v : null))
     .or(z.literal('').transform(() => null)),
   is_public: z
+    .union([z.literal('on'), z.literal('true'), z.literal(''), z.null(), z.undefined()])
+    .transform((v) => v === 'on' || v === 'true'),
+  share_attendance: z
     .union([z.literal('on'), z.literal('true'), z.literal(''), z.null(), z.undefined()])
     .transform((v) => v === 'on' || v === 'true'),
 });

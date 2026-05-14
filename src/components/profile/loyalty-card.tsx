@@ -1,4 +1,6 @@
-import { Flame, Sparkles } from 'lucide-react';
+import { Flame, Gift, Sparkles } from 'lucide-react';
+import type { LoyaltyReward } from '@/lib/gamification/loyalty-rewards';
+import { LOYALTY_THRESHOLDS } from '@/lib/gamification/loyalty-rewards';
 import { cn } from '@/lib/utils/cn';
 import { loyaltyState, POINTS_PER_BOOKING } from '@/lib/utils/loyalty';
 
@@ -6,13 +8,15 @@ interface Props {
   points: number;
   /** Haftalık aktiflik serisi (streak_weeks) — 0 ise gösterilmez */
   streakWeeks?: number;
+  /** Kazanılan otomatik kuponlar — son birkaçı küçük chip olarak gözükür */
+  rewards?: LoyaltyReward[];
 }
 
 /**
  * Profil sayfası için loyalty kartı — emoji rozet + puan + sonraki tier'a
  * progress bar. Sıfır puanlıda dahi gösterilir (motivasyon).
  */
-export function LoyaltyCard({ points, streakWeeks = 0 }: Props) {
+export function LoyaltyCard({ points, streakWeeks = 0, rewards = [] }: Props) {
   const s = loyaltyState(points);
 
   const accent =
@@ -92,8 +96,33 @@ export function LoyaltyCard({ points, streakWeeks = 0 }: Props) {
 
       <p className="text-muted-foreground mt-4 text-[11px] leading-relaxed">
         Her tamamlanmış rezervasyon <strong className="text-foreground">+{POINTS_PER_BOOKING}</strong> puan
-        kazandırır. Gümüş ve Altın üyelere yakında özel kampanyalar.
+        kazandırır. Belirli eşiklerde otomatik kupon kazanırsın.
       </p>
+
+      {rewards.length > 0 ? (
+        <div className="mt-4 border-t border-current/10 pt-3">
+          <p className="mb-2 inline-flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide opacity-80">
+            <Gift className="size-3" aria-hidden="true" />
+            Kazandığın kuponlar
+          </p>
+          <ul className="flex flex-wrap gap-1.5">
+            {rewards.map((r) => {
+              const cfg = LOYALTY_THRESHOLDS.find((t) => t.threshold === r.threshold);
+              return (
+                <li
+                  key={r.threshold}
+                  className="inline-flex items-center gap-1 rounded-full border border-current/30 bg-current/5 px-2 py-0.5 text-[11px] font-mono"
+                  title={`Kupon: ${r.couponCode}`}
+                >
+                  <span className="font-bold">{r.threshold}p</span>
+                  <span className="opacity-60">→</span>
+                  <span>%{cfg?.percent ?? '?'}</span>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ) : null}
     </section>
   );
 }

@@ -8,7 +8,11 @@ import { ImageGallery } from '@/components/deal/image-gallery';
 import { LiveViewerCount } from '@/components/deal/live-viewer-count';
 import { ReviewsSection } from '@/components/deal/reviews-section';
 import { ShareButtons } from '@/components/share/share-buttons';
+import { EtaBadge } from '@/components/deal/eta-badge';
+import { LastMinuteBadge } from '@/components/deal/last-minute-badge';
+import { OpenNowBadge } from '@/components/deal/open-now-badge';
 import { ShowOnMap } from '@/components/deal/show-on-map';
+import { WalkInPressure } from '@/components/deal/walk-in-pressure';
 import { SimilarDeals } from '@/components/deal/similar-deals';
 import { SocialProof } from '@/components/deal/social-proof';
 import { StickyCta } from '@/components/deal/sticky-cta';
@@ -275,15 +279,36 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
               ) : null}
 
               {!expired ? (
-                <div className="flex flex-wrap items-center gap-2 pt-1">
-                  <SocialProof
-                    soldCount={deal.sold_count ?? 0}
-                    viewCount={deal.view_count ?? 0}
-                    className="flex flex-wrap gap-2"
-                  />
-                  <LiveViewerCount dealSlug={deal.slug} minToShow={1} />
-                </div>
+                <>
+                  <div className="flex flex-wrap items-center gap-2 pt-1">
+                    <SocialProof
+                      soldCount={deal.sold_count ?? 0}
+                      viewCount={deal.view_count ?? 0}
+                      className="flex flex-wrap gap-2"
+                    />
+                    <LiveViewerCount dealSlug={deal.slug} minToShow={1} />
+                    <WalkInPressure dealId={deal.id} />
+                  </div>
+                  <div className="pt-1">
+                    <LastMinuteBadge validUntil={deal.valid_until} />
+                  </div>
+                </>
               ) : null}
+
+              <div className="flex flex-wrap items-center gap-2 pt-2">
+                {deal.merchant?.working_hours ? (
+                  <OpenNowBadge
+                    hours={deal.merchant.working_hours as Parameters<typeof OpenNowBadge>[0]['hours']}
+                  />
+                ) : null}
+                {deal.merchant?.lat !== null && deal.merchant?.lat !== undefined &&
+                deal.merchant.lng !== null && deal.merchant.lng !== undefined ? (
+                  <EtaBadge
+                    toLat={Number(deal.merchant.lat)}
+                    toLng={Number(deal.merchant.lng)}
+                  />
+                ) : null}
+              </div>
 
               {deal.merchant?.lat !== null && deal.merchant?.lat !== undefined &&
               deal.merchant.lng !== null && deal.merchant.lng !== undefined ? (

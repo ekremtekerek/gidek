@@ -3,9 +3,15 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Clock, Gift, MessageSquare, Tag } from 'lucide-react';
 import { AddToCalendar } from '@/components/booking/add-to-calendar';
+import { AttendeesSection } from '@/components/booking/attendees-section';
 import { CancelButton } from '@/components/booking/cancel-button';
 import { ETicket } from '@/components/booking/eticket';
+import { EventChat } from '@/components/booking/event-chat';
+import { ExtendButton } from '@/components/booking/extend-button';
 import { PrintButton } from '@/components/booking/print-button';
+import { RefundCouponBanner } from '@/components/booking/refund-coupon-banner';
+import { getServerClient } from '@/lib/db/server';
+import { getServiceClient } from '@/lib/db/service';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
@@ -36,7 +42,7 @@ export default async function RezervasyonDetailPage({
   params: Promise<Params>;
 }) {
   const { code } = await params;
-  await requireUser();
+  const user = await requireUser();
 
   const booking = await getBookingByCode(code);
   if (!booking) notFound();
@@ -46,6 +52,20 @@ export default async function RezervasyonDetailPage({
     ? [booking.deal.district, booking.deal.city].filter(Boolean).join(', ')
     : null;
   const showTicket = (status === 'confirmed' || status === 'used') && booking.deal;
+
+  // İptal edilmiş booking için iade kuponu lookup
+  let refundCoupon: { code: string; amount: number } | null = null;
+  if (status === 'cancelled') {
+    const svc = getServiceClient();
+    const { data: rc } = await svc
+      .from('user_refund_coupons')
+      .select('coupon_code, refund_value')
+      .eq('booking_id', booking.id)
+      .maybeSingle();
+    if (rc) {
+      refundCoupon = { code: rc.coupon_code, amount: Number(rc.refund_value) };
+    }
+  }
 
   return (
     <Container className="py-10 sm:py-14">
@@ -83,7 +103,7 @@ export default async function RezervasyonDetailPage({
         {booking.is_gift ? (
           <div className="border-rose-500/30 bg-rose-500/5 mb-6 flex items-start gap-3 rounded-xl border p-4">
             <Gift className="size-5 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden="true" />
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-foreground text-sm font-medium">
                 Bu bir hediye rezervasyon
               </p>
@@ -97,6 +117,16 @@ export default async function RezervasyonDetailPage({
                   &ldquo;{booking.gift_message}&rdquo;
                 </p>
               ) : null}
+              <Link
+                href={`/rezervasyonlarim/${booking.booking_code}/hediye-karti`}
+                className={cn(
+                  buttonVariants({ variant: 'primary', size: 'sm' }),
+                  'mt-3 bg-gradient-to-r from-rose-500 to-amber-500 text-white hover:from-rose-600 hover:to-amber-600',
+                )}
+              >
+                <Gift className="size-4" aria-hidden="true" />
+                Hediye kartını indir
+              </Link>
             </div>
           </div>
         ) : null}
@@ -129,6 +159,22 @@ export default async function RezervasyonDetailPage({
             selectedTime={booking.selected_time}
             quantity={booking.quantity}
             totalAmount={booking.total_amount}
+          />
+        ) : null}
+
+        {refundCoupon ? (
+          <RefundCouponBanner code={refundCoupon.code} amount={refundCoupon.amount} />
+        ) : null}
+
+        {showTicket ? <AttendeesSection bookingCode={booking.booking_code} /> : null}
+
+        {showTicket && booking.deal ? (
+          <EventChatGate
+            bookingCode={booking.booking_code}
+            dealId={booking.deal_id}
+            selectedDate={booking.selected_date}
+            selectedTime={booking.selected_time}
+            currentUserId={user.id}
           />
         ) : null}
 
@@ -169,6 +215,14 @@ export default async function RezervasyonDetailPage({
         </dl>
 
         <div className="gidek-no-print mt-6 flex flex-col gap-3">
+          {isCancellable(status) && booking.deal ? (
+            <ExtendButton
+              bookingId={booking.id}
+              currentQuantity={booking.quantity}
+              unitPrice={Number(booking.unit_price)}
+              maxPerUser={booking.deal.max_per_user}
+            />
+          ) : null}
           {isCancellable(status) ? <CancelButton bookingId={booking.id} /> : null}
 
           {!isCancellable(status) && status !== 'pending' ? (
@@ -196,5 +250,79 @@ export default async function RezervasyonDetailPage({
         </p>
       </div>
     </Container>
+  );
+}
+
+/**
+ * Server component — sohbet için ilk mesajları + room key'i çeker, sonra
+ * EventChat client widget'a iletir.
+ */
+async function EventChatGate({
+  bookingCode,
+  dealId,
+  selectedDate,
+  selectedTime,
+  currentUserId,
+}: {
+  bookingCode: string;
+  dealId: string;
+  selectedDate: string | null;
+  selectedTime: string | null;
+  currentUserId: string;
+}) {
+  const supabase = await getServerClient();
+  const { data: roomKey } = await supabase.rpc('build_event_room_key', {
+    p_deal_id: dealId,
+    p_date: selectedDate,
+    p_time: selectedTime,
+  });
+  if (!roomKey) return null;
+
+  // İlk mesajlar — son 50, eski→yeni sırada
+  const { data: rawMessages } = await supabase
+    .from('event_messages')
+    .select(
+      `id, body, created_at, sender:profiles!sender_id (
+         id, display_name, public_slug, avatar_url
+       )`,
+    )
+    .eq('room_key', roomKey)
+    .order('created_at', { ascending: false })
+    .limit(50);
+
+  type Raw = {
+    id: string;
+    body: string;
+    created_at: string;
+    sender:
+      | { id: string; display_name: string | null; public_slug: string | null; avatar_url: string | null }
+      | { id: string; display_name: string | null; public_slug: string | null; avatar_url: string | null }[]
+      | null;
+  };
+  const initial = ((rawMessages ?? []) as unknown as Raw[])
+    .map((r) => {
+      const s = Array.isArray(r.sender) ? r.sender[0] : r.sender;
+      if (!s) return null;
+      return {
+        id: r.id,
+        body: r.body,
+        created_at: r.created_at,
+        sender: s,
+      };
+    })
+    .filter((m): m is NonNullable<typeof m> => m !== null)
+    .reverse();
+
+  // Katılımcı sayısı (rough — RLS'ten ötürü read da limit'li olabilir)
+  const participantHint = new Set(initial.map((m) => m.sender.id)).size;
+
+  return (
+    <EventChat
+      bookingCode={bookingCode}
+      roomKey={roomKey}
+      currentUserId={currentUserId}
+      initialMessages={initial}
+      participantHint={participantHint}
+    />
   );
 }

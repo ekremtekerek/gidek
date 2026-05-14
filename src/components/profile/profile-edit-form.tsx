@@ -16,6 +16,7 @@ interface Props {
     phone: string | null;
     public_slug: string | null;
     is_public: boolean;
+    share_attendance: boolean;
   };
   email: string | null | undefined;
 }
@@ -107,6 +108,22 @@ export function ProfileEditForm({ initial, email }: Props) {
             className="accent-foreground size-4"
           />
           Profilim ve favori listem herkese açık olsun
+        </label>
+
+        <label className="inline-flex items-start gap-2 text-sm">
+          <input
+            type="checkbox"
+            name="share_attendance"
+            defaultChecked={initial.share_attendance}
+            className="accent-foreground mt-0.5 size-4"
+          />
+          <span>
+            Aynı etkinliğe katılan diğer kullanıcılar beni görsün
+            <span className="text-muted-foreground mt-0.5 block text-xs">
+              Yalnız onaylı rezervasyonlar için, sadece aynı tarih/saatte aynı
+              fırsata gelenler — profilini tıklayıp ziyaret edebilirler.
+            </span>
+          </span>
         </label>
       </div>
 
