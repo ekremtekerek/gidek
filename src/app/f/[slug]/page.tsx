@@ -5,6 +5,7 @@ import { Suspense } from 'react';
 import { Calendar, Clock, MapPin, Users } from 'lucide-react';
 import { FavoriteButton } from '@/components/favorites/favorite-button';
 import { ImageGallery } from '@/components/deal/image-gallery';
+import { LiveViewerCount } from '@/components/deal/live-viewer-count';
 import { ReviewsSection } from '@/components/deal/reviews-section';
 import { ShareButtons } from '@/components/share/share-buttons';
 import { ShowOnMap } from '@/components/deal/show-on-map';
@@ -274,11 +275,14 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
               ) : null}
 
               {!expired ? (
-                <SocialProof
-                  soldCount={deal.sold_count ?? 0}
-                  viewCount={deal.view_count ?? 0}
-                  className="flex flex-wrap gap-2 pt-1"
-                />
+                <div className="flex flex-wrap items-center gap-2 pt-1">
+                  <SocialProof
+                    soldCount={deal.sold_count ?? 0}
+                    viewCount={deal.view_count ?? 0}
+                    className="flex flex-wrap gap-2"
+                  />
+                  <LiveViewerCount dealSlug={deal.slug} minToShow={1} />
+                </div>
               ) : null}
 
               {deal.merchant?.lat !== null && deal.merchant?.lat !== undefined &&

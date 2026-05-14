@@ -1,4 +1,6 @@
 import Link from 'next/link';
+import { Radio } from 'lucide-react';
+import { BookingsRealtimeRefresh } from '@/components/admin/bookings-realtime-refresh';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { getAdminBookings } from '@/lib/db/queries/admin';
@@ -18,11 +20,18 @@ export default async function AdminBookingsPage() {
 
   return (
     <div className="flex flex-col gap-5">
+      <BookingsRealtimeRefresh />
       <header>
         <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
           Yönetim
         </p>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Rezervasyonlar</h1>
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Rezervasyonlar</h1>
+          <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+            <Radio className="size-3" aria-hidden="true" />
+            canlı
+          </span>
+        </div>
         <p className="text-muted-foreground mt-1 text-sm">
           Son {bookings.length} kayıt — yeni → eski
         </p>

@@ -1,6 +1,8 @@
 import Link from 'next/link';
-import { Phone, User } from 'lucide-react';
+import { Phone, Radio, User } from 'lucide-react';
+import { MerchantBookingsRealtime } from '@/components/merchant/merchant-bookings-realtime';
 import { Badge } from '@/components/ui/badge';
+import { getServiceClient } from '@/lib/db/service';
 import { listMerchantBookings } from '@/lib/db/queries/merchant-portal';
 import { requireMerchant } from '@/lib/security/auth';
 import { BOOKING_STATUS_BADGE, BOOKING_STATUS_LABEL } from '@/lib/utils/booking-status';
@@ -15,15 +17,29 @@ const CREATED_AT_FORMATTER = new Intl.DateTimeFormat('tr-TR', {
 
 export default async function MerchantBookingsPage() {
   const { merchantId } = await requireMerchant();
-  const bookings = await listMerchantBookings(merchantId, 100);
+  const supabase = getServiceClient();
+  const [bookings, { data: deals }] = await Promise.all([
+    listMerchantBookings(merchantId, 100),
+    supabase.from('deals').select('id').eq('merchant_id', merchantId),
+  ]);
+  const dealIds = (deals ?? []).map((d) => d.id);
 
   return (
     <div className="flex flex-col gap-5">
+      <MerchantBookingsRealtime dealIds={dealIds} />
       <header>
         <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
           İşletme paneli
         </p>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Rezervasyonlar</h1>
+        <div className="flex flex-wrap items-baseline gap-3">
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Rezervasyonlar</h1>
+          {dealIds.length > 0 ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-300">
+              <Radio className="size-3" aria-hidden="true" />
+              canlı
+            </span>
+          ) : null}
+        </div>
         <p className="text-muted-foreground mt-1 text-sm">
           Son {bookings.length} kayıt — yeni → eski
         </p>
