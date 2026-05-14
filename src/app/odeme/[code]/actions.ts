@@ -81,16 +81,18 @@ export async function confirmPaymentAction(
   if (bErr || !booking) return { ok: false, error: 'Rezervasyon bulunamadı.' };
   if (booking.user_id !== user.id) return { ok: false, error: 'Bu rezervasyon size ait değil.' };
   if (booking.status === 'cancelled') return { ok: false, error: 'Bu rezervasyon iptal edilmiş.' };
+  if (booking.status === 'used') return { ok: false, error: 'Bu rezervasyon kullanılmış.' };
 
   // Yapay gecikme — "ödeme işleniyor" hissi için.
   await new Promise((r) => setTimeout(r, 1200));
 
   if (booking.status === 'pending') {
-    const { error: uErr } = await supabase
-      .from('bookings')
-      .update({ status: 'confirmed' })
-      .eq('id', booking.id);
-    if (uErr) return { ok: false, error: 'Ödeme kaydedilemedi.' };
+    // bookings tablosunda doğrudan UPDATE RLS policy'si yok; security-definer
+    // RPC üzerinden 'pending' → 'confirmed' geçişini yapıyoruz.
+    const { error: rpcErr } = await supabase.rpc('confirm_booking_payment', {
+      p_booking_id: booking.id,
+    });
+    if (rpcErr) return { ok: false, error: 'Ödeme kaydedilemedi.' };
   }
 
   // Onay e-postasını fire-and-forget olarak gönder; kullanıcının akışını
@@ -117,4 +119,125 @@ export async function confirmPaymentAction(
 
   revalidatePath('/rezervasyonlarim');
   redirect(withToast(`/rezervasyonlarim/${parsed.data.bookingCode}`, TOAST_KEYS.paymentSuccess));
+}
+
+// ---------------------------------------------------------------------------
+// Promo kod uygulama / kaldırma — ödeme sayfasında "pending" booking üzerinde
+// çağrılır. apply_coupon_to_booking RPC subtotal'i unit_price * quantity'den
+// yeniden hesaplar; daha önce uygulanmış kuponun etkisi temizlenir.
+// ---------------------------------------------------------------------------
+
+export type CouponState =
+  | { ok: true; message?: string }
+  | { ok: false; error: string }
+  | null;
+
+const applySchema = z.object({
+  bookingCode: z.string().trim().min(4).max(40),
+  code: z
+    .string()
+    .trim()
+    .min(2, 'Kupon kodu en az 2 karakter olmalı')
+    .max(40, 'Kupon kodu çok uzun'),
+});
+
+const removeSchema = z.object({
+  bookingCode: z.string().trim().min(4).max(40),
+});
+
+function couponReasonLabel(reason: string): string {
+  switch (reason) {
+    case 'not_found':
+      return 'Geçersiz kod';
+    case 'inactive':
+      return 'Bu kupon artık aktif değil';
+    case 'not_started':
+      return 'Kupon henüz başlamadı';
+    case 'expired':
+      return 'Kuponun süresi dolmuş';
+    case 'max_uses':
+      return 'Kupon kullanım limiti dolmuş';
+    case 'min_amount':
+      return 'Sepet tutarı bu kupon için yetersiz';
+    case 'empty':
+      return 'Kod girmelisin';
+    default:
+      return 'Kupon uygulanamadı';
+  }
+}
+
+export async function applyCouponAction(
+  _prev: CouponState,
+  formData: FormData,
+): Promise<CouponState> {
+  const user = await requireUser();
+
+  const parsed = applySchema.safeParse({
+    bookingCode: formData.get('bookingCode'),
+    code: formData.get('code'),
+  });
+  if (!parsed.success) {
+    const issue = parsed.error.flatten().fieldErrors;
+    return { ok: false, error: issue.code?.[0] ?? 'Geçersiz istek.' };
+  }
+
+  const supabase = await getServerClient();
+  const { data: booking, error: bErr } = await supabase
+    .from('bookings')
+    .select('id, user_id, status')
+    .eq('booking_code', parsed.data.bookingCode)
+    .maybeSingle();
+
+  if (bErr || !booking) return { ok: false, error: 'Rezervasyon bulunamadı.' };
+  if (booking.user_id !== user.id) return { ok: false, error: 'Bu rezervasyon size ait değil.' };
+  if (booking.status !== 'pending') {
+    return { ok: false, error: 'Yalnızca ödenmemiş rezervasyona kupon eklenebilir.' };
+  }
+
+  const { error: rpcErr } = await supabase.rpc('apply_coupon_to_booking', {
+    p_booking_id: booking.id,
+    p_code: parsed.data.code,
+  });
+  if (rpcErr) {
+    // RPC raise exception 'coupon_invalid:<reason>' formatında mesaj atar.
+    const match = /coupon_invalid:(\w+)/.exec(rpcErr.message ?? '');
+    if (match) return { ok: false, error: couponReasonLabel(match[1]) };
+    return { ok: false, error: 'Kupon uygulanamadı.' };
+  }
+
+  revalidatePath(`/odeme/${parsed.data.bookingCode}`);
+  return { ok: true, message: 'Kupon uygulandı.' };
+}
+
+export async function removeCouponAction(
+  _prev: CouponState,
+  formData: FormData,
+): Promise<CouponState> {
+  const user = await requireUser();
+
+  const parsed = removeSchema.safeParse({
+    bookingCode: formData.get('bookingCode'),
+  });
+  if (!parsed.success) return { ok: false, error: 'Geçersiz istek.' };
+
+  const supabase = await getServerClient();
+  const { data: booking, error: bErr } = await supabase
+    .from('bookings')
+    .select('id, user_id, status')
+    .eq('booking_code', parsed.data.bookingCode)
+    .maybeSingle();
+
+  if (bErr || !booking) return { ok: false, error: 'Rezervasyon bulunamadı.' };
+  if (booking.user_id !== user.id) return { ok: false, error: 'Bu rezervasyon size ait değil.' };
+  if (booking.status !== 'pending') {
+    return { ok: false, error: 'Yalnızca ödenmemiş rezervasyondan kupon çıkarılabilir.' };
+  }
+
+  const { error: rpcErr } = await supabase.rpc('remove_coupon_from_booking', {
+    p_booking_id: booking.id,
+  });
+  if (rpcErr) return { ok: false, error: 'Kupon kaldırılamadı.' };
+
+  revalidatePath(`/odeme/${parsed.data.bookingCode}`);
+  return { ok: true, message: 'Kupon kaldırıldı.' };
 }

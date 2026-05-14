@@ -1,17 +1,27 @@
-import { Star } from 'lucide-react';
-import { listReviewsForDeal, summariseReviews } from '@/lib/db/queries/reviews';
+import Link from 'next/link';
+import { CheckCircle2, LogIn, Star, Ticket } from 'lucide-react';
+import { ReviewForm } from '@/components/deal/review-form';
+import {
+  getUserReviewEligibility,
+  listReviewsForDeal,
+  summariseReviews,
+} from '@/lib/db/queries/reviews';
 import { cn } from '@/lib/utils/cn';
 
 interface Props {
   dealId: string;
+  dealSlug: string;
 }
 
 /**
  * Detay sayfasında yorumlar — ortalama puan kartı + 1-5 yıldız dağılım barları
  * + yorum kartları listesi. Yorum yoksa kompakt empty state.
  */
-export async function ReviewsSection({ dealId }: Props) {
-  const reviews = await listReviewsForDeal(dealId, 24);
+export async function ReviewsSection({ dealId, dealSlug }: Props) {
+  const [reviews, eligibility] = await Promise.all([
+    listReviewsForDeal(dealId, 24),
+    getUserReviewEligibility(dealId),
+  ]);
   const stats = summariseReviews(reviews);
 
   return (
@@ -29,9 +39,15 @@ export async function ReviewsSection({ dealId }: Props) {
         </h2>
       </div>
 
+      {eligibility.canReview ? (
+        <ReviewForm dealId={dealId} defaultName={eligibility.defaultName} />
+      ) : (
+        <EligibilityNote reason={eligibility.reason} dealSlug={dealSlug} />
+      )}
+
       {stats.count === 0 ? (
         <p className="text-muted-foreground border-border bg-muted/30 rounded-xl border border-dashed p-6 text-center text-sm">
-          Bu fırsat için henüz yorum yok. Rezervasyon sonrası ilk sen yaz.
+          Bu fırsat için henüz yorum yok. Rezervasyon sahipleri yazabilir — ilk sen ol.
         </p>
       ) : (
         <>
@@ -50,6 +66,61 @@ export async function ReviewsSection({ dealId }: Props) {
         </>
       )}
     </section>
+  );
+}
+
+function EligibilityNote({
+  reason,
+  dealSlug,
+}: {
+  reason: 'unauth' | 'no_booking' | 'already_reviewed';
+  dealSlug: string;
+}) {
+  if (reason === 'already_reviewed') {
+    return (
+      <div className="border-emerald-500/30 bg-emerald-500/10 text-foreground mb-6 flex items-start gap-3 rounded-xl border p-4">
+        <CheckCircle2 className="size-5 shrink-0 text-emerald-600" aria-hidden="true" />
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Yorumun yayında — teşekkürler!</p>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            Bu fırsat için bir yorum bıraktın. Bir kullanıcı her fırsata yalnızca tek yorum
+            yazabilir.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (reason === 'no_booking') {
+    return (
+      <div className="border-border bg-muted/40 mb-6 flex items-start gap-3 rounded-xl border p-4">
+        <Ticket className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
+        <div className="min-w-0">
+          <p className="text-sm font-medium">Yorum sadece rezervasyon sahiplerine açık</p>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            Bu fırsattan en az bir rezervasyon yaptıktan sonra deneyimini paylaşabilirsin.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="border-border bg-muted/40 mb-6 flex items-start gap-3 rounded-xl border p-4 sm:items-center">
+      <LogIn className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">Yorum yapmak için giriş yap</p>
+        <p className="text-muted-foreground mt-0.5 text-xs">
+          Rezervasyon yaptığın fırsatlar için yıldız + yorum bırakabilirsin.
+        </p>
+      </div>
+      <Link
+        href={`/giris?next=/f/${dealSlug}#yorumlar`}
+        className="border-border bg-background hover:bg-muted shrink-0 inline-flex h-9 items-center rounded-md border px-3 text-xs font-medium transition-colors"
+      >
+        Giriş yap
+      </Link>
+    </div>
   );
 }
 

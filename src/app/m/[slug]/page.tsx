@@ -18,7 +18,8 @@ import {
 import { cn } from '@/lib/utils/cn';
 import { SITE } from '@/lib/utils/site-config';
 
-export const dynamic = 'force-dynamic';
+// ISR — işletme sayfası 10 dakikada bir yeniden render edilir.
+export const revalidate = 600;
 
 type Params = { slug: string };
 

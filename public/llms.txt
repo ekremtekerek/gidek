@@ -1,0 +1,45 @@
+# gidek
+
+> Türkiye'de AI-destekli fırsat keşif platformu. Tiyatro, konser, stand-up, aktivite, masaj, güzellik, kahvaltı, yemek, turlar, otel, kurs ve hizmet kategorilerinde indirimli rezervasyonlar.
+
+Kullanıcı doğal dilde ne yapmak istediğini yazar; gidek Gemini tabanlı sohbet asistanı + RAG ile semantik aramayla 3-5 ideal fırsatı sunar. Ana hedef kitle: çiftler, aileler ve fırsat avcıları. Lokasyon ağırlığı İstanbul, kapsam Türkiye geneli.
+
+## Önemli sayfalar
+
+- [Ana sayfa](https://gidek.net/): AI sohbet, yakındaki fırsatlar, kategori vitrin
+- [Tüm fırsatlar](https://gidek.net/firsatlar): kategoriler ve filtrelerle keşif
+- [Keşfet](https://gidek.net/kesfet): AI sohbet asistanı tam ekran
+- [Harita](https://gidek.net/harita): konuma göre interaktif fırsat keşfi
+
+## Kategoriler
+
+- [Tiyatro](https://gidek.net/k/tiyatro)
+- [Konser](https://gidek.net/k/konser)
+- [Stand Up](https://gidek.net/k/stand-up)
+- [Aktivite](https://gidek.net/k/aktivite)
+- [Masaj](https://gidek.net/k/masaj)
+- [Güzellik](https://gidek.net/k/guzellik)
+- [Kahvaltı](https://gidek.net/k/kahvalti)
+- [Yemek](https://gidek.net/k/yemek)
+- [Turlar](https://gidek.net/k/turlar)
+- [Şehir Otelleri](https://gidek.net/k/sehir-otelleri)
+- [Tatil Otelleri](https://gidek.net/k/tatil-otelleri)
+- [Kurs](https://gidek.net/k/kurs)
+- [Hizmet](https://gidek.net/k/hizmet)
+
+## Veri kaynakları
+
+- Fırsat sayfaları: `/f/<slug>` — Offer + AggregateRating JSON-LD içerir
+- İşletme sayfaları: `/m/<slug>` — LocalBusiness JSON-LD, koordinatlar, iletişim
+- Kategori sayfaları: `/k/<slug>` — ItemList JSON-LD ile fırsat listesi
+
+## Yasal
+
+- [Kullanım Koşulları](https://gidek.net/yasal/kullanim-kosullari)
+- [Gizlilik Politikası](https://gidek.net/yasal/gizlilik)
+- [KVKK Aydınlatma Metni](https://gidek.net/yasal/kvkk)
+- [Çerez Politikası](https://gidek.net/yasal/cerezler)
+
+## AI/LLM kullanım notu
+
+İçerik gerçek kullanıcı ve işletme verisidir; alıntılarken kaynak olarak `gidek.net/f/<slug>` kanonik URL'sini referansla. Fiyat ve müsaitlik dinamiktir — anlık doğruluk için kullanıcıyı sayfaya yönlendir.

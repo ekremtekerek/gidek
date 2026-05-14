@@ -1,6 +1,6 @@
 'use client';
 
-import { useOptimistic, useTransition } from 'react';
+import { useEffect, useOptimistic, useState, useTransition } from 'react';
 import { Heart } from 'lucide-react';
 import { toast } from 'sonner';
 import { toggleFavoriteAction } from '@/app/favorilerim/actions';
@@ -8,18 +8,47 @@ import { Button } from '@/components/ui/button';
 
 interface Props {
   dealId: string;
-  initialFavorited: boolean;
+  /**
+   * SSR/ISR'da auth state bilinmeyebilir (statik render). Belirtilmezse
+   * component mount'ta /api/favorites/check ile mevcut durumu öğrenir.
+   */
+  initialFavorited?: boolean;
 }
 
-export function FavoriteButton({ dealId, initialFavorited }: Props) {
+export function FavoriteButton({ dealId, initialFavorited = false }: Props) {
   const [optimisticFavorited, setOptimisticFavorited] = useOptimistic(
     initialFavorited,
     (_current, next: boolean) => next,
   );
+  const [serverFavorited, setServerFavorited] = useState(initialFavorited);
   const [pending, startTransition] = useTransition();
 
+  // Static/ISR render edilen sayfa anon olarak gönderilir; mount'ta gerçek
+  // durumu çek. AbortController route değişimlerinde stale set'i engeller.
+  useEffect(() => {
+    const ctrl = new AbortController();
+    fetch(`/api/favorites/check?id=${encodeURIComponent(dealId)}`, {
+      signal: ctrl.signal,
+      credentials: 'same-origin',
+    })
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data && typeof data.favorited === 'boolean') {
+          setServerFavorited(data.favorited);
+        }
+      })
+      .catch(() => {
+        /* ignore — anon kullanıcı / network hatası */
+      });
+    return () => ctrl.abort();
+  }, [dealId]);
+
+  // serverFavorited değişince optimistic state'i de senkronla (mount fetch'i
+  // sonrası gerçek durumu yansıt).
+  const displayed = pending ? optimisticFavorited : serverFavorited;
+
   function onClick() {
-    const next = !optimisticFavorited;
+    const next = !displayed;
     startTransition(async () => {
       setOptimisticFavorited(next);
       const result = await toggleFavoriteAction(dealId);
@@ -28,9 +57,7 @@ export function FavoriteButton({ dealId, initialFavorited }: Props) {
         toast.error(result.error);
         return;
       }
-      if (result.favorited !== next) {
-        setOptimisticFavorited(result.favorited);
-      }
+      setServerFavorited(result.favorited);
       if (result.favorited) {
         toast.success('Favorilere eklendi');
       } else {
@@ -42,19 +69,19 @@ export function FavoriteButton({ dealId, initialFavorited }: Props) {
   return (
     <Button
       type="button"
-      variant={optimisticFavorited ? 'primary' : 'outline'}
+      variant={displayed ? 'primary' : 'outline'}
       size="md"
       full
       onClick={onClick}
       disabled={pending}
-      aria-pressed={optimisticFavorited}
+      aria-pressed={displayed}
     >
       <Heart
         className="size-4"
-        fill={optimisticFavorited ? 'currentColor' : 'transparent'}
+        fill={displayed ? 'currentColor' : 'transparent'}
         aria-hidden="true"
       />
-      {optimisticFavorited ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+      {displayed ? 'Favorilerden çıkar' : 'Favorilere ekle'}
     </Button>
   );
 }

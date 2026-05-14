@@ -158,16 +158,22 @@ export type Database = {
       }
       bookings: {
         Row: {
+          admin_notes: string | null
           booking_code: string
+          cancelled_by_admin_at: string | null
+          coupon_code: string | null
+          coupon_id: string | null
           created_at: string
           currency: string
           deal_id: string
+          discount_amount: number
           guest_email: string | null
           guest_name: string | null
           guest_phone: string | null
           id: string
           notes: string | null
           quantity: number
+          refunded_at: string | null
           selected_date: string | null
           selected_time: string | null
           status: string
@@ -177,16 +183,22 @@ export type Database = {
           user_id: string | null
         }
         Insert: {
+          admin_notes?: string | null
           booking_code?: string
+          cancelled_by_admin_at?: string | null
+          coupon_code?: string | null
+          coupon_id?: string | null
           created_at?: string
           currency?: string
           deal_id: string
+          discount_amount?: number
           guest_email?: string | null
           guest_name?: string | null
           guest_phone?: string | null
           id?: string
           notes?: string | null
           quantity?: number
+          refunded_at?: string | null
           selected_date?: string | null
           selected_time?: string | null
           status?: string
@@ -196,16 +208,22 @@ export type Database = {
           user_id?: string | null
         }
         Update: {
+          admin_notes?: string | null
           booking_code?: string
+          cancelled_by_admin_at?: string | null
+          coupon_code?: string | null
+          coupon_id?: string | null
           created_at?: string
           currency?: string
           deal_id?: string
+          discount_amount?: number
           guest_email?: string | null
           guest_name?: string | null
           guest_phone?: string | null
           id?: string
           notes?: string | null
           quantity?: number
+          refunded_at?: string | null
           selected_date?: string | null
           selected_time?: string | null
           status?: string
@@ -334,6 +352,54 @@ export type Database = {
           title?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      coupons: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          discount_type: string
+          discount_value: number
+          id: string
+          is_active: boolean
+          max_uses: number | null
+          min_order_amount: number
+          updated_at: string
+          used_count: number
+          valid_from: string
+          valid_until: string | null
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          discount_type: string
+          discount_value: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_order_amount?: number
+          updated_at?: string
+          used_count?: number
+          valid_from?: string
+          valid_until?: string | null
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          discount_type?: string
+          discount_value?: number
+          id?: string
+          is_active?: boolean
+          max_uses?: number | null
+          min_order_amount?: number
+          updated_at?: string
+          used_count?: number
+          valid_from?: string
+          valid_until?: string | null
         }
         Relationships: []
       }
@@ -913,6 +979,72 @@ export type Database = {
           to: "bookings"
           isOneToOne: true
           isSetofReturn: false
+        }
+      }
+      confirm_booking_payment: {
+        Args: { p_booking_id: string }
+        Returns: {
+          booking_code: string
+          created_at: string
+          currency: string
+          deal_id: string
+          guest_email: string | null
+          guest_name: string | null
+          guest_phone: string | null
+          id: string
+          notes: string | null
+          quantity: number
+          selected_date: string | null
+          selected_time: string | null
+          status: string
+          total_amount: number
+          unit_price: number
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      validate_coupon: {
+        Args: { p_code: string; p_amount: number }
+        Returns: {
+          coupon_id: string | null
+          discount_amount: number
+          reason: string
+        }[]
+      }
+      apply_coupon_to_booking: {
+        Args: { p_booking_id: string; p_code: string }
+        Returns: {
+          booking_code: string
+          coupon_code: string | null
+          coupon_id: string | null
+          discount_amount: number
+          id: string
+          quantity: number
+          status: string
+          total_amount: number
+          unit_price: number
+          user_id: string | null
+        }
+      }
+      remove_coupon_from_booking: {
+        Args: { p_booking_id: string }
+        Returns: {
+          booking_code: string
+          coupon_code: string | null
+          coupon_id: string | null
+          discount_amount: number
+          id: string
+          quantity: number
+          status: string
+          total_amount: number
+          unit_price: number
+          user_id: string | null
         }
       }
       deal_trending_score: {

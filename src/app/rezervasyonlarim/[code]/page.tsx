@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Clock, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Clock, MessageSquare, Tag } from 'lucide-react';
 import { CancelButton } from '@/components/booking/cancel-button';
 import { ETicket } from '@/components/booking/eticket';
 import { PrintButton } from '@/components/booking/print-button';
@@ -98,6 +98,20 @@ export default async function RezervasyonDetailPage({
         ) : null}
 
         <dl className="border-border bg-background gidek-no-print mt-6 divide-y divide-[var(--border)] rounded-lg border">
+          {Number(booking.discount_amount ?? 0) > 0 ? (
+            <div className="flex items-center gap-4 p-4 sm:p-5">
+              <Tag className="size-5 shrink-0 text-emerald-600" aria-hidden="true" />
+              <div className="min-w-0 flex-1">
+                <dt className="text-muted-foreground text-xs">Uygulanan kupon</dt>
+                <dd className="text-sm font-medium">
+                  {booking.coupon_code ?? '—'}{' '}
+                  <span className="text-emerald-700 dark:text-emerald-300">
+                    (−{Number(booking.discount_amount).toLocaleString('tr-TR')} ₺)
+                  </span>
+                </dd>
+              </div>
+            </div>
+          ) : null}
           {booking.notes ? (
             <div className="flex items-start gap-4 p-4 sm:p-5">
               <MessageSquare

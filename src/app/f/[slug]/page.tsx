@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { Calendar, Clock, Heart, MapPin, Users } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users } from 'lucide-react';
 import { FavoriteButton } from '@/components/favorites/favorite-button';
 import { ImageGallery } from '@/components/deal/image-gallery';
 import { ReviewsSection } from '@/components/deal/reviews-section';
@@ -17,16 +17,16 @@ import { buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getDealBySlug, isDealExpired, listPublishedDealSlugs } from '@/lib/db/queries/deals';
-import { isFavorite } from '@/lib/db/queries/favorites';
-import { getCurrentUser } from '@/lib/security/auth';
 import { cn } from '@/lib/utils/cn';
 import { AUDIENCE_LABEL, DEAL_TAG_LABEL } from '@/lib/utils/constants';
 import { formatDuration, formatTRY } from '@/lib/utils/format';
 import { SITE } from '@/lib/utils/site-config';
 
-// Auth state (favorite toggle) means we can't ISR every minute — switch to
-// per-request rendering so the heart shows the right state for the caller.
-export const dynamic = 'force-dynamic';
+// ISR — sayfa 5 dakikada bir yeniden render edilir. Auth-bağımlı UI
+// (FavoriteButton, StickyCta) statik render altında kalır; gerçek auth
+// durumu client-side fetch ile alınır. Bu sayede LCP düşük, Googlebot
+// hızlıca statik HTML görüyor.
+export const revalidate = 300;
 
 type Params = { slug: string };
 
@@ -73,8 +73,6 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
   const deal = await getDealBySlug(slug);
   if (!deal) notFound();
 
-  const user = await getCurrentUser();
-  const favorited = user ? await isFavorite(deal.id) : false;
   const expired = isDealExpired(deal);
 
   const primaryCategory = deal.categories[0];
@@ -133,6 +131,57 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
       worstRating: 1,
     };
   }
+
+  // Event JSON-LD — sahne/etkinlik tipi fırsatlarda Google'da rich snippet
+  // (tarih, yer, fiyat doğrudan SERP'te) gözüksün diye. Sadece event-benzeri
+  // kategorilerde basıyoruz; spa/yemek/otel için Offer yeterli.
+  const eventTypeMap: Record<string, string> = {
+    tiyatro: 'TheaterEvent',
+    konser: 'MusicEvent',
+    'stand-up': 'ComedyEvent',
+    aktivite: 'Event',
+  };
+  const eventType = primaryCategory ? eventTypeMap[primaryCategory.slug] : undefined;
+  const eventLd: Record<string, unknown> | null = eventType
+    ? {
+        '@context': 'https://schema.org',
+        '@type': eventType,
+        name: deal.title,
+        description: deal.description,
+        image: [deal.cover_image, ...(deal.images ?? [])].filter(Boolean),
+        startDate: deal.valid_from,
+        endDate: deal.valid_until,
+        eventStatus: 'https://schema.org/EventScheduled',
+        eventAttendanceMode: 'https://schema.org/OfflineEventAttendanceMode',
+        location: {
+          '@type': 'Place',
+          name: deal.merchant?.name ?? location,
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: deal.city ?? undefined,
+            addressRegion: deal.district ?? undefined,
+            addressCountry: 'TR',
+          },
+        },
+        offers: {
+          '@type': 'Offer',
+          url: `${SITE.url}/f/${deal.slug}`,
+          price: deal.discounted_price,
+          priceCurrency: deal.currency,
+          availability: expired
+            ? 'https://schema.org/SoldOut'
+            : 'https://schema.org/InStock',
+          validFrom: deal.valid_from,
+        },
+        organizer: deal.merchant
+          ? {
+              '@type': 'Organization',
+              name: deal.merchant.name,
+              url: `${SITE.url}/m/${deal.merchant.slug}`,
+            }
+          : undefined,
+      }
+    : null;
 
   return (
     <>
@@ -337,7 +386,7 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                 </div>
               </div>
 
-              {expired ? null : user ? (
+              {expired ? null : (
                 <Link
                   href={`/rezervasyon/${deal.slug}`}
                   className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full gap-2')}
@@ -345,26 +394,8 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                   <Calendar className="size-4" aria-hidden="true" />
                   Rezervasyon Yap
                 </Link>
-              ) : (
-                <Link
-                  href={`/giris?next=/rezervasyon/${deal.slug}`}
-                  className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full gap-2')}
-                >
-                  <Calendar className="size-4" aria-hidden="true" />
-                  Rezervasyon Yap
-                </Link>
               )}
-              {expired ? null : user ? (
-                <FavoriteButton dealId={deal.id} initialFavorited={favorited} />
-              ) : (
-                <Link
-                  href={`/giris?next=/f/${deal.slug}`}
-                  className={cn(buttonVariants({ variant: 'outline', size: 'md' }), 'w-full gap-2')}
-                >
-                  <Heart className="size-4" aria-hidden="true" />
-                  Favorilere ekle
-                </Link>
-              )}
+              {expired ? null : <FavoriteButton dealId={deal.id} />}
               <ShareButtons
                 title={deal.title}
                 text={deal.subtitle ?? deal.title}
@@ -397,7 +428,7 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
 
         <div className="mt-10 flex flex-col gap-10">
           <Suspense fallback={<ReviewsSkeleton />}>
-            <ReviewsSection dealId={deal.id} />
+            <ReviewsSection dealId={deal.id} dealSlug={deal.slug} />
           </Suspense>
 
           {primaryCategory ? (
@@ -410,10 +441,10 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
 
       <JsonLd data={breadcrumbLd} />
       <JsonLd data={offerLd} />
+      {eventLd ? <JsonLd data={eventLd} /> : null}
 
       <StickyCta
         dealSlug={deal.slug}
-        isAuthenticated={Boolean(user)}
         expired={expired}
         originalPrice={deal.original_price}
         discountedPrice={deal.discounted_price}

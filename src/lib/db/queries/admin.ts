@@ -1,5 +1,6 @@
 import 'server-only';
 import { getServiceClient } from '@/lib/db/service';
+import type { BookingStatus } from '@/lib/utils/constants';
 
 export type AdminCounts = {
   totalDeals: number;
@@ -83,6 +84,179 @@ export async function getBookingsLast7Days(): Promise<DayCount[]> {
     if (buckets.has(day)) buckets.set(day, (buckets.get(day) ?? 0) + 1);
   }
   return [...buckets.entries()].map(([day, count]) => ({ day, count }));
+}
+
+export interface AdminBookingRow {
+  id: string;
+  bookingCode: string;
+  status: BookingStatus;
+  quantity: number;
+  totalAmount: number;
+  unitPrice: number;
+  discountAmount: number;
+  couponCode: string | null;
+  currency: string;
+  selectedDate: string | null;
+  selectedTime: string | null;
+  notes: string | null;
+  adminNotes: string | null;
+  cancelledByAdminAt: string | null;
+  refundedAt: string | null;
+  createdAt: string;
+  updatedAt: string;
+  userId: string | null;
+  dealId: string;
+  dealTitle: string;
+  dealSlug: string;
+  customerName: string | null;
+  customerEmail: string | null;
+  customerPhone: string | null;
+}
+
+/**
+ * Admin booking list — son rezervasyonlar, deal + müşteri bilgisiyle birlikte.
+ * Service-role client RLS'i bypass eder. E-posta auth.users'tan ayrıca alınır
+ * (profiles tablosunda email yok).
+ */
+export async function getAdminBookings(limit = 100): Promise<AdminBookingRow[]> {
+  const supabase = getServiceClient();
+  const { data } = await supabase
+    .from('bookings')
+    .select(
+      `id, booking_code, status, quantity, total_amount, unit_price, currency,
+       discount_amount, coupon_code,
+       selected_date, selected_time, notes, admin_notes,
+       cancelled_by_admin_at, refunded_at,
+       created_at, updated_at, user_id,
+       guest_name, guest_email, guest_phone,
+       deal:deals ( id, title, slug ),
+       profile:profiles ( display_name, phone )`,
+    )
+    .order('created_at', { ascending: false })
+    .limit(limit);
+
+  const rows = data ?? [];
+  const userIds = [...new Set(rows.map((r) => r.user_id).filter(Boolean) as string[])];
+  const emailByUserId = new Map<string, string>();
+  if (userIds.length) {
+    // auth.users.email — service-role admin API üzerinden batch fetch.
+    // V1 ölçeğinde 100 üst sınır kabul edilebilir.
+    await Promise.all(
+      userIds.map(async (uid) => {
+        const { data: u } = await supabase.auth.admin.getUserById(uid);
+        if (u?.user?.email) emailByUserId.set(uid, u.user.email);
+      }),
+    );
+  }
+
+  return rows.map((b) => {
+    const dealRel = b.deal as
+      | { id: string; title: string; slug: string }
+      | { id: string; title: string; slug: string }[]
+      | null;
+    const deal = Array.isArray(dealRel) ? dealRel[0] : dealRel;
+    const profileRel = b.profile as
+      | { display_name: string | null; phone: string | null }
+      | { display_name: string | null; phone: string | null }[]
+      | null;
+    const profile = Array.isArray(profileRel) ? profileRel[0] : profileRel;
+    const authEmail = b.user_id ? emailByUserId.get(b.user_id) : undefined;
+
+    return {
+      id: b.id,
+      bookingCode: b.booking_code,
+      status: b.status as BookingStatus,
+      quantity: b.quantity,
+      totalAmount: Number(b.total_amount),
+      unitPrice: Number(b.unit_price),
+      discountAmount: Number(b.discount_amount ?? 0),
+      couponCode: b.coupon_code,
+      currency: b.currency,
+      selectedDate: b.selected_date,
+      selectedTime: b.selected_time,
+      notes: b.notes,
+      adminNotes: b.admin_notes,
+      cancelledByAdminAt: b.cancelled_by_admin_at,
+      refundedAt: b.refunded_at,
+      createdAt: b.created_at,
+      updatedAt: b.updated_at,
+      userId: b.user_id,
+      dealId: deal?.id ?? '',
+      dealTitle: deal?.title ?? '—',
+      dealSlug: deal?.slug ?? '',
+      customerName: profile?.display_name ?? b.guest_name ?? null,
+      customerEmail: authEmail ?? b.guest_email ?? null,
+      customerPhone: profile?.phone ?? b.guest_phone ?? null,
+    };
+  });
+}
+
+/**
+ * Tek bir rezervasyonun admin detayı — booking_code ile çekilir, deal +
+ * müşteri ekleri ile birlikte. Geri kalan alanlar liste ile aynı şekil.
+ */
+export async function getAdminBookingByCode(code: string): Promise<AdminBookingRow | null> {
+  const supabase = getServiceClient();
+  const { data: b } = await supabase
+    .from('bookings')
+    .select(
+      `id, booking_code, status, quantity, total_amount, unit_price, currency,
+       discount_amount, coupon_code,
+       selected_date, selected_time, notes, admin_notes,
+       cancelled_by_admin_at, refunded_at,
+       created_at, updated_at, user_id,
+       guest_name, guest_email, guest_phone,
+       deal:deals ( id, title, slug ),
+       profile:profiles ( display_name, phone )`,
+    )
+    .eq('booking_code', code)
+    .maybeSingle();
+
+  if (!b) return null;
+
+  const dealRel = b.deal as
+    | { id: string; title: string; slug: string }
+    | { id: string; title: string; slug: string }[]
+    | null;
+  const deal = Array.isArray(dealRel) ? dealRel[0] : dealRel;
+  const profileRel = b.profile as
+    | { display_name: string | null; phone: string | null }
+    | { display_name: string | null; phone: string | null }[]
+    | null;
+  const profile = Array.isArray(profileRel) ? profileRel[0] : profileRel;
+
+  let authEmail: string | undefined;
+  if (b.user_id) {
+    const { data: u } = await supabase.auth.admin.getUserById(b.user_id);
+    authEmail = u?.user?.email ?? undefined;
+  }
+
+  return {
+    id: b.id,
+    bookingCode: b.booking_code,
+    status: b.status as BookingStatus,
+    quantity: b.quantity,
+    totalAmount: Number(b.total_amount),
+    unitPrice: Number(b.unit_price),
+    discountAmount: Number(b.discount_amount ?? 0),
+    couponCode: b.coupon_code,
+    currency: b.currency,
+    selectedDate: b.selected_date,
+    selectedTime: b.selected_time,
+    notes: b.notes,
+    adminNotes: b.admin_notes,
+    cancelledByAdminAt: b.cancelled_by_admin_at,
+    refundedAt: b.refunded_at,
+    createdAt: b.created_at,
+    updatedAt: b.updated_at,
+    userId: b.user_id,
+    dealId: deal?.id ?? '',
+    dealTitle: deal?.title ?? '—',
+    dealSlug: deal?.slug ?? '',
+    customerName: profile?.display_name ?? b.guest_name ?? null,
+    customerEmail: authEmail ?? b.guest_email ?? null,
+    customerPhone: profile?.phone ?? b.guest_phone ?? null,
+  };
 }
 
 /** En çok rezervasyon alan kategoriler (top 5, all-time). */

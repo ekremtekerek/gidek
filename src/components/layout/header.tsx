@@ -36,7 +36,7 @@ export async function Header() {
       <Container className="flex h-16 items-center gap-3 sm:gap-4">
         <Link
           href="/"
-          className="text-xl font-semibold tracking-tight shrink-0"
+          className="text-2xl sm:text-3xl font-bold tracking-tight shrink-0"
           aria-label={SITE.name}
         >
           {SITE.name}

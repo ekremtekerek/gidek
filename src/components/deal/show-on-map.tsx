@@ -3,8 +3,9 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { MapPin, X } from 'lucide-react';
+import { MapPin, Navigation, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { googleMapsDirectionsUrl } from '@/lib/utils/maps';
 
 interface Props {
   lat: number;
@@ -24,9 +25,10 @@ const InlineMap = dynamic(() => import('./inline-map').then((m) => m.InlineMap),
   ),
 });
 
-/** Buton + modal Mapbox — merchant konumunu öne çıkarır. */
+/** Buton + modal Mapbox — merchant konumunu öne çıkarır, yol tarifini dış uygulamaya bırakır. */
 export function ShowOnMap({ lat, lng, title, address, className }: Props) {
   const [open, setOpen] = useState(false);
+  const directionsUrl = googleMapsDirectionsUrl(lat, lng);
 
   useEffect(() => {
     if (!open) return;
@@ -44,17 +46,26 @@ export function ShowOnMap({ lat, lng, title, address, className }: Props) {
 
   return (
     <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className={cn(
-          'border-border bg-background hover:border-foreground/40 hover:bg-muted inline-flex h-10 items-center gap-2 rounded-md border px-4 text-sm font-medium transition-colors',
-          className,
-        )}
-      >
-        <MapPin className="size-4" aria-hidden="true" />
-        Haritada göster
-      </button>
+      <div className={cn('flex flex-wrap items-center gap-2', className)}>
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="border-border bg-background hover:border-foreground/40 hover:bg-muted inline-flex h-10 items-center gap-2 rounded-md border px-4 text-sm font-medium transition-colors"
+        >
+          <MapPin className="size-4" aria-hidden="true" />
+          Haritada göster
+        </button>
+        <a
+          href={directionsUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={`${title} için yol tarifi al`}
+          className="border-border bg-background hover:border-foreground/40 hover:bg-muted inline-flex h-10 items-center gap-2 rounded-md border px-4 text-sm font-medium transition-colors"
+        >
+          <Navigation className="size-4" aria-hidden="true" />
+          Yol tarifi
+        </a>
+      </div>
 
       {open && typeof window !== 'undefined'
         ? createPortal(
@@ -95,6 +106,21 @@ export function ShowOnMap({ lat, lng, title, address, className }: Props) {
                 <div className="relative flex-1">
                   <InlineMap lat={lat} lng={lng} title={title} />
                 </div>
+
+                <footer className="border-border bg-background border-t px-5 py-3">
+                  <a
+                    href={directionsUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-foreground text-background hover:bg-foreground/90 inline-flex h-10 w-full items-center justify-center gap-2 rounded-md px-4 text-sm font-semibold transition-colors sm:w-auto"
+                  >
+                    <Navigation className="size-4" aria-hidden="true" />
+                    Yol tarifi al
+                  </a>
+                  <p className="text-muted-foreground mt-1.5 text-[11px]">
+                    Google Maps'te açılır — mobilde harita uygulamana yönlenir.
+                  </p>
+                </footer>
               </div>
             </div>,
             document.body,

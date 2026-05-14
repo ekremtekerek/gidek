@@ -54,6 +54,8 @@ export async function createBookingAction(
   const unitPrice = Number(deal.discounted_price);
   const total = unitPrice * parsed.data.quantity;
 
+  // Kupon, ödeme sayfasında ayrı bir aksiyonla uygulanır — burada her zaman
+  // full subtotal'le insert ediyoruz.
   const { data: booking, error: bErr } = await supabase
     .from('bookings')
     .insert({

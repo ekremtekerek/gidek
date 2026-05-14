@@ -16,6 +16,8 @@ export const TOAST_KEYS = {
   bookingCreated: 'booking-created',
   paymentSuccess: 'payment-success',
   passwordUpdated: 'password-updated',
+  emailChangeRequested: 'email-change-requested',
+  accountDeleted: 'account-deleted',
   searchSaved: 'search-saved',
   searchDeleted: 'search-deleted',
 } as const;

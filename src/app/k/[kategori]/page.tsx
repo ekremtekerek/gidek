@@ -12,7 +12,10 @@ import { SITE } from '@/lib/utils/site-config';
 
 const AUDIENCE_SLUGS = new Set(AUDIENCE.map((a) => a.slug));
 
-export const dynamic = 'force-dynamic';
+// Kategori sayfası searchParams üzerinden filtrelenir (city/tag/aud/min/max/sort);
+// Next.js bu erişim sebebiyle her istekte dinamik render eder. Veri katmanı
+// cache'lenebilir; force-dynamic'i kaldırıp Next'in optimizasyonunu serbest
+// bırakıyoruz.
 
 type Params = { kategori: string };
 type Search = {

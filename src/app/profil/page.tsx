@@ -9,6 +9,7 @@ import {
   Pencil,
   Phone,
   Settings,
+  ShieldCheck,
   Ticket,
   User as UserIcon,
 } from 'lucide-react';
@@ -166,6 +167,17 @@ export default async function ProfilPage() {
               <p className="text-muted-foreground text-xs">
                 İkiniz de 100 TL kupon kazanın
               </p>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
+          </Link>
+          <Link
+            href="/profil/hesap"
+            className="hover:bg-muted/50 flex items-center gap-4 p-4 transition-colors sm:p-5"
+          >
+            <ShieldCheck className="text-muted-foreground size-5 shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">Hesap ayarları</p>
+              <p className="text-muted-foreground text-xs">Şifre, e-posta, hesap silme</p>
             </div>
             <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
           </Link>

@@ -141,6 +141,29 @@ export const createBookingSchema = z.object({
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
 
+export const createReviewSchema = z.object({
+  dealId: z.string().uuid('Geçersiz fırsat tanımlayıcısı'),
+  rating: z.coerce
+    .number()
+    .int('Puan tamsayı olmalı')
+    .min(1, 'En az 1 yıldız')
+    .max(5, 'En fazla 5 yıldız'),
+  body: z
+    .string()
+    .trim()
+    .min(5, 'En az 5 karakter')
+    .max(1000, 'En fazla 1000 karakter'),
+  displayName: z
+    .string()
+    .trim()
+    .min(2, 'En az 2 karakter')
+    .max(50, 'En fazla 50 karakter')
+    .optional()
+    .or(z.literal('').transform(() => undefined)),
+});
+
+export type CreateReviewInput = z.infer<typeof createReviewSchema>;
+
 export const profileUpdateSchema = z.object({
   display_name: z
     .string()

@@ -2,8 +2,9 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
-import { CalendarDays, Lock, MapPin, ShieldCheck } from 'lucide-react';
+import { CalendarDays, Lock, MapPin, ShieldCheck, Tag } from 'lucide-react';
 import { Container } from '@/components/ui/container';
+import { CouponInput } from '@/components/payment/coupon-input';
 import { PaymentForm } from '@/components/payment/payment-form';
 import { getBookingByCode } from '@/lib/db/queries/bookings';
 import { requireUser } from '@/lib/security/auth';
@@ -105,20 +106,45 @@ export default async function PaymentPage({ params }: { params: Promise<Params> 
             <li>{booking.quantity} adet</li>
           </ul>
 
-          <div className="border-border space-y-2 border-t pt-3 text-sm">
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Ara toplam</span>
-              <span>{formatTRY(Number(booking.total_amount))}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-muted-foreground">Hizmet bedeli</span>
-              <span className="text-emerald-600 dark:text-emerald-400">Ücretsiz</span>
-            </div>
-            <div className="border-border flex items-baseline justify-between border-t pt-2 text-base font-semibold">
-              <span>Toplam</span>
-              <span>{formatTRY(Number(booking.total_amount))}</span>
-            </div>
-          </div>
+          {(() => {
+            const total = Number(booking.total_amount);
+            const discount = Number(booking.discount_amount ?? 0);
+            const subtotal = total + discount;
+            return (
+              <>
+                <div className="border-border space-y-2 border-t pt-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Ara toplam</span>
+                    <span>{formatTRY(subtotal)}</span>
+                  </div>
+                  {discount > 0 ? (
+                    <div className="flex justify-between text-emerald-700 dark:text-emerald-300">
+                      <span className="inline-flex items-center gap-1.5">
+                        <Tag className="size-3.5" aria-hidden="true" />
+                        Kupon{booking.coupon_code ? ` · ${booking.coupon_code}` : ''}
+                      </span>
+                      <span>−{formatTRY(discount)}</span>
+                    </div>
+                  ) : null}
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Hizmet bedeli</span>
+                    <span className="text-emerald-600 dark:text-emerald-400">Ücretsiz</span>
+                  </div>
+                  <div className="border-border flex items-baseline justify-between border-t pt-2 text-base font-semibold">
+                    <span>Toplam</span>
+                    <span>{formatTRY(total)}</span>
+                  </div>
+                </div>
+
+                <div className="border-border border-t pt-3">
+                  <CouponInput
+                    bookingCode={booking.booking_code}
+                    appliedCode={booking.coupon_code ?? null}
+                  />
+                </div>
+              </>
+            );
+          })()}
 
           <p className="text-muted-foreground inline-flex items-start gap-1.5 text-[11px]">
             <ShieldCheck className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />

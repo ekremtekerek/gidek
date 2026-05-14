@@ -10,7 +10,6 @@ import { formatTRY } from '@/lib/utils/format';
 
 interface Props {
   dealSlug: string;
-  isAuthenticated: boolean;
   expired: boolean;
   originalPrice: number | string;
   discountedPrice: number | string;
@@ -28,7 +27,6 @@ interface Props {
  */
 export function StickyCta({
   dealSlug,
-  isAuthenticated,
   expired,
   originalPrice,
   discountedPrice,
@@ -49,9 +47,8 @@ export function StickyCta({
 
   const discount = discountPercent ?? 0;
   const showDiscount = discount > 0 && Number(discountedPrice) < Number(originalPrice);
-  const href = isAuthenticated
-    ? `/rezervasyon/${dealSlug}`
-    : `/giris?next=/rezervasyon/${dealSlug}`;
+  // Anon kullanıcı için /rezervasyon sayfası requireUser ile login'e yönlendirir.
+  const href = `/rezervasyon/${dealSlug}`;
 
   return (
     <div

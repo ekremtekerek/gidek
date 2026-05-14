@@ -24,6 +24,14 @@ const REGISTRY: Record<string, () => void> = {
       description: 'E-biletin aşağıda — yazdırabilir veya QR kodu gösterebilirsin.',
     }),
   'password-updated': () => toast.success('Şifre güncellendi'),
+  'email-change-requested': () =>
+    toast.success('Onay e-postası gönderildi', {
+      description: 'Yeni adresine gelen bağlantıyı tıklayınca değişiklik tamamlanır.',
+    }),
+  'account-deleted': () =>
+    toast.success('Hesabın silindi', {
+      description: 'Verilerin kalıcı olarak kaldırıldı.',
+    }),
   'search-saved': () =>
     toast.success('Arama kaydedildi', {
       description: 'Profil → Aramalarım sayfasından dönebilirsin.',

@@ -1,11 +1,28 @@
 import Link from 'next/link';
-import { Activity, LayoutDashboard, MessageSquare, Sparkles, Store, Ticket } from 'lucide-react';
+import {
+  Activity,
+  CalendarCheck,
+  LayoutDashboard,
+  ListTree,
+  Mail,
+  MessageSquare,
+  Sparkles,
+  Store,
+  Tag,
+  Ticket,
+  Users,
+} from 'lucide-react';
 
 const ITEMS = [
   { href: '/admin', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/admin/deals', label: 'Fırsatlar', Icon: Ticket },
+  { href: '/admin/categories', label: 'Kategoriler', Icon: ListTree },
+  { href: '/admin/bookings', label: 'Rezervasyonlar', Icon: CalendarCheck },
+  { href: '/admin/coupons', label: 'Kuponlar', Icon: Tag },
   { href: '/admin/merchants', label: 'İşletmeler', Icon: Store },
   { href: '/admin/reviews', label: 'Yorumlar', Icon: MessageSquare },
+  { href: '/admin/users', label: 'Kullanıcılar', Icon: Users },
+  { href: '/admin/newsletter', label: 'Newsletter', Icon: Mail },
   { href: '/admin/ai-logs', label: 'AI sorguları', Icon: Activity },
 ] as const;
 

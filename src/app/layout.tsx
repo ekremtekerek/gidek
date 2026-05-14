@@ -60,6 +60,29 @@ const orgJsonLd = {
 };
 
 /**
+ * WebSite şeması + SearchAction — Google'ın "sitelinks search box" rich
+ * sonucu için bunu okur (URL altında bir arama kutusu gösterir). Bizim arama
+ * URL'imiz: /firsatlar?q=<query>.
+ */
+const websiteJsonLd = {
+  '@context': 'https://schema.org',
+  '@type': 'WebSite',
+  name: SITE.name,
+  alternateName: `${SITE.name}.net`,
+  url: SITE.url,
+  description: SITE.description,
+  inLanguage: 'tr-TR',
+  potentialAction: {
+    '@type': 'SearchAction',
+    target: {
+      '@type': 'EntryPoint',
+      urlTemplate: `${SITE.url}/?q={search_term_string}`,
+    },
+    'query-input': 'required name=search_term_string',
+  },
+};
+
+/**
  * No-flash tema scripti — paint öncesi çalışır, localStorage'ten seçimi
  * okuyup <html>'e .light / .dark sınıfı ekler. Yoksa hiç class eklemez ve
  * @media prefers-color-scheme devreye girer (auto mode).
@@ -85,6 +108,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       suppressHydrationWarning
     >
       <head>
+        {/* Preconnect — kritik 3rd party origin'lere DNS+TLS handshake'i
+            erkenden başlatır. LCP'yi etkileyen ana asset host'larına. */}
+        <link rel="preconnect" href="https://res.cloudinary.com" crossOrigin="" />
+        <link rel="preconnect" href="https://images.unsplash.com" crossOrigin="" />
+        <link rel="preconnect" href="https://api.mapbox.com" crossOrigin="" />
+        <link rel="dns-prefetch" href="https://events.mapbox.com" />
+        <link rel="dns-prefetch" href="https://api.tiles.mapbox.com" />
+        <link rel="dns-prefetch" href="https://picsum.photos" />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrapScript }} />
       </head>
       <body className="bg-background text-foreground flex min-h-full flex-col font-sans">
@@ -117,6 +148,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <RefCapture />
         </Suspense>
         <JsonLd data={orgJsonLd} />
+        <JsonLd data={websiteJsonLd} />
       </body>
     </html>
   );

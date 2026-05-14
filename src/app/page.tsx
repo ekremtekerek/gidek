@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import { CategoryGrid } from '@/components/home/category-grid';
 import { EndingSoon } from '@/components/home/ending-soon';
 import { FeaturedCarousel } from '@/components/home/featured-carousel';
@@ -11,6 +12,41 @@ import { Container } from '@/components/ui/container';
 import { listDeals } from '@/lib/db/queries/deals';
 import { getPlatformStats, listEndingSoonDeals } from '@/lib/db/queries/stats';
 import { getUserContext } from '@/lib/security/user-context-server';
+import { SITE } from '@/lib/utils/site-config';
+
+export const metadata: Metadata = {
+  title: `${SITE.name} — ${SITE.tagline}`,
+  description: SITE.description,
+  alternates: { canonical: '/' },
+  openGraph: {
+    type: 'website',
+    title: `${SITE.name} — ${SITE.tagline}`,
+    description: SITE.description,
+    url: SITE.url,
+    siteName: SITE.name,
+    locale: SITE.locale,
+    images: [{ url: SITE.defaultOgImage }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: `${SITE.name} — ${SITE.tagline}`,
+    description: SITE.description,
+    images: [SITE.defaultOgImage],
+  },
+  keywords: [
+    'fırsat',
+    'kampanya',
+    'indirim',
+    'tiyatro bileti',
+    'konser bileti',
+    'masaj',
+    'kahvaltı',
+    'tatil otel',
+    'aktivite',
+    'AI öneri',
+    'İstanbul',
+  ],
+};
 
 // ?c= query'sini okumak için her istek tazelenmeli — ISR yerine dinamik.
 export const dynamic = 'force-dynamic';
