@@ -1,10 +1,12 @@
 'use client';
 
-import { useActionState, useEffect, useState } from 'react';
-import { Loader2, Send, Star } from 'lucide-react';
+import { useActionState, useEffect, useRef, useState } from 'react';
+import Image from 'next/image';
+import { ImagePlus, Loader2, Send, Star, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { createReviewAction, type ReviewState } from '@/app/f/[slug]/actions';
 import { Button } from '@/components/ui/button';
+import { BLUR_DATA_URL } from '@/lib/utils/blur';
 import { cn } from '@/lib/utils/cn';
 
 interface Props {
@@ -14,6 +16,7 @@ interface Props {
 
 const MIN_BODY = 5;
 const MAX_BODY = 1000;
+const MAX_PHOTOS = 4;
 
 /**
  * Verified-buyer'a açık yorum formu. 1-5 yıldız seçici (klavye dostu) +
@@ -28,6 +31,9 @@ export function ReviewForm({ dealId, defaultName }: Props) {
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [bodyLen, setBodyLen] = useState(0);
+  const [photos, setPhotos] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!state) return;
@@ -38,10 +44,51 @@ export function ReviewForm({ dealId, defaultName }: Props) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setRating(0);
       setBodyLen(0);
+      setPhotos([]);
     } else if (state.error) {
       toast.error(state.error);
     }
   }, [state]);
+
+  async function handleFiles(files: FileList | null) {
+    if (!files || files.length === 0) return;
+    const remaining = MAX_PHOTOS - photos.length;
+    if (remaining <= 0) {
+      toast.error(`En fazla ${MAX_PHOTOS} foto ekleyebilirsin.`);
+      return;
+    }
+    const toUpload = Array.from(files).slice(0, remaining);
+    setUploading(true);
+    try {
+      const uploaded: string[] = [];
+      for (const file of toUpload) {
+        const fd = new FormData();
+        fd.append('file', file);
+        const res = await fetch('/api/upload/review-photo', { method: 'POST', body: fd });
+        const ct = res.headers.get('content-type') ?? '';
+        if (!ct.includes('application/json')) {
+          throw new Error(`Sunucu hatası (${res.status})`);
+        }
+        const data = await res.json();
+        if (!res.ok || !data.url) {
+          throw new Error(data.error ?? 'Yükleme başarısız.');
+        }
+        uploaded.push(data.url as string);
+      }
+      setPhotos((prev) => [...prev, ...uploaded]);
+      toast.success(`${uploaded.length} foto eklendi.`);
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Yükleme başarısız.';
+      toast.error(msg);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  }
+
+  function removePhoto(url: string) {
+    setPhotos((prev) => prev.filter((p) => p !== url));
+  }
 
   const fieldErrors = state && !state.ok ? state.fieldErrors : undefined;
   const displayed = hoverRating || rating;
@@ -161,11 +208,76 @@ export function ReviewForm({ dealId, defaultName }: Props) {
         </div>
       </div>
 
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-medium">Fotoğraflar (opsiyonel)</span>
+          <span className="text-muted-foreground text-[11px] tabular-nums">
+            {photos.length} / {MAX_PHOTOS}
+          </span>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {photos.map((url) => (
+            <div
+              key={url}
+              className="border-border bg-muted relative size-20 overflow-hidden rounded-md border"
+            >
+              <Image
+                src={url}
+                alt="Yorum fotoğrafı"
+                fill
+                sizes="80px"
+                className="object-cover"
+                placeholder="blur"
+                blurDataURL={BLUR_DATA_URL}
+              />
+              <input type="hidden" name="photoUrls[]" value={url} />
+              <button
+                type="button"
+                onClick={() => removePhoto(url)}
+                aria-label="Fotoğrafı kaldır"
+                className="bg-background/95 hover:bg-rose-500 hover:text-white absolute right-1 top-1 inline-flex size-5 items-center justify-center rounded-full shadow"
+              >
+                <X className="size-3" aria-hidden="true" />
+              </button>
+            </div>
+          ))}
+          {photos.length < MAX_PHOTOS ? (
+            <label
+              className={cn(
+                'border-border bg-background hover:bg-muted/30 flex size-20 cursor-pointer flex-col items-center justify-center gap-1 rounded-md border-2 border-dashed text-[10px] font-medium transition-colors',
+                uploading ? 'pointer-events-none opacity-60' : null,
+              )}
+            >
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={(e) => handleFiles(e.target.files)}
+                disabled={uploading}
+                className="sr-only"
+              />
+              {uploading ? (
+                <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <>
+                  <ImagePlus className="size-4" aria-hidden="true" />
+                  <span>Foto ekle</span>
+                </>
+              )}
+            </label>
+          ) : null}
+        </div>
+        <p className="text-muted-foreground text-[11px]">
+          JPG/PNG/WebP · max 6 MB. Fotolar gidek üzerinde paylaşılır.
+        </p>
+      </div>
+
       <Button
         type="submit"
         variant="primary"
         size="md"
-        disabled={pending || rating === 0 || bodyLen < MIN_BODY}
+        disabled={pending || rating === 0 || bodyLen < MIN_BODY || uploading}
         className="self-end gap-2"
       >
         {pending ? (

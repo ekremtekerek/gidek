@@ -7,11 +7,24 @@ import { requireUser } from '@/lib/security/auth';
 import { createBookingSchema } from '@/lib/security/validators';
 import { TOAST_KEYS, withToast } from '@/lib/utils/toast';
 
+export interface BookingConflict {
+  bookingCode: string;
+  dealTitle: string;
+  dealSlug: string;
+  selectedDate: string;
+  selectedTime: string | null;
+}
+
 export type CreateBookingState =
   | {
       ok: false;
       error?: string;
       fieldErrors?: Record<string, string[]>;
+    }
+  | {
+      ok: false;
+      warning: 'overlap';
+      conflicts: BookingConflict[];
     }
   | null;
 
@@ -54,6 +67,39 @@ export async function createBookingAction(
   }
   if (parsed.data.quantity > deal.max_per_user) {
     return { ok: false, error: `En fazla ${deal.max_per_user} adet seçilebilir.` };
+  }
+
+  // Çakışma kontrolü — aynı tarihte mevcut bir booking varsa kullanıcıyı
+  // uyar. Kullanıcı `confirm_overlap=on` ile gönderirse devam edilir
+  // (bilinçli ikinci rezervasyon yapıyor olabilir).
+  const confirmOverlap = formData.get('confirm_overlap') === 'on';
+  if (!confirmOverlap) {
+    const { data: existing } = await supabase
+      .from('bookings')
+      .select(
+        'booking_code, selected_date, selected_time, deal:deals ( title, slug )',
+      )
+      .eq('user_id', user.id)
+      .eq('selected_date', parsed.data.selected_date)
+      .in('status', ['pending', 'confirmed']);
+
+    if (existing && existing.length > 0) {
+      const conflicts = existing.map((b) => {
+        const dealRel = b.deal as
+          | { title: string; slug: string }
+          | { title: string; slug: string }[]
+          | null;
+        const d = Array.isArray(dealRel) ? dealRel[0] : dealRel;
+        return {
+          bookingCode: b.booking_code,
+          dealTitle: d?.title ?? '—',
+          dealSlug: d?.slug ?? '',
+          selectedDate: b.selected_date as string,
+          selectedTime: b.selected_time as string | null,
+        };
+      });
+      return { ok: false, warning: 'overlap', conflicts };
+    }
   }
 
   const unitPrice = Number(deal.discounted_price);

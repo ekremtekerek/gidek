@@ -11,13 +11,19 @@ import {
   Phone,
   Settings,
   ShieldCheck,
+  Sparkles,
   Store,
   Ticket,
   User as UserIcon,
+  Users,
 } from 'lucide-react';
 import { signOutAction } from '@/app/profil/actions';
+import { BadgesGrid } from '@/components/profile/badges-grid';
+import { BingoCard } from '@/components/profile/bingo-card';
 import { LoyaltyCard } from '@/components/profile/loyalty-card';
 import { PushOptIn } from '@/components/pwa/push-opt-in';
+import { listBadgesForUser } from '@/lib/gamification/badges';
+import { BINGO_THRESHOLD, listBingoProgress } from '@/lib/gamification/bingo';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { getServerClient } from '@/lib/db/server';
@@ -38,13 +44,17 @@ export default async function ProfilPage() {
   const user = await requireUser();
 
   const supabase = await getServerClient();
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select(
-      'display_name, avatar_url, phone, onboarding_done, created_at, merchant_id, loyalty_points',
-    )
-    .eq('id', user.id)
-    .maybeSingle();
+  const [{ data: profile }, badges, bingo] = await Promise.all([
+    supabase
+      .from('profiles')
+      .select(
+        'display_name, avatar_url, phone, onboarding_done, created_at, merchant_id, loyalty_points, streak_weeks',
+      )
+      .eq('id', user.id)
+      .maybeSingle(),
+    listBadgesForUser(user.id),
+    listBingoProgress(user.id),
+  ]);
 
   const displayName = profile?.display_name ?? user.email?.split('@')[0] ?? 'Üye';
 
@@ -100,8 +110,21 @@ export default async function ProfilPage() {
         </header>
 
         <div className="mb-6">
-          <LoyaltyCard points={profile?.loyalty_points ?? 0} />
+          <LoyaltyCard
+            points={profile?.loyalty_points ?? 0}
+            streakWeeks={profile?.streak_weeks ?? 0}
+          />
         </div>
+
+        <div className="mb-6">
+          <BadgesGrid badges={badges} />
+        </div>
+
+        {bingo.length > 0 ? (
+          <div className="mb-6">
+            <BingoCard cities={bingo} threshold={BINGO_THRESHOLD} />
+          </div>
+        ) : null}
 
         {isAdmin(user) ? (
           <Link
@@ -203,6 +226,19 @@ export default async function ProfilPage() {
             <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
           </Link>
           <Link
+            href="/akis"
+            className="hover:bg-muted/50 flex items-center gap-4 p-4 transition-colors sm:p-5"
+          >
+            <Users className="size-5 shrink-0 text-emerald-600" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">Akış</p>
+              <p className="text-muted-foreground text-xs">
+                Takip ettiklerinin son aktiviteleri
+              </p>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
+          </Link>
+          <Link
             href="/onboarding"
             className="hover:bg-muted/50 flex items-center gap-4 p-4 transition-colors sm:p-5"
           >
@@ -213,6 +249,19 @@ export default async function ProfilPage() {
                 {profile?.onboarding_done
                   ? 'Şehir, bütçe, ilgi alanları — güncelle'
                   : 'Tamamla — öneriler kişiselleşsin'}
+              </p>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
+          </Link>
+          <Link
+            href="/cark"
+            className="hover:bg-muted/50 flex items-center gap-4 p-4 transition-colors sm:p-5"
+          >
+            <Sparkles className="size-5 shrink-0 text-amber-500" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-medium">Günlük çark</p>
+              <p className="text-muted-foreground text-xs">
+                Günde bir kez çevir — puan veya kupon kazan
               </p>
             </div>
             <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />

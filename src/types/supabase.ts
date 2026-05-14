@@ -156,6 +156,141 @@ export type Database = {
           },
         ]
       }
+      badges: {
+        Row: {
+          created_at: string
+          criteria_extra: string | null
+          criteria_type: string
+          criteria_value: number
+          description: string
+          emoji: string
+          id: string
+          name: string
+          slug: string
+          sort_order: number
+          tier: string
+        }
+        Insert: {
+          created_at?: string
+          criteria_extra?: string | null
+          criteria_type: string
+          criteria_value?: number
+          description: string
+          emoji: string
+          id?: string
+          name: string
+          slug: string
+          sort_order?: number
+          tier: string
+        }
+        Update: {
+          created_at?: string
+          criteria_extra?: string | null
+          criteria_type?: string
+          criteria_value?: number
+          description?: string
+          emoji?: string
+          id?: string
+          name?: string
+          slug?: string
+          sort_order?: number
+          tier?: string
+        }
+        Relationships: []
+      }
+      user_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      follows: {
+        Row: {
+          created_at: string
+          follower_id: string
+          followee_id: string
+        }
+        Insert: {
+          created_at?: string
+          follower_id: string
+          followee_id: string
+        }
+        Update: {
+          created_at?: string
+          follower_id?: string
+          followee_id?: string
+        }
+        Relationships: []
+      }
+      user_daily_spins: {
+        Row: {
+          coupon_code: string | null
+          coupon_value: number | null
+          label: string
+          points: number | null
+          prize_kind: string
+          spin_date: string
+          spun_at: string
+          user_id: string
+        }
+        Insert: {
+          coupon_code?: string | null
+          coupon_value?: number | null
+          label: string
+          points?: number | null
+          prize_kind: string
+          spin_date?: string
+          spun_at?: string
+          user_id: string
+        }
+        Update: {
+          coupon_code?: string | null
+          coupon_value?: number | null
+          label?: string
+          points?: number | null
+          prize_kind?: string
+          spin_date?: string
+          spun_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_city_bingos: {
+        Row: {
+          city: string
+          claimed_at: string
+          coupon_code: string
+          district_count: number
+          user_id: string
+        }
+        Insert: {
+          city: string
+          claimed_at?: string
+          coupon_code: string
+          district_count: number
+          user_id: string
+        }
+        Update: {
+          city?: string
+          claimed_at?: string
+          coupon_code?: string
+          district_count?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           admin_notes: string | null
@@ -717,6 +852,8 @@ export type Database = {
           onboarding_done: boolean
           phone: string | null
           public_slug: string | null
+          streak_last_week: string | null
+          streak_weeks: number
           updated_at: string
         }
         Insert: {
@@ -730,6 +867,8 @@ export type Database = {
           onboarding_done?: boolean
           phone?: string | null
           public_slug?: string | null
+          streak_last_week?: string | null
+          streak_weeks?: number
           updated_at?: string
         }
         Update: {
@@ -743,6 +882,8 @@ export type Database = {
           onboarding_done?: boolean
           phone?: string | null
           public_slug?: string | null
+          streak_last_week?: string | null
+          streak_weeks?: number
           updated_at?: string
         }
         Relationships: []
@@ -824,6 +965,66 @@ export type Database = {
           code?: string
           created_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      review_photos: {
+        Row: {
+          created_at: string
+          id: string
+          review_id: string
+          sort_order: number
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          review_id: string
+          sort_order?: number
+          url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          review_id?: string
+          sort_order?: number
+          url?: string
+        }
+        Relationships: []
+      }
+      review_replies: {
+        Row: {
+          body: string
+          created_at: string
+          display_name: string
+          id: string
+          is_active: boolean
+          is_merchant_reply: boolean
+          review_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          display_name: string
+          id?: string
+          is_active?: boolean
+          is_merchant_reply?: boolean
+          review_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          display_name?: string
+          id?: string
+          is_active?: boolean
+          is_merchant_reply?: boolean
+          review_id?: string
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -1079,6 +1280,30 @@ export type Database = {
           unit_price: number
           user_id: string | null
         }
+      }
+      spin_daily: {
+        Args: { p_user_id: string }
+        Returns: {
+          prize_kind: string
+          points: number | null
+          coupon_code: string | null
+          coupon_value: number | null
+          label: string
+        }[]
+      }
+      claim_city_bingo: {
+        Args: { p_user_id: string; p_city: string }
+        Returns: string | null
+      }
+      bingo_progress_for_user: {
+        Args: { p_user_id: string }
+        Returns: {
+          city: string
+          districts: string[] | null
+          district_count: number
+          claimed: boolean
+          coupon_code: string | null
+        }[]
       }
       remove_coupon_from_booking: {
         Args: { p_booking_id: string }

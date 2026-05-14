@@ -3,8 +3,11 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Heart, Sparkles, User as UserIcon } from 'lucide-react';
+import { BadgesGrid } from '@/components/profile/badges-grid';
+import { FollowButton } from '@/components/profile/follow-button';
 import { Container } from '@/components/ui/container';
 import { getServiceClient } from '@/lib/db/service';
+import { listBadgesForUser } from '@/lib/gamification/badges';
 import { BLUR_DATA_URL } from '@/lib/utils/blur';
 import { formatTRY } from '@/lib/utils/format';
 import { loyaltyState } from '@/lib/utils/loyalty';
@@ -57,7 +60,13 @@ export default async function PublicProfilePage({ params }: PageProps) {
 
   if (!profile) notFound();
 
-  const [{ data: favorites }, { count: bookingCount }] = await Promise.all([
+  const [
+    { data: favorites },
+    { count: bookingCount },
+    badges,
+    { count: followersCount },
+    { count: followingCount },
+  ] = await Promise.all([
     supabase
       .from('favorites')
       .select(
@@ -74,7 +83,18 @@ export default async function PublicProfilePage({ params }: PageProps) {
       .select('id', { count: 'exact', head: true })
       .eq('user_id', profile.id)
       .in('status', ['confirmed', 'used']),
+    listBadgesForUser(profile.id),
+    supabase
+      .from('follows')
+      .select('follower_id', { count: 'exact', head: true })
+      .eq('followee_id', profile.id),
+    supabase
+      .from('follows')
+      .select('followee_id', { count: 'exact', head: true })
+      .eq('follower_id', profile.id),
   ]);
+
+  const earnedBadges = badges.filter((b) => b.earned);
 
   // Sadece aktif + yayında + süresi dolmamış deal'leri göster
   const now = new Date();
@@ -147,7 +167,32 @@ export default async function PublicProfilePage({ params }: PageProps) {
           <span aria-hidden="true">·</span>
           <span>{memberSince}&apos;dan beri</span>
         </p>
+
+        <div className="text-muted-foreground mt-1 inline-flex items-center gap-4 text-sm">
+          <span>
+            <strong className="text-foreground tabular-nums">{followersCount ?? 0}</strong>{' '}
+            takipçi
+          </span>
+          <span aria-hidden="true">·</span>
+          <span>
+            <strong className="text-foreground tabular-nums">{followingCount ?? 0}</strong>{' '}
+            takipte
+          </span>
+        </div>
+
+        <div className="mt-3">
+          <FollowButton
+            targetUserId={profile.id}
+            initialFollowersCount={followersCount ?? 0}
+          />
+        </div>
       </header>
+
+      {earnedBadges.length > 0 ? (
+        <div className="mb-8">
+          <BadgesGrid badges={badges} compact />
+        </div>
+      ) : null}
 
       <section>
         <header className="mb-5">

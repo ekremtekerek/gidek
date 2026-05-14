@@ -6,6 +6,9 @@ import { z } from 'zod';
 import { getServerClient } from '@/lib/db/server';
 import { sendEmail } from '@/lib/email/send';
 import { bookingConfirmedEmail } from '@/lib/email/templates';
+import { evaluateAndGrantBadges } from '@/lib/gamification/badges';
+import { maybeClaimCityBingo } from '@/lib/gamification/bingo';
+import { updateStreak } from '@/lib/gamification/streak';
 import { requireUser } from '@/lib/security/auth';
 import { TOAST_KEYS, withToast } from '@/lib/utils/toast';
 
@@ -73,7 +76,7 @@ export async function confirmPaymentAction(
   const { data: booking, error: bErr } = await supabase
     .from('bookings')
     .select(
-      'id, user_id, status, quantity, total_amount, selected_date, selected_time, deal:deals ( title )',
+      'id, user_id, status, quantity, total_amount, selected_date, selected_time, deal:deals ( title, city )',
     )
     .eq('booking_code', parsed.data.bookingCode)
     .maybeSingle();
@@ -93,6 +96,22 @@ export async function confirmPaymentAction(
       p_booking_id: booking.id,
     });
     if (rpcErr) return { ok: false, error: 'Ödeme kaydedilemedi.' };
+
+    // Streak'i önce güncelle, sonra rozetleri değerlendir — streak_weeks
+    // criteria_type=streak_weeks rozetinin kazanımını doğru yakalayalım.
+    // Şehir bingosunu da burada tetikliyoruz; idempotent RPC.
+    const dealCity = (Array.isArray(booking.deal)
+      ? (booking.deal as Array<{ city: string | null }>)[0]?.city
+      : (booking.deal as { city: string | null } | null)?.city) ?? null;
+    void (async () => {
+      try {
+        await updateStreak(user.id);
+        await evaluateAndGrantBadges(user.id);
+        if (dealCity) await maybeClaimCityBingo(user.id, dealCity);
+      } catch (err) {
+        console.error('[gamification] post-confirm failed:', err);
+      }
+    })();
   }
 
   // Onay e-postasını fire-and-forget olarak gönder; kullanıcının akışını

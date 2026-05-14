@@ -25,13 +25,16 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
   const [quantity, setQuantity] = useState(1);
   const [isGift, setIsGift] = useState(false);
   const total = unitPrice * quantity;
-  const err = state?.fieldErrors;
+  const err = state && 'fieldErrors' in state ? state.fieldErrors : undefined;
+  const warning = state && 'warning' in state ? state : null;
 
   const todayIso = new Date().toISOString().slice(0, 10);
 
   return (
     <form action={formAction} className="flex flex-col gap-6" noValidate>
       <input type="hidden" name="dealId" value={dealId} />
+      {/* Çakışma uyarısı kabul edildiğinde aynı submit'te bayrak gönderilir */}
+      {warning ? <input type="hidden" name="confirm_overlap" value="on" /> : null}
 
       <div className="flex flex-col gap-1.5">
         <Label htmlFor="quantity" className="inline-flex items-center gap-1.5">
@@ -221,7 +224,7 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
         <span className="text-2xl font-semibold">{formatTRY(total)}</span>
       </div>
 
-      {state?.error ? (
+      {state && 'error' in state && state.error ? (
         <p
           role="alert"
           className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
@@ -230,8 +233,52 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
         </p>
       ) : null}
 
+      {warning ? (
+        <div
+          role="alert"
+          className="border-amber-500/30 bg-amber-500/10 flex flex-col gap-3 rounded-xl border p-4"
+        >
+          <div className="flex items-start gap-2">
+            <span className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300">
+              ⚠
+            </span>
+            <div className="min-w-0">
+              <p className="text-foreground text-sm font-semibold">
+                Aynı gün için zaten rezervasyonun var
+              </p>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                Aşağıdaki rezervasyon{warning.conflicts.length > 1 ? 'ların' : 'un'} ile çakışıyor.
+                Yine de devam etmek istersen aynı butona tekrar bas.
+              </p>
+            </div>
+          </div>
+          <ul className="border-border bg-background flex flex-col gap-1.5 rounded-md border p-3 text-xs">
+            {warning.conflicts.map((c) => (
+              <li key={c.bookingCode} className="flex items-center justify-between gap-3">
+                <span className="line-clamp-1 font-medium">{c.dealTitle}</span>
+                <span className="text-muted-foreground tabular-nums">
+                  {c.selectedTime ? c.selectedTime.slice(0, 5) : 'Saat —'} ·{' '}
+                  <a
+                    href={`/rezervasyonlarim/${c.bookingCode}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-foreground hover:underline underline-offset-2"
+                  >
+                    {c.bookingCode}
+                  </a>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
+
       <Button type="submit" variant="primary" size="lg" full disabled={pending}>
-        {pending ? 'Rezervasyon oluşturuluyor…' : 'Rezervasyonu Tamamla'}
+        {pending
+          ? 'Rezervasyon oluşturuluyor…'
+          : warning
+            ? 'Yine de devam et'
+            : 'Rezervasyonu Tamamla'}
       </Button>
 
       <p className="text-muted-foreground text-center text-xs">

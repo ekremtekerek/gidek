@@ -20,6 +20,12 @@ const THIRTY_DAYS_AGO = () => {
   return d.toISOString();
 };
 
+const YEAR_AGO = () => {
+  const d = new Date();
+  d.setDate(d.getDate() - 365);
+  return d.toISOString();
+};
+
 const FOURTEEN_DAYS_AGO = () => {
   const d = new Date();
   d.setDate(d.getDate() - 14);
@@ -161,6 +167,10 @@ export async function getWeeklyChampions(top = 3): Promise<Champion[]> {
 
 export async function getMonthlyChampions(top = 3): Promise<Champion[]> {
   return getChampionsInWindow(THIRTY_DAYS_AGO(), top);
+}
+
+export async function getYearlyChampions(top = 3): Promise<Champion[]> {
+  return getChampionsInWindow(YEAR_AGO(), top);
 }
 
 /**

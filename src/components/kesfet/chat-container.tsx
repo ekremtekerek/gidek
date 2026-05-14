@@ -316,8 +316,13 @@ export function ChatContainer({
 
       {/* Main area — welcome (empty) or scrollable message list (active) */}
       {isEmpty ? (
-        <div className="flex flex-1 items-center justify-center px-4 py-10 sm:px-6 sm:py-14">
-          <WelcomeHero welcomeDeals={welcomeDeals} city={city} welcome={liveWelcome} />
+        <div className="flex flex-1 items-center justify-center px-4 py-6 sm:px-6 sm:py-8">
+          <WelcomeHero
+            welcomeDeals={welcomeDeals}
+            city={city}
+            welcome={liveWelcome}
+            onMoodSelect={onQuickPrompt}
+          />
         </div>
       ) : (
         <div
@@ -411,25 +416,121 @@ function WelcomeHero({
   welcomeDeals,
   city,
   welcome,
+  onMoodSelect,
 }: {
   welcomeDeals: DealWithMerchant[];
   city?: string;
   welcome: WelcomeContent;
+  onMoodSelect: (prompt: string) => void;
 }) {
   return (
-    <div className="flex w-full flex-col items-center gap-6 text-center sm:gap-8">
+    <div className="flex w-full flex-col items-center gap-4 text-center sm:gap-5">
       {welcomeDeals.length > 0 && city ? (
         <NearbyCarousel deals={welcomeDeals} city={city} />
       ) : null}
-      <div className="flex flex-col items-center gap-4">
-        <h1 className="text-3xl font-semibold tracking-tight text-balance sm:text-5xl">
+      <div className="flex flex-col items-center gap-3">
+        <h1 className="text-2xl font-semibold tracking-tight text-balance sm:text-4xl">
           {welcome.greeting}
         </h1>
-        <p className="text-muted-foreground max-w-xl text-balance sm:text-lg">
-          {welcome.subtitle}
-        </p>
         <PhotoSearchCta />
       </div>
+      <MoodChips onSelect={onMoodSelect} />
+    </div>
+  );
+}
+
+interface MoodChip {
+  emoji: string;
+  label: string;
+  prompt: string;
+  /** Tailwind background — varsayılan muted; vurgulu için belirt. */
+  accent?: string;
+}
+
+const MOOD_CHIPS: MoodChip[] = [
+  {
+    emoji: '😌',
+    label: 'Sakinleşmek istiyorum',
+    prompt: 'Stresliyim, beni rahatlatacak sakin bir aktivite veya mekan öner',
+    accent: 'from-sky-500/15 to-blue-500/15 border-sky-500/30',
+  },
+  {
+    emoji: '💕',
+    label: 'Romantik bir akşam',
+    prompt: 'Çiftler için romantik bir akşam yemeği veya etkinlik öner',
+    accent: 'from-rose-500/15 to-pink-500/15 border-rose-500/30',
+  },
+  {
+    emoji: '👨‍👩‍👧',
+    label: 'Aile vakti',
+    prompt: 'Ailecek çocuklarla yapabileceğimiz bir aktivite öner',
+    accent: 'from-amber-500/15 to-orange-500/15 border-amber-500/30',
+  },
+  {
+    emoji: '🥗',
+    label: 'Brunch arıyorum',
+    prompt: 'Bu hafta sonu için güzel bir brunch mekanı öner',
+    accent: 'from-emerald-500/15 to-teal-500/15 border-emerald-500/30',
+  },
+  {
+    emoji: '🎂',
+    label: 'Kutlama yapıyorum',
+    prompt: 'Bir doğum günü/kutlama için özel bir mekan öner',
+    accent: 'from-violet-500/15 to-fuchsia-500/15 border-violet-500/30',
+  },
+  {
+    emoji: '🌃',
+    label: 'Gece hayatı',
+    prompt: 'Bu akşam için canlı ve eğlenceli bir mekan öner',
+    accent: 'from-indigo-500/15 to-purple-500/15 border-indigo-500/30',
+  },
+  {
+    emoji: '🧘',
+    label: 'Kendime zaman',
+    prompt: 'Tek başıma keyifli vakit geçirebileceğim huzurlu bir yer öner',
+    accent: 'from-teal-500/15 to-cyan-500/15 border-teal-500/30',
+  },
+  {
+    emoji: '🎭',
+    label: 'Sahne / etkinlik',
+    prompt: 'Bu hafta için bir tiyatro, konser veya stand-up önerir misin',
+    accent: 'from-orange-500/15 to-red-500/15 border-orange-500/30',
+  },
+];
+
+/**
+ * Hero altında 8 mood chip'i — kullanıcı kelime yazmadan tek tıkla AI'a
+ * hazır niyet iletebilsin. Her chip kendi gradient'i + emoji + Türkçe
+ * etiket; tıklayınca onQuickPrompt çağırılır → AI hemen yanıt verir.
+ */
+function MoodChips({ onSelect }: { onSelect: (prompt: string) => void }) {
+  return (
+    <div className="flex w-full max-w-3xl flex-col items-center gap-3">
+      <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
+        Bugün için hazır başlangıçlar
+      </p>
+      <ul className="flex flex-wrap justify-center gap-2">
+        {MOOD_CHIPS.map((m) => (
+          <li key={m.label}>
+            <button
+              type="button"
+              onClick={() => onSelect(m.prompt)}
+              className={cn(
+                'group/mood inline-flex items-center gap-2 rounded-full border bg-gradient-to-br px-3.5 py-2 text-sm font-medium shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md focus-visible:ring-2 focus-visible:ring-foreground/30 focus-visible:outline-none',
+                m.accent ?? 'from-muted to-muted border-border',
+              )}
+            >
+              <span
+                className="text-base transition-transform duration-300 group-hover/mood:scale-110"
+                aria-hidden="true"
+              >
+                {m.emoji}
+              </span>
+              <span>{m.label}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

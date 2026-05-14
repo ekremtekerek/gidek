@@ -1,16 +1,20 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
-import { CheckCircle2, LogIn, Star, Ticket } from 'lucide-react';
+import { CheckCircle2, LogIn, ShieldCheck, Star, Ticket } from 'lucide-react';
 import {
   AiReviewSummary,
   AiReviewSummarySkeleton,
 } from '@/components/deal/ai-review-summary';
 import { ReviewForm } from '@/components/deal/review-form';
+import { ReviewPhotoGallery } from '@/components/deal/review-photo-gallery';
+import { ReviewReplyForm } from '@/components/deal/review-reply-form';
 import {
   getUserReviewEligibility,
   listReviewsForDeal,
   summariseReviews,
+  type ReviewRow,
 } from '@/lib/db/queries/reviews';
+import { getCurrentUser } from '@/lib/security/auth';
 import { cn } from '@/lib/utils/cn';
 
 interface Props {
@@ -23,11 +27,13 @@ interface Props {
  * + yorum kartları listesi. Yorum yoksa kompakt empty state.
  */
 export async function ReviewsSection({ dealId, dealSlug }: Props) {
-  const [reviews, eligibility] = await Promise.all([
+  const [reviews, eligibility, currentUser] = await Promise.all([
     listReviewsForDeal(dealId, 24),
     getUserReviewEligibility(dealId),
+    getCurrentUser(),
   ]);
   const stats = summariseReviews(reviews);
+  const isAuthenticated = Boolean(currentUser);
 
   return (
     <section
@@ -68,7 +74,11 @@ export async function ReviewsSection({ dealId, dealSlug }: Props) {
           <ul className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             {reviews.map((r) => (
               <li key={r.id}>
-                <ReviewCard review={r} />
+                <ReviewCard
+                  review={r}
+                  dealSlug={dealSlug}
+                  isAuthenticated={isAuthenticated}
+                />
               </li>
             ))}
           </ul>
@@ -178,7 +188,15 @@ function DistributionBars({
   );
 }
 
-function ReviewCard({ review }: { review: { display_name: string; rating: number; body: string; created_at: string } }) {
+function ReviewCard({
+  review,
+  dealSlug,
+  isAuthenticated,
+}: {
+  review: ReviewRow;
+  dealSlug: string;
+  isAuthenticated: boolean;
+}) {
   const initials = review.display_name
     .split(' ')
     .map((p) => p[0])
@@ -205,6 +223,45 @@ function ReviewCard({ review }: { review: { display_name: string; rating: number
         <Stars value={review.rating} size={14} />
       </header>
       <p className="text-foreground/90 text-sm leading-relaxed">{review.body}</p>
+
+      {review.photos.length > 0 ? <ReviewPhotoGallery photos={review.photos} /> : null}
+
+      {review.replies.length > 0 ? (
+        <ul className="border-border mt-1 flex flex-col gap-2 border-l-2 pl-3">
+          {review.replies.map((reply) => {
+            const replyDate = new Date(reply.created_at).toLocaleDateString('tr-TR', {
+              day: 'numeric',
+              month: 'short',
+            });
+            return (
+              <li key={reply.id} className="flex flex-col gap-1">
+                <header className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                  <span className="text-foreground font-semibold">
+                    {reply.display_name}
+                  </span>
+                  {reply.is_merchant_reply ? (
+                    <span className="inline-flex items-center gap-0.5 rounded-full bg-violet-500/15 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-violet-700 dark:text-violet-300">
+                      <ShieldCheck className="size-2.5" aria-hidden="true" />
+                      İşletme
+                    </span>
+                  ) : null}
+                  <span className="text-muted-foreground">·</span>
+                  <span className="text-muted-foreground">{replyDate}</span>
+                </header>
+                <p className="text-foreground/85 text-xs leading-relaxed">{reply.body}</p>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+
+      <footer className="border-border mt-1 border-t pt-2">
+        <ReviewReplyForm
+          reviewId={review.id}
+          authenticated={isAuthenticated}
+          dealSlug={dealSlug}
+        />
+      </footer>
     </article>
   );
 }

@@ -64,6 +64,15 @@ export async function onboardingAction(
     redirect('/');
   }
 
+  // Sevmediği şeyler: chip seçimleri + serbest metin → birleştirilip dedupe
+  const dislikePicks = formData.getAll('dislike_picks').map(String).filter(Boolean);
+  const dislikesExtraRaw = (formData.get('dislikes_extra')?.toString() ?? '').trim();
+  const dislikesExtra = dislikesExtraRaw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0 && s.length <= 50);
+  const dislikesCombined = Array.from(new Set([...dislikePicks, ...dislikesExtra])).slice(0, 20);
+
   const parsed = onboardingSchema.safeParse({
     city: formData.get('city'),
     district: formData.get('district'),
@@ -73,7 +82,7 @@ export async function onboardingAction(
     budget_max: formData.get('budget_max'),
     interests: formData.getAll('interests'),
     dietary: formData.getAll('dietary'),
-    dislikes: formData.get('dislikes'),
+    dislikes: dislikesCombined,
     has_car: formData.get('has_car'),
     has_pet: formData.get('has_pet'),
     time_preference: formData.get('time_preference'),
@@ -98,7 +107,7 @@ export async function onboardingAction(
       budget_max: d.budget_max ?? null,
       interests: d.interests,
       dietary: d.dietary,
-      dislikes: d.dislikes ? [d.dislikes] : [],
+      dislikes: d.dislikes,
       has_car: d.has_car ?? null,
       has_pet: d.has_pet ?? null,
       time_preference: d.time_preference ?? null,

@@ -168,15 +168,11 @@ export function OnboardingForm({ initial }: Props) {
         </fieldset>
       </Section>
 
-      <Section title="Sevmediğin şeyler" desc="Virgülle ayırarak yaz — AI bunlardan uzak duracak.">
-        <Input
-          id="dislikes"
-          name="dislikes"
-          type="text"
-          defaultValue={initial?.dislikes?.join(', ') ?? ''}
-          placeholder="Örn. çok kalabalık yerler, sushi, geç saat"
-          maxLength={500}
-        />
+      <Section
+        title="Sevmediğin şeyler"
+        desc="Hızlı seç ya da kendi notunu yaz — AI önerileri bunlardan uzak duracak."
+      >
+        <DislikesField initial={initial?.dislikes ?? []} />
       </Section>
 
       <Section title="Birkaç pratik soru daha" desc="AI önerilerini daha keskin yapsın diye.">
@@ -254,6 +250,69 @@ export function OnboardingForm({ initial }: Props) {
         </Button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Sevmediği şeyler için hibrit alan — sık önerilen chip'ler + serbest metin.
+ * Submit'te `dislike_picks` (checkbox) ve `dislikes_extra` (input) ayrı
+ * gelir; action katmanı ikisini birleştirip array olarak kaydeder.
+ */
+// Türkçe label'lar doğrudan kaydedilir — AI'ya gönderildiğinde doğal okunur
+// ("sevmediği: kalabalık, sigaralı ortam"). Slug yerine label tutmak hem
+// preferences.ts'in render kodunu basit tutar hem AI prompt'unda nüans korur.
+const SUGGESTED_DISLIKES = [
+  'Kalabalık',
+  'Gürültülü',
+  'Çok pahalı',
+  'Geç saat',
+  'Sigaralı ortam',
+  'Park sorunu',
+  'Fast food',
+  'Çocuk dostu değil',
+  'Sadece kapalı mekan',
+  'Sıra/bekleme',
+];
+
+const SUGGESTED_SET = new Set(SUGGESTED_DISLIKES);
+
+function DislikesField({ initial }: { initial: string[] }) {
+  // Mevcut dislikes'ı pick'lere ve extra metne ayır
+  const pickedDefaults = initial.filter((v) => SUGGESTED_SET.has(v));
+  const extraDefaults = initial
+    .filter((v) => !SUGGESTED_SET.has(v))
+    .join(', ');
+
+  return (
+    <div className="flex flex-col gap-3">
+      <fieldset>
+        <legend className="sr-only">Sık seçilen tercihler</legend>
+        <div className="flex flex-wrap gap-1.5">
+          {SUGGESTED_DISLIKES.map((d) => (
+            <ChipCheckbox
+              key={d}
+              name="dislike_picks"
+              value={d}
+              label={d}
+              defaultChecked={pickedDefaults.includes(d)}
+            />
+          ))}
+        </div>
+      </fieldset>
+      <div className="flex flex-col gap-1.5">
+        <Label htmlFor="dislikes_extra" className="text-muted-foreground text-xs">
+          Aklındakini yaz — virgülle birden çok
+        </Label>
+        <Input
+          id="dislikes_extra"
+          name="dislikes_extra"
+          type="text"
+          defaultValue={extraDefaults}
+          placeholder="Örn. sushi, lavanta kokusu, çok loş aydınlatma"
+          maxLength={500}
+        />
+      </div>
+    </div>
   );
 }
 

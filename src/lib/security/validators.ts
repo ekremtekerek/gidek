@@ -80,7 +80,7 @@ export const onboardingSchema = z
     budget_max: optionalNumber,
     interests: z.array(z.string().trim().min(1).max(50)).optional().default([]),
     dietary: z.array(z.enum(DIETARY_VALUES)).optional().default([]),
-    dislikes: optionalText(500),
+    dislikes: z.array(z.string().trim().min(1).max(50)).optional().default([]),
     // Genişletilmiş profil — atlanabilir.
     has_car: z
       .union([z.literal('yes'), z.literal('no'), z.literal('')])

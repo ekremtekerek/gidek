@@ -3,12 +3,29 @@ import { getPublicClient } from '@/lib/db/public';
 import { getServerClient } from '@/lib/db/server';
 import { getCurrentUser } from '@/lib/security/auth';
 
+export interface ReviewPhoto {
+  id: string;
+  url: string;
+}
+
+export interface ReviewReply {
+  id: string;
+  display_name: string;
+  body: string;
+  is_merchant_reply: boolean;
+  created_at: string;
+  user_id: string | null;
+}
+
 export interface ReviewRow {
   id: string;
+  user_id: string | null;
   display_name: string;
   rating: number;
   body: string;
   created_at: string;
+  photos: ReviewPhoto[];
+  replies: ReviewReply[];
 }
 
 export interface ReviewStats {
@@ -25,14 +42,59 @@ export async function listReviewsForDeal(
   const supabase = getPublicClient();
   const { data, error } = await supabase
     .from('reviews')
-    .select('id, display_name, rating, body, created_at')
+    .select(
+      `id, user_id, display_name, rating, body, created_at,
+       photos:review_photos ( id, url, sort_order ),
+       replies:review_replies ( id, display_name, body, is_merchant_reply, created_at, user_id, is_active )`,
+    )
     .eq('deal_id', dealId)
     .eq('is_active', true)
     .order('created_at', { ascending: false })
     .limit(limit);
 
   if (error) throw error;
-  return (data ?? []) as ReviewRow[];
+
+  type RawRow = {
+    id: string;
+    user_id: string | null;
+    display_name: string;
+    rating: number;
+    body: string;
+    created_at: string;
+    photos?: { id: string; url: string; sort_order: number }[] | null;
+    replies?: {
+      id: string;
+      display_name: string;
+      body: string;
+      is_merchant_reply: boolean;
+      created_at: string;
+      user_id: string | null;
+      is_active: boolean;
+    }[] | null;
+  };
+
+  return ((data ?? []) as unknown as RawRow[]).map((r) => ({
+    id: r.id,
+    user_id: r.user_id,
+    display_name: r.display_name,
+    rating: r.rating,
+    body: r.body,
+    created_at: r.created_at,
+    photos: [...(r.photos ?? [])]
+      .sort((a, b) => a.sort_order - b.sort_order)
+      .map((p) => ({ id: p.id, url: p.url })),
+    replies: (r.replies ?? [])
+      .filter((rp) => rp.is_active)
+      .sort((a, b) => (a.created_at < b.created_at ? -1 : 1))
+      .map((rp) => ({
+        id: rp.id,
+        display_name: rp.display_name,
+        body: rp.body,
+        is_merchant_reply: rp.is_merchant_reply,
+        created_at: rp.created_at,
+        user_id: rp.user_id,
+      })),
+  }));
 }
 
 /**

@@ -1,16 +1,18 @@
-import { Sparkles } from 'lucide-react';
+import { Flame, Sparkles } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { loyaltyState, POINTS_PER_BOOKING } from '@/lib/utils/loyalty';
 
 interface Props {
   points: number;
+  /** Haftalık aktiflik serisi (streak_weeks) — 0 ise gösterilmez */
+  streakWeeks?: number;
 }
 
 /**
  * Profil sayfası için loyalty kartı — emoji rozet + puan + sonraki tier'a
  * progress bar. Sıfır puanlıda dahi gösterilir (motivasyon).
  */
-export function LoyaltyCard({ points }: Props) {
+export function LoyaltyCard({ points, streakWeeks = 0 }: Props) {
   const s = loyaltyState(points);
 
   const accent =
@@ -45,6 +47,15 @@ export function LoyaltyCard({ points }: Props) {
             <span>{s.label}</span>
             <span className="text-foreground/60 ms-1 text-base font-normal">üye</span>
           </p>
+          {streakWeeks > 0 ? (
+            <p
+              className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-rose-500/30 bg-rose-500/10 px-2.5 py-0.5 text-[11px] font-medium text-rose-700 dark:text-rose-300"
+              aria-label={`${streakWeeks} hafta art arda aktif`}
+            >
+              <Flame className="size-3 animate-pulse" aria-hidden="true" />
+              {streakWeeks} hafta seri
+            </p>
+          ) : null}
         </div>
         <div className="text-right">
           <p className="text-3xl font-bold tabular-nums">{s.points}</p>

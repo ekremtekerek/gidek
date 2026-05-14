@@ -5,12 +5,12 @@ import {
   Calendar,
   Crown,
   Heart,
-  Medal,
   Sparkles,
   Trophy,
   User as UserIcon,
   Users,
 } from 'lucide-react';
+import { LeaderboardTabs } from '@/components/community/leaderboard-tabs';
 import { Container } from '@/components/ui/container';
 import {
   getCommunityStats,
@@ -18,8 +18,8 @@ import {
   getMonthlyChampions,
   getMostFavoritedDeals,
   getWeeklyChampions,
+  getYearlyChampions,
   listPublicProfiles,
-  type Champion,
   type PublicProfileBrief,
 } from '@/lib/db/queries/community';
 import { BLUR_DATA_URL } from '@/lib/utils/blur';
@@ -45,9 +45,10 @@ export const metadata: Metadata = {
 export const revalidate = 1800;
 
 export default async function CommunityPage() {
-  const [weekly, monthly, profiles, mostFav, distribution, stats] = await Promise.all([
+  const [weekly, monthly, yearly, profiles, mostFav, distribution, stats] = await Promise.all([
     getWeeklyChampions(3),
     getMonthlyChampions(3),
+    getYearlyChampions(3),
     listPublicProfiles(24),
     getMostFavoritedDeals(6),
     getLoyaltyDistribution(),
@@ -84,37 +85,17 @@ export default async function CommunityPage() {
         />
       </section>
 
-      {/* Haftanın şampiyonları — podyum */}
+      {/* Liderlik tablosu — haftalık / aylık / yıllık sekmeli */}
       <section className="mb-12">
         <SectionHeader
-          eyebrow="Haftanın şampiyonları"
-          title="Son 7 günün en aktif üyeleri"
-          subtitle="En çok onaylanmış rezervasyon yapan public profiller."
+          eyebrow="Liderlik tablosu"
+          title="Toplulukta en aktif üyeler"
+          subtitle="Dönemi seç — sezonun ya da yılın şampiyonlarını gör."
           Icon={Trophy}
           accent="amber"
         />
-        {weekly.length > 0 ? <ChampionPodium champions={weekly} /> : <EmptyChampions />}
+        <LeaderboardTabs weekly={weekly} monthly={monthly} yearly={yearly} />
       </section>
-
-      {/* Ayın şampiyonları — kompakt liste */}
-      {monthly.length > 0 ? (
-        <section className="mb-12">
-          <SectionHeader
-            eyebrow="Ayın şampiyonları"
-            title="Son 30 günün lider üyeleri"
-            subtitle="Aylık aktivite + loyalty toplam değerlendirmesi."
-            Icon={Medal}
-            accent="violet"
-          />
-          <ul className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-            {monthly.map((c, idx) => (
-              <li key={c.id}>
-                <ChampionRow rank={idx + 1} champion={c} variant="monthly" />
-              </li>
-            ))}
-          </ul>
-        </section>
-      ) : null}
 
       {/* Topluluğun favorisi */}
       <section className="mb-12">
@@ -314,113 +295,6 @@ function StatCard({
       </p>
       <p className="text-muted-foreground text-xs">{label}</p>
     </div>
-  );
-}
-
-function EmptyChampions() {
-  return (
-    <p className="text-muted-foreground border-border bg-muted/30 rounded-xl border border-dashed p-10 text-center text-sm">
-      Bu hafta için henüz şampiyon yok — bir rezervasyon yap, sen lider ol!
-    </p>
-  );
-}
-
-function ChampionPodium({ champions }: { champions: Champion[] }) {
-  const [first, second, third] = champions;
-  // Mobil: dikey liste (1-2-3 sırasıyla). Desktop: 2-1-3 podyum.
-  return (
-    <>
-      <div className="grid grid-cols-1 gap-3 sm:hidden">
-        {champions.map((c, idx) => (
-          <ChampionRow key={c.id} rank={idx + 1} champion={c} variant="podium" />
-        ))}
-      </div>
-      <div className="hidden grid-cols-3 items-end gap-3 sm:grid">
-        {second ? <PodiumCard champion={second} rank={2} height="md" /> : <div />}
-        {first ? <PodiumCard champion={first} rank={1} height="lg" /> : <div />}
-        {third ? <PodiumCard champion={third} rank={3} height="sm" /> : <div />}
-      </div>
-    </>
-  );
-}
-
-function PodiumCard({
-  champion,
-  rank,
-  height,
-}: {
-  champion: Champion;
-  rank: 1 | 2 | 3;
-  height: 'sm' | 'md' | 'lg';
-}) {
-  const heightCls =
-    height === 'lg' ? 'pt-10 pb-6' : height === 'md' ? 'pt-8 pb-5' : 'pt-7 pb-4';
-  const rankColor =
-    rank === 1
-      ? 'from-amber-500 to-yellow-400'
-      : rank === 2
-        ? 'from-slate-400 to-slate-300'
-        : 'from-orange-500 to-orange-400';
-  const medalEmoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉';
-
-  return (
-    <Link
-      href={`/u/${champion.publicSlug}`}
-      className={cn(
-        'border-border bg-background hover:border-foreground/30 group relative flex flex-col items-center gap-2 rounded-2xl border text-center shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg',
-        heightCls,
-        rank === 1 ? 'ring-2 ring-amber-400/40' : null,
-      )}
-    >
-      <span
-        className={cn(
-          'absolute -top-3 inline-flex size-9 items-center justify-center rounded-full bg-gradient-to-br text-base shadow-md ring-2 ring-background',
-          rankColor,
-        )}
-        aria-hidden="true"
-      >
-        {medalEmoji}
-      </span>
-      <Avatar profile={champion} size={height === 'lg' ? 'lg' : 'md'} />
-      <p className="line-clamp-1 px-2 text-sm font-semibold">{champion.displayName}</p>
-      <p className="text-muted-foreground text-[11px]">@{champion.publicSlug}</p>
-      <p className="border-border mt-1 rounded-full border bg-muted/40 px-2.5 py-0.5 text-[11px] font-medium tabular-nums">
-        {champion.windowBookings} rezervasyon
-      </p>
-    </Link>
-  );
-}
-
-function ChampionRow({
-  rank,
-  champion,
-  variant,
-}: {
-  rank: number;
-  champion: Champion;
-  variant: 'podium' | 'monthly';
-}) {
-  const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : '🥉';
-  return (
-    <Link
-      href={`/u/${champion.publicSlug}`}
-      className="border-border bg-background hover:border-foreground/30 flex items-center gap-3 rounded-xl border p-3 transition-colors"
-    >
-      <span aria-hidden="true" className="text-xl">
-        {medal}
-      </span>
-      <Avatar profile={champion} size="sm" />
-      <div className="min-w-0 flex-1">
-        <p className="line-clamp-1 text-sm font-semibold">{champion.displayName}</p>
-        <p className="text-muted-foreground text-[11px]">@{champion.publicSlug}</p>
-      </div>
-      <span className="text-right">
-        <p className="text-sm font-bold tabular-nums">{champion.windowBookings}</p>
-        <p className="text-muted-foreground text-[10px]">
-          {variant === 'monthly' ? '30 günde' : '7 günde'}
-        </p>
-      </span>
-    </Link>
   );
 }
 
