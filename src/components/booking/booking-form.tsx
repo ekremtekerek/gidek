@@ -1,13 +1,14 @@
 'use client';
 
 import { useActionState, useState } from 'react';
-import { Calendar, Clock, MessageSquare, Users } from 'lucide-react';
+import { Calendar, Clock, Gift, Heart, MessageSquare, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DateField } from '@/components/ui/date-field';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TimeField } from '@/components/ui/time-field';
 import { createBookingAction, type CreateBookingState } from '@/app/rezervasyon/[slug]/actions';
+import { cn } from '@/lib/utils/cn';
 import { formatTRY } from '@/lib/utils/format';
 
 interface Props {
@@ -22,6 +23,7 @@ const INITIAL: CreateBookingState = null;
 export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: Props) {
   const [state, formAction, pending] = useActionState(createBookingAction, INITIAL);
   const [quantity, setQuantity] = useState(1);
+  const [isGift, setIsGift] = useState(false);
   const total = unitPrice * quantity;
   const err = state?.fieldErrors;
 
@@ -100,6 +102,119 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
           className="border-border bg-background focus:border-foreground/50 focus:ring-foreground/10 placeholder:text-muted-foreground min-h-[88px] w-full rounded-md border p-3 text-sm transition-colors focus:ring-2 focus:outline-none"
         />
       </div>
+
+      <div className="flex flex-col gap-3">
+        <Label>Kim için?</Label>
+        <div className="grid gap-2 sm:grid-cols-2">
+          <button
+            type="button"
+            onClick={() => setIsGift(false)}
+            className={cn(
+              'border-border flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-colors',
+              !isGift
+                ? 'border-foreground bg-foreground/5'
+                : 'hover:border-foreground/40 bg-background',
+            )}
+            aria-pressed={!isGift}
+          >
+            <Heart className="size-4" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">Kendim için</p>
+              <p className="text-muted-foreground text-xs">E-bilet sana gelir</p>
+            </div>
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsGift(true)}
+            className={cn(
+              'border-border flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-colors',
+              isGift
+                ? 'border-rose-500 bg-rose-500/5'
+                : 'hover:border-foreground/40 bg-background',
+            )}
+            aria-pressed={isGift}
+          >
+            <Gift className="size-4 text-rose-600 dark:text-rose-400" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <p className="font-medium">Hediye olarak</p>
+              <p className="text-muted-foreground text-xs">E-bilet alıcıya gider</p>
+            </div>
+          </button>
+        </div>
+        {/* Form'a is_gift bayrağı zaman zaman state ile sync için */}
+        <input type="hidden" name="is_gift" value={isGift ? 'on' : ''} />
+      </div>
+
+      {isGift ? (
+        <div className="border-rose-500/30 bg-rose-500/5 flex flex-col gap-4 rounded-lg border p-4">
+          <p className="text-foreground/90 text-xs leading-relaxed">
+            <Gift className="me-1 inline-block size-3.5 text-rose-600" aria-hidden="true" />
+            Hediye alıcısının bilgilerini gir; ödemeyi sen yaparsın, e-bilet
+            alıcıya gider. Mesajını da iletiriz.
+          </p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="gift_recipient_name">Alıcı adı</Label>
+              <Input
+                id="gift_recipient_name"
+                name="gift_recipient_name"
+                type="text"
+                maxLength={80}
+                placeholder="Aslı Yılmaz"
+                aria-invalid={err?.gift_recipient_name ? 'true' : undefined}
+              />
+              {err?.gift_recipient_name ? (
+                <p className="text-sm text-rose-600 dark:text-rose-400">
+                  {err.gift_recipient_name[0]}
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <Label htmlFor="gift_recipient_phone">Alıcı telefon</Label>
+              <Input
+                id="gift_recipient_phone"
+                name="gift_recipient_phone"
+                type="tel"
+                maxLength={30}
+                placeholder="+90 555 …"
+                aria-invalid={err?.gift_recipient_phone ? 'true' : undefined}
+              />
+              {err?.gift_recipient_phone ? (
+                <p className="text-sm text-rose-600 dark:text-rose-400">
+                  {err.gift_recipient_phone[0]}
+                </p>
+              ) : null}
+            </div>
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="gift_recipient_email">Alıcı e-posta (opsiyonel)</Label>
+            <Input
+              id="gift_recipient_email"
+              name="gift_recipient_email"
+              type="email"
+              autoComplete="off"
+              placeholder="asli@ornek.com"
+              aria-invalid={err?.gift_recipient_email ? 'true' : undefined}
+            />
+            {err?.gift_recipient_email ? (
+              <p className="text-sm text-rose-600 dark:text-rose-400">
+                {err.gift_recipient_email[0]}
+              </p>
+            ) : null}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <Label htmlFor="gift_message">Kişisel mesaj (opsiyonel)</Label>
+            <textarea
+              id="gift_message"
+              name="gift_message"
+              rows={2}
+              maxLength={500}
+              placeholder="Doğum günün kutlu olsun! Bu seninle keyifli bir gün geçireceğin yer olsun."
+              className="border-border bg-background focus:border-foreground/50 focus:ring-foreground/10 placeholder:text-muted-foreground min-h-[60px] w-full rounded-md border p-3 text-sm transition-colors focus:ring-2 focus:outline-none"
+            />
+          </div>
+        </div>
+      ) : null}
 
       <div className="border-border bg-muted/30 flex items-center justify-between rounded-lg border p-4">
         <span className="text-muted-foreground text-sm">Toplam tutar</span>

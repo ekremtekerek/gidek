@@ -28,6 +28,11 @@ export async function createBookingAction(
     selected_date: formData.get('selected_date'),
     selected_time: formData.get('selected_time'),
     notes: formData.get('notes'),
+    is_gift: formData.get('is_gift'),
+    gift_recipient_name: formData.get('gift_recipient_name'),
+    gift_recipient_email: formData.get('gift_recipient_email'),
+    gift_recipient_phone: formData.get('gift_recipient_phone'),
+    gift_message: formData.get('gift_message'),
   });
 
   if (!parsed.success) {
@@ -69,6 +74,11 @@ export async function createBookingAction(
       selected_time: parsed.data.selected_time ?? null,
       notes: parsed.data.notes ?? null,
       status: 'pending', // ödeme adımından sonra 'confirmed'e geçer
+      is_gift: parsed.data.is_gift,
+      gift_message: parsed.data.is_gift ? (parsed.data.gift_message ?? null) : null,
+      guest_name: parsed.data.is_gift ? (parsed.data.gift_recipient_name ?? null) : null,
+      guest_email: parsed.data.is_gift ? (parsed.data.gift_recipient_email ?? null) : null,
+      guest_phone: parsed.data.is_gift ? (parsed.data.gift_recipient_phone ?? null) : null,
     })
     .select('booking_code')
     .single();

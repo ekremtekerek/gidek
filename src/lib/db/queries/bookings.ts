@@ -8,7 +8,7 @@ export type BookingWithDeal = BookingRow & {
   deal:
     | (Pick<
         Database['public']['Tables']['deals']['Row'],
-        'id' | 'slug' | 'title' | 'cover_image' | 'city' | 'district'
+        'id' | 'slug' | 'title' | 'cover_image' | 'city' | 'district' | 'duration_minutes'
       > & { merchant: { name: string } | null })
     | null;
 };
@@ -16,7 +16,7 @@ export type BookingWithDeal = BookingRow & {
 const BOOKING_SELECT = `
   *,
   deal:deals (
-    id, slug, title, cover_image, city, district,
+    id, slug, title, cover_image, city, district, duration_minutes,
     merchant:merchants ( name )
   )
 `;

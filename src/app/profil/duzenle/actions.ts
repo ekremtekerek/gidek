@@ -23,6 +23,8 @@ export async function updateProfileAction(
   const parsed = profileUpdateSchema.safeParse({
     display_name: formData.get('display_name'),
     phone: formData.get('phone'),
+    public_slug: formData.get('public_slug'),
+    is_public: formData.get('is_public'),
   });
 
   if (!parsed.success) {
@@ -32,16 +34,33 @@ export async function updateProfileAction(
     };
   }
 
+  // is_public açıksa slug zorunlu — slug yoksa public yapamayız
+  if (parsed.data.is_public && !parsed.data.public_slug) {
+    return {
+      ok: false,
+      fieldErrors: { public_slug: ['Public profil için bir kullanıcı adı belirle'] },
+    };
+  }
+
   const supabase = await getServerClient();
   const { error } = await supabase
     .from('profiles')
     .update({
       display_name: parsed.data.display_name,
       phone: parsed.data.phone,
+      public_slug: parsed.data.public_slug,
+      is_public: parsed.data.is_public,
     })
     .eq('id', user.id);
 
   if (error) {
+    // Slug çakışmasını okunabilir hâle getir
+    if (error.code === '23505') {
+      return {
+        ok: false,
+        fieldErrors: { public_slug: ['Bu kullanıcı adı alınmış — başka birini dene'] },
+      };
+    }
     return { ok: false, error: 'Profil güncellenemedi: ' + error.message };
   }
 

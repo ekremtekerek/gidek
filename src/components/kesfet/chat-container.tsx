@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport, type UIMessage } from 'ai';
-import { RotateCcw, Send, Sparkles } from 'lucide-react';
+import { Camera, RotateCcw, Send, Sparkles } from 'lucide-react';
 import { ChatMessage } from '@/components/kesfet/chat-message';
 import { FollowupChips } from '@/components/kesfet/followup-chips';
 import { NearbyCarousel } from '@/components/kesfet/nearby-carousel';
@@ -325,9 +325,23 @@ export function ChatContainer({
           className="flex-1 overflow-y-auto overscroll-contain"
         >
           <div className="mx-auto flex max-w-3xl flex-col gap-5 px-4 py-6 sm:px-6">
-            {messages.map((m) => (
-              <ChatMessage key={m.id} message={m} />
-            ))}
+            {(() => {
+              // Her assistant mesajına kendinden önceki son user mesajının
+              // metnini iliştiriyoruz — "Neden bu öneri?" rationale'i bağlam
+              // için kullanır.
+              let prevUserText = '';
+              return messages.map((m) => {
+                if (m.role === 'user') {
+                  prevUserText = m.parts
+                    .filter((p) => p.type === 'text')
+                    .map((p) => ('text' in p ? p.text : ''))
+                    .join(' ')
+                    .trim();
+                  return <ChatMessage key={m.id} message={m} />;
+                }
+                return <ChatMessage key={m.id} message={m} userQuery={prevUserText} />;
+              });
+            })()}
             {isLoading ? <TypingIndicator /> : null}
           </div>
         </div>
@@ -414,7 +428,41 @@ function WelcomeHero({
         <p className="text-muted-foreground max-w-xl text-balance sm:text-lg">
           {welcome.subtitle}
         </p>
+        <PhotoSearchCta />
       </div>
+    </div>
+  );
+}
+
+/**
+ * Hero altında diskret bir "Fotoğrafla ara" CTA + hover tooltip. AI
+ * sohbete alternatif yol — kullanıcı kelime yerine görsel ile niyet
+ * iletebilsin.
+ */
+function PhotoSearchCta() {
+  return (
+    <div className="group relative inline-flex">
+      <Link
+        href="/foto-arama"
+        className="inline-flex items-center gap-2 rounded-full border border-violet-500/40 bg-gradient-to-r from-violet-500/10 via-fuchsia-500/10 to-violet-500/10 px-4 py-2 text-sm font-semibold text-violet-700 shadow-sm transition-all hover:scale-105 hover:border-violet-500/60 hover:shadow-md hover:shadow-violet-500/20 focus-visible:ring-2 focus-visible:ring-violet-300 focus-visible:outline-none dark:text-violet-300"
+      >
+        <Camera className="size-4" aria-hidden="true" />
+        Fotoğrafla ara
+        <span className="bg-violet-500/15 text-violet-700 dark:text-violet-300 rounded-full px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+          AI
+        </span>
+      </Link>
+      <span
+        role="tooltip"
+        className="bg-foreground text-background pointer-events-none absolute left-1/2 top-full z-50 mt-2 hidden -translate-x-1/2 whitespace-normal rounded-lg px-3 py-2 text-[11px] font-medium leading-relaxed shadow-xl group-hover:block sm:w-[260px]"
+      >
+        Beğendiğin bir atmosferin fotosunu yükle — Gemini Vision görseldeki
+        temaları çıkarıp benzer fırsatları önersin.
+        <span
+          aria-hidden="true"
+          className="bg-foreground absolute -top-1 left-1/2 size-2 -translate-x-1/2 rotate-45"
+        />
+      </span>
     </div>
   );
 }

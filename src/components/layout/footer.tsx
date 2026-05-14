@@ -46,6 +46,30 @@ export function Footer() {
           <ul className="space-y-2 text-sm">
             <li>
               <Link
+                href="/trend"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Bu haftanın trendleri
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/u"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Topluluk seçkileri
+              </Link>
+            </li>
+            <li>
+              <Link
+                href="/foto-arama"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Fotoğrafla ara
+              </Link>
+            </li>
+            <li>
+              <Link
                 href="/gecmis-firsatlar"
                 className="text-muted-foreground hover:text-foreground transition-colors"
               >

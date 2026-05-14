@@ -116,28 +116,60 @@ export type OnboardingInput = z.infer<typeof onboardingSchema>;
 const isoDateRegex = /^\d{4}-\d{2}-\d{2}$/;
 const timeRegex = /^([01]\d|2[0-3]):[0-5]\d$/;
 
-export const createBookingSchema = z.object({
-  dealId: z.string().uuid('Geçersiz fırsat tanımlayıcısı'),
-  quantity: z.coerce
-    .number()
-    .int('Adet tamsayı olmalı')
-    .min(1, 'En az 1 adet')
-    .max(20, 'En fazla 20 adet'),
-  selected_date: z
-    .string()
-    .regex(isoDateRegex, 'Tarih formatı geçersiz')
-    .refine((d) => {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      return new Date(`${d}T00:00:00`) >= today;
-    }, 'Tarih geçmişte olamaz'),
-  selected_time: z
-    .string()
-    .optional()
-    .transform((v) => (v && v.length > 0 ? v : undefined))
-    .refine((v) => v === undefined || timeRegex.test(v), { message: 'Saat formatı HH:MM olmalı' }),
-  notes: optionalText(500),
-});
+export const createBookingSchema = z
+  .object({
+    dealId: z.string().uuid('Geçersiz fırsat tanımlayıcısı'),
+    quantity: z.coerce
+      .number()
+      .int('Adet tamsayı olmalı')
+      .min(1, 'En az 1 adet')
+      .max(20, 'En fazla 20 adet'),
+    selected_date: z
+      .string()
+      .regex(isoDateRegex, 'Tarih formatı geçersiz')
+      .refine((d) => {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return new Date(`${d}T00:00:00`) >= today;
+      }, 'Tarih geçmişte olamaz'),
+    selected_time: z
+      .string()
+      .optional()
+      .transform((v) => (v && v.length > 0 ? v : undefined))
+      .refine((v) => v === undefined || timeRegex.test(v), { message: 'Saat formatı HH:MM olmalı' }),
+    notes: optionalText(500),
+    is_gift: z
+      .union([z.literal('on'), z.literal('true'), z.literal(''), z.null(), z.undefined()])
+      .transform((v) => v === 'on' || v === 'true'),
+    gift_recipient_name: optionalText(80),
+    gift_recipient_email: z
+      .string()
+      .trim()
+      .email('Geçerli e-posta')
+      .optional()
+      .or(z.literal('').transform(() => undefined)),
+    gift_recipient_phone: optionalText(30),
+    gift_message: optionalText(500),
+  })
+  .superRefine((data, ctx) => {
+    if (data.is_gift) {
+      // Hediye seçildiyse alıcı adı + (telefon VEYA e-posta) en az biri zorunlu
+      if (!data.gift_recipient_name) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['gift_recipient_name'],
+          message: 'Alıcının adı zorunlu',
+        });
+      }
+      if (!data.gift_recipient_email && !data.gift_recipient_phone) {
+        ctx.addIssue({
+          code: 'custom',
+          path: ['gift_recipient_phone'],
+          message: 'Alıcının e-posta veya telefonundan en az biri',
+        });
+      }
+    }
+  });
 
 export type CreateBookingInput = z.infer<typeof createBookingSchema>;
 
@@ -180,6 +212,19 @@ export const profileUpdateSchema = z.object({
     .optional()
     .transform((v) => (v && v.length > 0 ? v : null))
     .or(z.literal('').transform(() => null)),
+  public_slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(3, 'En az 3 karakter')
+    .max(30, 'En fazla 30 karakter')
+    .regex(/^[a-z0-9_-]+$/, 'Yalnızca küçük harf, rakam, _ ve - kullanılabilir')
+    .optional()
+    .transform((v) => (v && v.length > 0 ? v : null))
+    .or(z.literal('').transform(() => null)),
+  is_public: z
+    .union([z.literal('on'), z.literal('true'), z.literal(''), z.null(), z.undefined()])
+    .transform((v) => v === 'on' || v === 'true'),
 });
 
 export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;

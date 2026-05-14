@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronRight, MapPin } from 'lucide-react';
+import { WhyRecommended } from '@/components/kesfet/why-recommended';
 import { Badge } from '@/components/ui/badge';
 import type { DealShape } from '@/lib/ai/tools';
 import { DEAL_TAG_LABEL } from '@/lib/utils/constants';
@@ -8,6 +9,8 @@ import { formatTRY } from '@/lib/utils/format';
 
 interface Props {
   deals: DealShape[];
+  /** Kullanıcının bu öneriyi tetikleyen son mesajı — "Neden bu öneri?" bağlamı. */
+  userQuery?: string;
 }
 
 /**
@@ -15,7 +18,7 @@ interface Props {
  * still vertical on desktop but with wider images so the cards feel like a
  * curated recommendation list rather than a search result row.
  */
-export function DealResults({ deals }: Props) {
+export function DealResults({ deals, userQuery }: Props) {
   if (deals.length === 0) {
     return (
       <div className="border-border bg-muted/30 rounded-xl border p-4 text-sm">
@@ -27,7 +30,13 @@ export function DealResults({ deals }: Props) {
   return (
     <ul className="flex w-full flex-col gap-3.5">
       {deals.map((d, idx) => (
-        <li key={d.id}>
+        <li key={d.id} className="relative">
+          {/* WhyRecommended Link DIŞINDA — popover overflow:hidden tarafından kesilmesin,
+              ve butona tıklama Link navigasyonunu tetiklemesin. */}
+          <div className="absolute right-3 top-3 z-10">
+            <WhyRecommended dealId={d.id} userQuery={userQuery} />
+          </div>
+
           <Link
             href={`/f/${d.slug}`}
             className="group border-border bg-background hover:border-foreground/30 block overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
@@ -48,13 +57,13 @@ export function DealResults({ deals }: Props) {
                   aria-hidden="true"
                   className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-black/10"
                 />
-                {/* Discount + rank */}
+                {/* Rank + discount badge */}
                 <div className="absolute inset-x-3 top-3 flex items-start justify-between">
                   <span className="bg-background/85 text-foreground inline-flex size-7 items-center justify-center rounded-full text-xs font-bold backdrop-blur">
                     {idx + 1}
                   </span>
                   {d.discountPct > 0 ? (
-                    <Badge variant="discount" size="md">
+                    <Badge variant="discount" size="md" className="me-10">
                       %{d.discountPct} indirim
                     </Badge>
                   ) : null}

@@ -1,5 +1,10 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { CheckCircle2, LogIn, Star, Ticket } from 'lucide-react';
+import {
+  AiReviewSummary,
+  AiReviewSummarySkeleton,
+} from '@/components/deal/ai-review-summary';
 import { ReviewForm } from '@/components/deal/review-form';
 import {
   getUserReviewEligibility,
@@ -38,6 +43,10 @@ export async function ReviewsSection({ dealId, dealSlug }: Props) {
           Yorumlar &amp; puanlar
         </h2>
       </div>
+
+      <Suspense fallback={<AiReviewSummarySkeleton />}>
+        <AiReviewSummary dealId={dealId} />
+      </Suspense>
 
       {eligibility.canReview ? (
         <ReviewForm dealId={dealId} defaultName={eligibility.defaultName} />

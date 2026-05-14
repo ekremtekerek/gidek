@@ -167,10 +167,12 @@ export type Database = {
           currency: string
           deal_id: string
           discount_amount: number
+          gift_message: string | null
           guest_email: string | null
           guest_name: string | null
           guest_phone: string | null
           id: string
+          is_gift: boolean
           notes: string | null
           quantity: number
           refunded_at: string | null
@@ -192,10 +194,12 @@ export type Database = {
           currency?: string
           deal_id: string
           discount_amount?: number
+          gift_message?: string | null
           guest_email?: string | null
           guest_name?: string | null
           guest_phone?: string | null
           id?: string
+          is_gift?: boolean
           notes?: string | null
           quantity?: number
           refunded_at?: string | null
@@ -217,10 +221,12 @@ export type Database = {
           currency?: string
           deal_id?: string
           discount_amount?: number
+          gift_message?: string | null
           guest_email?: string | null
           guest_name?: string | null
           guest_phone?: string | null
           id?: string
+          is_gift?: boolean
           notes?: string | null
           quantity?: number
           refunded_at?: string | null
@@ -705,9 +711,12 @@ export type Database = {
           created_at: string
           display_name: string | null
           id: string
+          is_public: boolean
+          loyalty_points: number
           merchant_id: string | null
           onboarding_done: boolean
           phone: string | null
+          public_slug: string | null
           updated_at: string
         }
         Insert: {
@@ -715,9 +724,12 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id: string
+          is_public?: boolean
+          loyalty_points?: number
           merchant_id?: string | null
           onboarding_done?: boolean
           phone?: string | null
+          public_slug?: string | null
           updated_at?: string
         }
         Update: {
@@ -725,9 +737,12 @@ export type Database = {
           created_at?: string
           display_name?: string | null
           id?: string
+          is_public?: boolean
+          loyalty_points?: number
           merchant_id?: string | null
           onboarding_done?: boolean
           phone?: string | null
+          public_slug?: string | null
           updated_at?: string
         }
         Relationships: []
@@ -809,6 +824,36 @@ export type Database = {
           code?: string
           created_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      review_summaries: {
+        Row: {
+          caution_notes: string[]
+          deal_id: string
+          generated_at: string
+          positive_themes: string[]
+          rating_avg_at_gen: number | null
+          review_count_at_gen: number
+          summary: string
+        }
+        Insert: {
+          caution_notes?: string[]
+          deal_id: string
+          generated_at?: string
+          positive_themes?: string[]
+          rating_avg_at_gen?: number | null
+          review_count_at_gen: number
+          summary: string
+        }
+        Update: {
+          caution_notes?: string[]
+          deal_id?: string
+          generated_at?: string
+          positive_themes?: string[]
+          rating_avg_at_gen?: number | null
+          review_count_at_gen?: number
+          summary?: string
         }
         Relationships: []
       }

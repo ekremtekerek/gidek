@@ -4,6 +4,7 @@ import {
   ChevronRight,
   Gift,
   Heart,
+  LayoutDashboard,
   LogOut,
   Mail,
   Pencil,
@@ -15,12 +16,13 @@ import {
   User as UserIcon,
 } from 'lucide-react';
 import { signOutAction } from '@/app/profil/actions';
+import { LoyaltyCard } from '@/components/profile/loyalty-card';
 import { PushOptIn } from '@/components/pwa/push-opt-in';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { getServerClient } from '@/lib/db/server';
 import { getServiceClient } from '@/lib/db/service';
-import { requireUser } from '@/lib/security/auth';
+import { isAdmin, requireUser } from '@/lib/security/auth';
 import { cn } from '@/lib/utils/cn';
 import { formatDate } from '@/lib/utils/format';
 
@@ -38,7 +40,9 @@ export default async function ProfilPage() {
   const supabase = await getServerClient();
   const { data: profile } = await supabase
     .from('profiles')
-    .select('display_name, avatar_url, phone, onboarding_done, created_at, merchant_id')
+    .select(
+      'display_name, avatar_url, phone, onboarding_done, created_at, merchant_id, loyalty_points',
+    )
     .eq('id', user.id)
     .maybeSingle();
 
@@ -94,6 +98,28 @@ export default async function ProfilPage() {
             Düzenle
           </Link>
         </header>
+
+        <div className="mb-6">
+          <LoyaltyCard points={profile?.loyalty_points ?? 0} />
+        </div>
+
+        {isAdmin(user) ? (
+          <Link
+            href="/admin"
+            className="border-violet-500/30 bg-gradient-to-br from-violet-500/10 via-background to-background hover:from-violet-500/15 mb-6 flex items-center gap-4 rounded-xl border p-4 transition-colors sm:p-5"
+          >
+            <span className="bg-violet-500/15 text-violet-700 dark:text-violet-300 inline-flex size-10 shrink-0 items-center justify-center rounded-full">
+              <LayoutDashboard className="size-5" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-semibold">Admin paneline geç</p>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                Fırsatlar, kategoriler, kullanıcılar, kuponlar — tüm yönetim ekranı
+              </p>
+            </div>
+            <ChevronRight className="text-muted-foreground size-4" aria-hidden="true" />
+          </Link>
+        ) : null}
 
         {profile?.merchant_id ? (
           <Link

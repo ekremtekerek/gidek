@@ -10,9 +10,11 @@ import { cn } from '@/lib/utils/cn';
 
 interface Props {
   message: UIMessage;
+  /** Bu assistant mesajını tetikleyen son user sorusu — "Neden bu öneri?" bağlamı. */
+  userQuery?: string;
 }
 
-export function ChatMessage({ message }: Props) {
+export function ChatMessage({ message, userQuery }: Props) {
   const isUser = message.role === 'user';
 
   // Gemini ara sıra hiç içerik üretmeden bitiriyor — parts'ta sadece
@@ -84,7 +86,7 @@ export function ChatMessage({ message }: Props) {
                 const output = part.output as { results: DealShape[]; count: number };
                 return (
                   <div key={i} className="w-full">
-                    <DealResults deals={output.results} />
+                    <DealResults deals={output.results} userQuery={userQuery} />
                   </div>
                 );
               }

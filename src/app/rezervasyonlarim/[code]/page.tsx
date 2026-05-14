@@ -1,7 +1,8 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Clock, MessageSquare, Tag } from 'lucide-react';
+import { ArrowLeft, Clock, Gift, MessageSquare, Tag } from 'lucide-react';
+import { AddToCalendar } from '@/components/booking/add-to-calendar';
 import { CancelButton } from '@/components/booking/cancel-button';
 import { ETicket } from '@/components/booking/eticket';
 import { PrintButton } from '@/components/booking/print-button';
@@ -62,9 +63,43 @@ export default async function RezervasyonDetailPage({
             <Badge variant={BOOKING_STATUS_BADGE[status]} size="md">
               {BOOKING_STATUS_LABEL[status]}
             </Badge>
-            {showTicket ? <PrintButton /> : null}
+            <div className="flex flex-wrap items-center gap-2">
+              {showTicket && booking.deal ? (
+                <AddToCalendar
+                  bookingCode={booking.booking_code}
+                  dealTitle={booking.deal.title}
+                  location={location ?? undefined}
+                  selectedDate={booking.selected_date}
+                  selectedTime={booking.selected_time}
+                  durationMinutes={booking.deal.duration_minutes}
+                  detailUrl={`${process.env.NEXT_PUBLIC_SITE_URL ?? ''}/rezervasyonlarim/${booking.booking_code}`}
+                />
+              ) : null}
+              {showTicket ? <PrintButton /> : null}
+            </div>
           </div>
         </header>
+
+        {booking.is_gift ? (
+          <div className="border-rose-500/30 bg-rose-500/5 mb-6 flex items-start gap-3 rounded-xl border p-4">
+            <Gift className="size-5 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden="true" />
+            <div className="min-w-0">
+              <p className="text-foreground text-sm font-medium">
+                Bu bir hediye rezervasyon
+              </p>
+              <p className="text-muted-foreground mt-0.5 text-xs">
+                Alıcı: {booking.guest_name ?? '—'}
+                {booking.guest_phone ? ` · ${booking.guest_phone}` : ''}
+                {booking.guest_email ? ` · ${booking.guest_email}` : ''}
+              </p>
+              {booking.gift_message ? (
+                <p className="text-foreground/90 mt-2 rounded-md border border-rose-500/20 bg-background/60 p-2.5 text-xs italic leading-relaxed">
+                  &ldquo;{booking.gift_message}&rdquo;
+                </p>
+              ) : null}
+            </div>
+          </div>
+        ) : null}
 
         {status === 'pending' ? (
           <div className="border-amber-500/30 bg-amber-500/10 mb-6 flex flex-col gap-3 rounded-xl border p-5 sm:flex-row sm:items-center">

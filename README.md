@@ -6,7 +6,7 @@
 
 Türkiye için fırsat keşif platformu. Tiyatro, konser, kahvaltı, tatil, masaj, aktivite — ne yapmak istediğini doğal dilde yaz, Gemini destekli sohbet asistanı semantik aramayla 3-5 fırsatı önersin.
 
-[Canlı demo](https://gidek.net) · [Mimari](./ARCHITECTURE.md) · [Katkı sağla](#geliştirme)
+[Canlı demo](https://gidek.net) · [Mimari](./ARCHITECTURE.md)
 
 </div>
 
@@ -33,12 +33,34 @@ gidek bunların **ikisini birden** çözmek üzere kuruldu:
 
 - **AI sohbet asistanı** — Gemini 2.5 Flash + RAG (pgvector top-30 → re-rank 3-5)
 - **Kişiselleştirme** — onboarding profili (şehir, hane tipi, çocuk yaş grubu, bütçe, diyet, ilgi alanları)
-- **Harita keşfi** — Mapbox + canlı yakındaki fırsatlar + filtreli klastering
+- **"Neden bu öneri?"** — her AI önerisinin yanında ⚡ rozet; tıklayınca Gemini structured output ile kişisel rationale + eşleşme faktörleri
+- **Fotoğrafla arama** — bir görsel yükle, Gemini Vision atmosfer/temaları çıkarıp semantic search'e çevirsin
+- **Harita keşfi** — Mapbox + canlı yakındaki fırsatlar + filtreli klastering + tek tıkla yol tarifi (Google Maps deep link)
+- **AI yorum özetleyici** — deal sayfasında "X yorumdan" Gemini özeti + olumlu temalar + dikkat notları (cache'li)
 - **Verified-buyer yorumlar** — yalnızca onaylanmış rezervasyon sahipleri yorum yazabilir
 - **Favoriler + kayıtlı aramalar** — geri dön, takip et, AI'ın seni hatırlamasını sağla
 - **Rezervasyon → e-bilet** — quantity adet ayrı QR kod + yazdırılabilir bilet
+- **Takvime ekle** — booking sonrası Google Calendar deep link + .ics dosyası
+- **Hediye akışı** — fırsatı arkadaşına hediye et: alıcı bilgileri + kişisel mesaj, e-bilet alıcıya gider
 - **Promo kod sistemi** — ödeme sayfasında yüzde/sabit indirim, geçerlilik penceresi, kullanım limiti
+- **Loyalty puan + tier** — bronz/gümüş/altın üye rozeti, +10 puan/booking, profil kartı
+- **Public profil** — opt-in kullanıcı adı (`/u/<slug>`) ile favori listeni paylaş
+- **Bildirimler** — yaklaşan rezervasyon, biten favori, davet kabul; tekli + toplu okundu/sil aksiyonu (localStorage)
+- **Real-time** — deal sayfasında "X kişi şu an inceliyor" canlı sayaç (Supabase Presence)
 - **Hesap yönetimi** — şifre/e-posta değiştir, KVKK uyumlu hesap silme
+
+### Topluluk + Trend
+
+- **`/trend`** — son 7 günün en çok rezerve edilen fırsatları + trending kategoriler (ISR 15 dk)
+- **`/u` topluluk** — haftanın şampiyonları (podyum), ayın şampiyonları, en çok favorilenen fırsatlar, loyalty piramidi, üye seçkileri
+- **`/foto-arama`** — Gemini Vision tabanlı görsel→fırsat eşleştirme
+
+### Merchant self-service portal (`/isletme`)
+
+- **Dashboard** — toplam fırsat, rezervasyon, ciro, ortalama puan
+- **Kendi fırsatları** — başvuru, düzenleme, yayın/onay durumu
+- **AI içerik yardımcısı** — başlık + ipuçlarından Gemini ile description/highlights/meta/tags üretimi
+- **Canlı rezervasyonlar** — Supabase Realtime ile yeni booking anında listede
 
 ### Admin paneli
 
@@ -51,6 +73,9 @@ gidek bunların **ikisini birden** çözmek üzere kuruldu:
 - **Kupon CRUD** — yüzde/sabit, min sepet, max kullanım
 - **Newsletter** — abone listesi, CSV export, kaynak dağılımı
 - **AI sorgu logları** — maliyet, başarı oranı, kullanım istatistiği
+- **AI içerik üretimi** — admin yeni deal eklerken Gemini structured output ile description + highlights + meta + tags
+- **Merchant atama** — `/admin/users` dropdown'ı ile bir kullanıcıyı işletmeye bağla
+- **Canlı booking listesi** — Supabase Realtime; yeni rezervasyon anında listede + toast
 
 ### SEO + GEO (AI engine optimization)
 

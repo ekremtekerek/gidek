@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { Flame, Users } from 'lucide-react';
 import { Container } from '@/components/ui/container';
 import { CityChip } from '@/components/layout/context-chips';
 import { HeaderSearch } from '@/components/layout/header-search';
@@ -51,6 +52,22 @@ export async function Header() {
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
+          <Link
+            href="/trend"
+            className="hidden h-9 items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-3 text-xs font-semibold text-rose-700 transition-all hover:bg-rose-500/15 hover:border-rose-500/60 dark:text-rose-300 md:inline-flex"
+            aria-label="Bu haftanın trendleri"
+          >
+            <Flame className="size-3.5 animate-pulse" aria-hidden="true" />
+            Trend
+          </Link>
+          <Link
+            href="/u"
+            className="hidden h-9 items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 transition-all hover:border-emerald-500/60 hover:bg-emerald-500/15 dark:text-emerald-300 md:inline-flex"
+            aria-label="Topluluk seçkileri"
+          >
+            <Users className="size-3.5" aria-hidden="true" />
+            Topluluk
+          </Link>
           {user ? (
             <div className="hidden md:block">
               <NotificationBell isAuthenticated />
