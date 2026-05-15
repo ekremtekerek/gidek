@@ -3,6 +3,8 @@
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { Calendar, Filter, MapPin, Search, Users } from 'lucide-react';
+import { Combobox } from '@/components/ui/combobox';
+import { DateField } from '@/components/ui/date-field';
 import { Select, type SelectOption } from '@/components/ui/select';
 import { CONCEPT_LABEL, type Concept } from '@/lib/travel/enrich';
 
@@ -30,7 +32,8 @@ const KID_OPTIONS: SelectOption<string>[] = [0, 1, 2, 3, 4].map((n) => ({
 
 /**
  * Sağ kolon — klasik filtre/arama formu (alternatif yol).
- * AI ile sohbet etmek istemeyen kullanıcılar için.
+ * Tüm field'lar custom UI primitives: Combobox (destinasyon), DateField
+ * (tarihler), Select (yetişkin/çocuk/konsept). Native tarayıcı widget'ları yok.
  */
 export function TravelClassicForm({ locations }: Props) {
   const router = useRouter();
@@ -55,8 +58,8 @@ export function TravelClassicForm({ locations }: Props) {
     e.preventDefault();
     const params = new URLSearchParams();
     if (dest) params.set('dest', dest);
-    params.set('checkin', checkin);
-    params.set('checkout', checkout);
+    if (checkin) params.set('checkin', checkin);
+    if (checkout) params.set('checkout', checkout);
     params.set('adults', adults);
     if (kids !== '0') params.set('kids', kids);
     if (concept) params.set('concept', concept);
@@ -76,82 +79,81 @@ export function TravelClassicForm({ locations }: Props) {
       </div>
 
       <form onSubmit={submit} className="flex flex-col gap-3">
-        {/* Destinasyon */}
-        <FieldShell icon={<MapPin className="size-3" />} label="Nereye">
-          <input
-            type="text"
-            list="travel-dest-list"
+        {/* Destinasyon — Combobox */}
+        <FieldLabel icon={<MapPin className="size-3" />} label="Nereye">
+          <Combobox
             value={dest}
-            onChange={(e) => setDest(e.target.value)}
-            placeholder="Bodrum, Antalya..."
-            className="text-foreground placeholder:text-muted-foreground w-full bg-transparent text-sm font-semibold outline-none"
+            onChange={setDest}
+            options={locations}
+            placeholder="Şehir, ilçe veya bölge"
+            label="Tatil destinasyonu"
+            size="md"
           />
-          <datalist id="travel-dest-list">
-            {locations.map((l) => (
-              <option key={l} value={l} />
-            ))}
-          </datalist>
-        </FieldShell>
+        </FieldLabel>
 
-        {/* Tarih */}
+        {/* Tarih — DateField (react-day-picker custom popup) */}
         <div className="grid grid-cols-2 gap-2">
-          <FieldShell icon={<Calendar className="size-3" />} label="Giriş">
-            <input
-              type="date"
+          <FieldLabel icon={<Calendar className="size-3" />} label="Giriş">
+            <DateField
+              name="checkin"
               value={checkin}
-              min={defaults.today}
-              onChange={(e) => {
-                setCheckin(e.target.value);
-                if (e.target.value >= checkout) {
-                  const next = new Date(e.target.value);
+              onChange={(v) => {
+                setCheckin(v);
+                if (v && v >= checkout) {
+                  const next = new Date(v);
                   next.setDate(next.getDate() + 3);
                   setCheckout(next.toISOString().slice(0, 10));
                 }
               }}
-              className="text-foreground w-full bg-transparent text-sm font-semibold outline-none"
+              min={defaults.today}
+              placeholder="Tarih seç"
             />
-          </FieldShell>
-          <FieldShell icon={<Calendar className="size-3" />} label="Çıkış">
-            <input
-              type="date"
+          </FieldLabel>
+          <FieldLabel icon={<Calendar className="size-3" />} label="Çıkış">
+            <DateField
+              name="checkout"
               value={checkout}
-              min={checkin}
-              onChange={(e) => setCheckout(e.target.value)}
-              className="text-foreground w-full bg-transparent text-sm font-semibold outline-none"
+              onChange={setCheckout}
+              min={checkin || defaults.today}
+              placeholder="Tarih seç"
             />
-          </FieldShell>
+          </FieldLabel>
         </div>
 
-        {/* Kişi */}
+        {/* Kişi — Select */}
         <div className="grid grid-cols-2 gap-2">
-          <Select
-            value={adults}
-            onChange={setAdults}
-            options={ADULT_OPTIONS}
-            label="Yetişkin"
-            size="sm"
-          />
-          <Select
-            value={kids}
-            onChange={setKids}
-            options={KID_OPTIONS}
-            label="Çocuk"
-            size="sm"
-          />
+          <FieldLabel icon={<Users className="size-3" />} label="Yetişkin">
+            <Select
+              value={adults}
+              onChange={setAdults}
+              options={ADULT_OPTIONS}
+              label="Yetişkin sayısı"
+            />
+          </FieldLabel>
+          <FieldLabel icon={<Users className="size-3" />} label="Çocuk">
+            <Select
+              value={kids}
+              onChange={setKids}
+              options={KID_OPTIONS}
+              label="Çocuk sayısı"
+            />
+          </FieldLabel>
         </div>
 
-        {/* Konsept */}
-        <Select<Concept | ''>
-          value={concept}
-          onChange={setConcept}
-          options={CONCEPT_OPTIONS}
-          label="Konsept"
-        />
+        {/* Konsept — Select */}
+        <FieldLabel label="Konsept">
+          <Select<Concept | ''>
+            value={concept}
+            onChange={setConcept}
+            options={CONCEPT_OPTIONS}
+            label="Tatil konsepti"
+          />
+        </FieldLabel>
 
         {/* Submit */}
         <button
           type="submit"
-          className="border-border bg-foreground text-background hover:bg-foreground/90 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl text-sm font-bold shadow-md transition-all hover:scale-[1.02]"
+          className="border-border bg-foreground text-background hover:bg-foreground/90 mt-1 inline-flex h-11 items-center justify-center gap-1.5 rounded-xl text-sm font-bold shadow-md transition-all hover:scale-[1.02]"
         >
           <Search className="size-4" aria-hidden="true" />
           Filtreyle ara
@@ -161,25 +163,22 @@ export function TravelClassicForm({ locations }: Props) {
   );
 }
 
-function FieldShell({
+function FieldLabel({
   icon,
   label,
   children,
 }: {
-  icon: React.ReactNode;
+  icon?: React.ReactNode;
   label: string;
   children: React.ReactNode;
 }) {
   return (
-    <label className="border-border bg-background hover:border-foreground/30 flex flex-col gap-0.5 rounded-md border px-3 py-2 transition-colors focus-within:border-foreground/40">
+    <div className="flex flex-col gap-1">
       <span className="text-muted-foreground inline-flex items-center gap-1 text-[10px] font-semibold uppercase tracking-wide">
         {icon}
         {label}
       </span>
       {children}
-    </label>
+    </div>
   );
 }
-
-// Users ikonu için import (yetişkin/çocuk için generic ikon — şu an Select'te kullanmıyoruz)
-export const _USERS_ICON_USED = Users;
