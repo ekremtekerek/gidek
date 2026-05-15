@@ -4,6 +4,7 @@ import Link from 'next/link';
 import {
   ArrowRight,
   CalendarDays,
+  Camera,
   Compass,
   Heart,
   Palmtree,
@@ -86,8 +87,45 @@ export default async function TatilLandingPage() {
         </Container>
       </section>
 
-      {/* AI WOW BANTLAR — rakiplerde yok özellikler */}
+      {/* FOTO İLE ARA — büyük featured bant, en wow özellik */}
       <Container className="pt-8 sm:pt-12">
+        <Link
+          href="/tatil/foto"
+          className="group from-violet-600 via-fuchsia-500 to-rose-500 relative flex items-center gap-5 overflow-hidden rounded-2xl bg-gradient-to-r p-5 shadow-xl transition-all hover:scale-[1.005] hover:shadow-2xl sm:p-7"
+        >
+          <Camera
+            aria-hidden="true"
+            className="absolute right-4 -bottom-4 size-32 text-white/15 sm:right-12 sm:size-48"
+          />
+          <Sparkles
+            aria-hidden="true"
+            className="absolute right-32 top-4 size-12 text-white/20 sm:size-16"
+          />
+          <span className="bg-white/20 inline-flex size-14 shrink-0 items-center justify-center rounded-2xl backdrop-blur shadow-md sm:size-16">
+            <Camera className="size-7 text-white sm:size-8" aria-hidden="true" />
+          </span>
+          <div className="min-w-0 flex-1 text-white">
+            <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur">
+              <Sparkles className="size-3" aria-hidden="true" />
+              Yeni · rakiplerde yok
+            </p>
+            <h2 className="mt-1.5 text-xl font-bold leading-tight tracking-tight sm:text-2xl">
+              Foto ile tatil ara
+            </h2>
+            <p className="mt-0.5 text-xs text-white/90 sm:text-sm">
+              Bali, Maldivler, Mykonos… Beğendiğin tatil fotosunu yükle, Türkiye&apos;den
+              benzerini bulalım
+            </p>
+          </div>
+          <ArrowRight
+            className="relative z-10 size-6 shrink-0 text-white transition-transform group-hover:translate-x-1"
+            aria-hidden="true"
+          />
+        </Link>
+      </Container>
+
+      {/* AI WOW BANTLAR — rakiplerde yok özellikler */}
+      <Container className="pt-4 sm:pt-5">
         <div className="grid gap-4 lg:grid-cols-2">
           {/* Plan kur */}
           <Link
