@@ -3,12 +3,12 @@ import { Flame, Users } from 'lucide-react';
 import { ContextLogo } from '@/components/layout/context-logo';
 import { ContextToggleButton } from '@/components/layout/context-toggle-button';
 import { Container } from '@/components/ui/container';
-import { CityChip } from '@/components/layout/context-chips';
-import { HeaderSearch } from '@/components/layout/header-search';
+import { HeaderSearchSwitch } from '@/components/layout/header-search-switch';
 import { MobileMenu } from '@/components/layout/mobile-menu';
 import { NotificationBell } from '@/components/layout/notification-bell';
 import { UserMenu } from '@/components/layout/user-menu';
 import { getServerClient } from '@/lib/db/server';
+import { listTravelLocations } from '@/lib/db/queries/travel';
 import { getCurrentUser } from '@/lib/security/auth';
 import { getUserContext } from '@/lib/security/user-context-server';
 
@@ -20,7 +20,11 @@ import { getUserContext } from '@/lib/security/user-context-server';
  * için yeterli görsel sağlıyor.
  */
 export async function Header() {
-  const [user, ctx] = await Promise.all([getCurrentUser(), getUserContext()]);
+  const [user, ctx, travelLocations] = await Promise.all([
+    getCurrentUser(),
+    getUserContext(),
+    listTravelLocations(),
+  ]);
 
   let avatarUrl: string | null = null;
   if (user) {
@@ -39,10 +43,7 @@ export async function Header() {
         <ContextLogo />
 
         <div className="hidden flex-1 justify-center md:flex">
-          <div className="flex w-full max-w-2xl items-center gap-2">
-            <HeaderSearch />
-            <CityChip value={ctx.city} />
-          </div>
+          <HeaderSearchSwitch city={ctx.city} travelLocations={travelLocations} />
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
