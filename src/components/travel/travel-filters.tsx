@@ -3,6 +3,8 @@
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useCallback, useMemo } from 'react';
 import { Star, X } from 'lucide-react';
+import { CheckboxField } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
 import {
   CONCEPT_LABEL,
   FEATURE_LABEL,
@@ -32,13 +34,12 @@ const FEATURE_OPTIONS: TravelFeature[] = [
 
 /**
  * Sol sticky filtre paneli — URL searchParams ile state senkron.
- * Bir filtreye tıklayınca URL güncellenir, sayfa server-side yeniden çekilir.
+ * Tüm controller'lar tasarıma uyumlu UI primitives'lerle.
  */
 export function TravelFilters({ regions }: Props) {
   const router = useRouter();
   const sp = useSearchParams();
 
-  // Mevcut filtreler
   const stars = useMemo(() => {
     const raw = sp?.get('stars') ?? '';
     return raw.split(',').map(Number).filter((n) => STARS_OPTIONS.includes(n as 3 | 4 | 5));
@@ -104,7 +105,7 @@ export function TravelFilters({ regions }: Props) {
   }
 
   return (
-    <aside className="border-border bg-background sticky top-24 max-h-[calc(100svh-7rem)] overflow-y-auto rounded-xl border p-4 shadow-sm">
+    <aside className="border-border bg-background sticky top-[8.5rem] max-h-[calc(100svh-9.5rem)] overflow-y-auto rounded-xl border p-4 shadow-sm">
       <header className="border-border mb-4 flex items-center justify-between border-b pb-3">
         <p className="text-sm font-bold">Filtreler</p>
         {hasAnyFilter ? (
@@ -122,97 +123,101 @@ export function TravelFilters({ regions }: Props) {
       {/* Fiyat */}
       <FilterGroup title="Kişi başı fiyat (₺)">
         <div className="grid grid-cols-2 gap-2">
-          <input
+          <Input
             type="number"
             inputMode="numeric"
             placeholder="En az"
             value={minPrice}
             onChange={(e) => setPrice('min', e.target.value)}
-            className="border-border bg-background focus:border-foreground/50 focus:ring-foreground/10 h-9 rounded-md border px-2.5 text-sm focus:ring-2 focus:outline-none"
+            className="h-9 text-sm"
             min="0"
           />
-          <input
+          <Input
             type="number"
             inputMode="numeric"
             placeholder="En çok"
             value={maxPrice}
             onChange={(e) => setPrice('max', e.target.value)}
-            className="border-border bg-background focus:border-foreground/50 focus:ring-foreground/10 h-9 rounded-md border px-2.5 text-sm focus:ring-2 focus:outline-none"
+            className="h-9 text-sm"
             min="0"
           />
         </div>
       </FilterGroup>
 
-      {/* Yıldız */}
+      {/* Yıldız — pill butonlar (görsel zenginlik) */}
       <FilterGroup title="Otel sınıfı">
         <div className="flex flex-col gap-1.5">
-          {STARS_OPTIONS.slice().reverse().map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => toggleStar(s)}
-              className={cn(
-                'flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors',
-                stars.includes(s)
-                  ? 'bg-amber-500/15 text-amber-800 dark:text-amber-200 font-semibold'
-                  : 'hover:bg-muted',
-              )}
-            >
-              <span className="inline-flex items-center gap-0.5">
-                {Array.from({ length: s }).map((_, i) => (
-                  <Star
-                    key={i}
-                    className="size-3.5 fill-amber-500 text-amber-500"
-                    aria-hidden="true"
-                  />
-                ))}
-              </span>
-              <span className="text-muted-foreground text-xs">
-                {stars.includes(s) ? '✓' : ''}
-              </span>
-            </button>
-          ))}
+          {STARS_OPTIONS.slice().reverse().map((s) => {
+            const active = stars.includes(s);
+            return (
+              <button
+                key={s}
+                type="button"
+                onClick={() => toggleStar(s)}
+                className={cn(
+                  'flex items-center justify-between gap-2 rounded-md border px-2.5 py-2 text-sm transition-all',
+                  active
+                    ? 'border-amber-500/40 bg-amber-500/10 text-amber-900 dark:text-amber-100 font-semibold'
+                    : 'border-border hover:border-foreground/30 hover:bg-muted/40',
+                )}
+              >
+                <span className="inline-flex items-center gap-0.5">
+                  {Array.from({ length: s }).map((_, i) => (
+                    <Star
+                      key={i}
+                      className={cn(
+                        'size-3.5',
+                        active ? 'fill-amber-500 text-amber-500' : 'text-muted-foreground',
+                      )}
+                      aria-hidden="true"
+                    />
+                  ))}
+                </span>
+                <span className="text-muted-foreground text-[11px]">
+                  {active ? '✓ Seçili' : ''}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </FilterGroup>
 
-      {/* Konsept */}
+      {/* Konsept — segment buttons */}
       <FilterGroup title="Konsept">
         <div className="flex flex-col gap-1">
-          {CONCEPT_OPTIONS.map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => toggleConcept(c)}
-              className={cn(
-                'flex items-center justify-between gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors',
-                concept === c
-                  ? 'bg-sky-500/15 text-sky-800 dark:text-sky-200 font-semibold'
-                  : 'hover:bg-muted',
-              )}
-            >
-              <span>{CONCEPT_LABEL[c]}</span>
-              {concept === c ? <span className="text-xs">✓</span> : null}
-            </button>
-          ))}
+          {CONCEPT_OPTIONS.map((c) => {
+            const active = concept === c;
+            return (
+              <button
+                key={c}
+                type="button"
+                onClick={() => toggleConcept(c)}
+                className={cn(
+                  'flex items-center justify-between gap-2 rounded-md border px-2.5 py-2 text-sm transition-all',
+                  active
+                    ? 'border-sky-500/40 bg-sky-500/10 text-sky-900 dark:text-sky-100 font-semibold'
+                    : 'border-transparent hover:bg-muted/40',
+                )}
+              >
+                <span>{CONCEPT_LABEL[c]}</span>
+                {active ? <span className="text-xs">✓</span> : null}
+              </button>
+            );
+          })}
         </div>
       </FilterGroup>
 
       {/* Özellikler */}
       <FilterGroup title="Tesis özellikleri">
-        <div className="flex flex-col gap-1">
+        <div className="flex flex-col gap-0.5">
           {FEATURE_OPTIONS.map((f) => (
-            <label
+            <CheckboxField
               key={f}
-              className="hover:bg-muted flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors"
-            >
-              <input
-                type="checkbox"
-                checked={features.includes(f)}
-                onChange={() => toggleFeature(f)}
-                className="accent-foreground size-4"
-              />
-              <span>{FEATURE_LABEL[f]}</span>
-            </label>
+              size="sm"
+              checked={features.includes(f)}
+              onChange={() => toggleFeature(f)}
+              label={FEATURE_LABEL[f]}
+            />
           ))}
         </div>
       </FilterGroup>
@@ -220,20 +225,15 @@ export function TravelFilters({ regions }: Props) {
       {/* Bölge */}
       {regions.length > 0 ? (
         <FilterGroup title="Bölge">
-          <div className="flex flex-col gap-1 max-h-60 overflow-y-auto pr-1">
+          <div className="flex flex-col gap-0.5 max-h-60 overflow-y-auto pr-1">
             {regions.map((r) => (
-              <label
+              <CheckboxField
                 key={r}
-                className="hover:bg-muted flex cursor-pointer items-center gap-2 rounded-md px-2.5 py-1.5 text-sm transition-colors"
-              >
-                <input
-                  type="checkbox"
-                  checked={regionList.includes(r)}
-                  onChange={() => toggleRegion(r)}
-                  className="accent-foreground size-4"
-                />
-                <span>{r}</span>
-              </label>
+                size="sm"
+                checked={regionList.includes(r)}
+                onChange={() => toggleRegion(r)}
+                label={r}
+              />
             ))}
           </div>
         </FilterGroup>

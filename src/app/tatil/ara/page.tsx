@@ -4,7 +4,7 @@ import { ArrowLeft, Compass, Filter, SlidersHorizontal } from 'lucide-react';
 import { TravelCard } from '@/components/travel/travel-card';
 import { TravelFilters } from '@/components/travel/travel-filters';
 import { TravelMapView } from '@/components/travel/travel-map-view';
-import { TravelSearchForm } from '@/components/travel/travel-search-form';
+import { TravelTopSearchBar } from '@/components/travel/travel-top-search-bar';
 import { TravelSortBar } from '@/components/travel/travel-sort-bar';
 import { TravelViewToggle } from '@/components/travel/travel-view-toggle';
 import { Container } from '@/components/ui/container';
@@ -137,7 +137,7 @@ export default async function TatilAraPage({
               AI ile keşfet
             </Link>
           </div>
-          <TravelSearchForm locations={locations} initial={initialFormValues} variant="panel" />
+          <TravelTopSearchBar locations={locations} initial={initialFormValues} />
         </Container>
       </div>
 

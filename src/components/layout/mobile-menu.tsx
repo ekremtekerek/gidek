@@ -12,12 +12,12 @@ import {
   LogOut,
   Menu,
   MessageSquare,
-  Palmtree,
   Ticket,
   User,
   Users,
   X,
 } from 'lucide-react';
+import { ContextToggleButton } from '@/components/layout/context-toggle-button';
 import { signOutAction } from '@/app/profil/actions';
 import { buttonVariants } from '@/components/ui/button';
 import { CityChip } from '@/components/layout/context-chips';
@@ -121,19 +121,7 @@ export function MobileMenu({ user, avatarUrl, ctx }: Props) {
               Keşfet
             </p>
             <div className="flex flex-col gap-2">
-              <Link
-                href="/tatil"
-                onClick={close}
-                className="from-sky-600 to-cyan-500 hover:from-sky-700 hover:to-cyan-600 flex items-center gap-3 rounded-md bg-gradient-to-r px-3 py-2.5 text-sm font-bold text-white shadow-sm transition-all"
-              >
-                <Palmtree className="size-4" aria-hidden="true" />
-                <div className="min-w-0 flex-1">
-                  <p>Tatil — AI ile planla</p>
-                  <p className="text-[11px] font-normal opacity-90">
-                    Otel, paket tur, yurtiçi & yurtdışı
-                  </p>
-                </div>
-              </Link>
+              <ContextToggleButton variant="mobile" onClick={close} />
               <Link
                 href="/trend"
                 onClick={close}

@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Compass, Heart, Palmtree, Plane, Sparkles, Waves } from 'lucide-react';
-import { TravelMoodChips } from '@/components/travel/travel-mood-chips';
-import { TravelSearchForm } from '@/components/travel/travel-search-form';
+import { ArrowRight, Compass, Heart, Palmtree, Sparkles, Waves } from 'lucide-react';
+import { TravelAIPrompt } from '@/components/travel/travel-ai-prompt';
+import { TravelClassicForm } from '@/components/travel/travel-classic-form';
 import { Container } from '@/components/ui/container';
 import {
   listTravelDeals,
@@ -60,28 +60,17 @@ export default async function TatilLandingPage() {
           className="absolute left-4 top-8 size-32 text-white/10 sm:left-12 sm:size-48"
         />
 
-        <Container className="relative py-16 sm:py-24">
-          <div className="mx-auto max-w-3xl text-center text-white">
-            <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-white/30 bg-white/10 px-3 py-1 text-xs font-semibold tracking-wider uppercase backdrop-blur">
-              <Plane className="size-3.5" aria-hidden="true" />
-              gidek tatil
-            </p>
-            <h1 className="text-3xl font-bold leading-tight tracking-tight sm:text-5xl md:text-6xl">
-              Tatilini AI planlasın
-            </h1>
-            <p className="mx-auto mt-3 max-w-xl text-base text-white/90 sm:text-lg">
-              Doğal dille söyle — &ldquo;Temmuz ortası, Bodrum, çift için her şey dahil 4 gece&rdquo;.
-              Gemini ile binlerce paket arasından sana özel 3 seçenek.
-            </p>
-
-            {/* Gelişmiş arama formu */}
-            <div className="mx-auto mt-8 max-w-4xl text-left">
-              <TravelSearchForm locations={locations} variant="inline" />
+        <Container className="relative py-10 sm:py-16">
+          {/* SPLIT — sol AI vurgusu büyük, sağ klasik filtre */}
+          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-stretch lg:gap-8">
+            {/* SOL — AI prompt (büyük, ön plan) */}
+            <div>
+              <TravelAIPrompt />
             </div>
 
-            {/* Mood chips */}
-            <div className="mt-6">
-              <TravelMoodChips />
+            {/* SAĞ — klasik filtre formu */}
+            <div className="flex">
+              <TravelClassicForm locations={locations} />
             </div>
           </div>
         </Container>

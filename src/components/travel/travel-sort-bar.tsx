@@ -2,8 +2,11 @@
 
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowUpDown } from 'lucide-react';
+import { Select, type SelectOption } from '@/components/ui/select';
 
-const OPTIONS: Array<{ value: 'recommended' | 'price-asc' | 'price-desc' | 'discount'; label: string }> = [
+type SortValue = 'recommended' | 'price-asc' | 'price-desc' | 'discount';
+
+const OPTIONS: SelectOption<SortValue>[] = [
   { value: 'recommended', label: 'Önerilen' },
   { value: 'price-asc', label: 'En ucuz' },
   { value: 'price-desc', label: 'En pahalı' },
@@ -13,9 +16,9 @@ const OPTIONS: Array<{ value: 'recommended' | 'price-asc' | 'price-desc' | 'disc
 export function TravelSortBar() {
   const router = useRouter();
   const sp = useSearchParams();
-  const current = sp?.get('sort') ?? 'recommended';
+  const current = (sp?.get('sort') ?? 'recommended') as SortValue;
 
-  function change(value: string) {
+  function change(value: SortValue) {
     const next = new URLSearchParams(Array.from(sp?.entries() ?? []));
     if (value === 'recommended') next.delete('sort');
     else next.set('sort', value);
@@ -23,20 +26,19 @@ export function TravelSortBar() {
   }
 
   return (
-    <label className="border-border bg-background inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm">
-      <ArrowUpDown className="text-muted-foreground size-3.5" aria-hidden="true" />
-      <span className="sr-only">Sıralama</span>
-      <select
+    <div className="w-44">
+      <Select<SortValue>
         value={current}
-        onChange={(e) => change(e.target.value)}
-        className="bg-transparent text-sm font-semibold outline-none"
-      >
-        {OPTIONS.map((o) => (
-          <option key={o.value} value={o.value}>
-            {o.label}
-          </option>
-        ))}
-      </select>
-    </label>
+        onChange={change}
+        options={OPTIONS}
+        size="sm"
+        label="Sıralama"
+        className="font-semibold"
+      />
+      {/* aria için sr-only label yerine icon yan görsel */}
+      <span className="sr-only">
+        <ArrowUpDown className="size-3.5" aria-hidden="true" /> Sıralama
+      </span>
+    </div>
   );
 }
