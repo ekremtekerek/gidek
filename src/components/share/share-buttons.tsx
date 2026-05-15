@@ -25,7 +25,9 @@ export function ShareButtons({ title, text, url, className }: Props) {
   const wasOpenRef = useRef(false);
 
   useEffect(() => {
+    // Browser capability detection — SSR-safe mount check
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setHasNativeShare(true);
     }
   }, []);

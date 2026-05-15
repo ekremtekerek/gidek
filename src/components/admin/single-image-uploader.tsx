@@ -138,7 +138,7 @@ export function SingleImageUploader({ name, initialUrl, label = 'Görsel' }: Pro
         }}
       />
       <p className="text-muted-foreground text-xs">
-        JPG / PNG / WebP / HEIC. Max 8MB. Sunucuda WebP'ye dönüştürülür.
+        JPG / PNG / WebP / HEIC. Max 8MB. Sunucuda WebP&apos;ye dönüştürülür.
       </p>
     </div>
   );

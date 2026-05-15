@@ -11,7 +11,6 @@ import { UserMenu } from '@/components/layout/user-menu';
 import { getServerClient } from '@/lib/db/server';
 import { getCurrentUser } from '@/lib/security/auth';
 import { getUserContext } from '@/lib/security/user-context-server';
-import { SITE } from '@/lib/utils/site-config';
 
 /**
  * Search-first header. Yazınca debounced autocomplete dropdown'unda fırsat

@@ -1,7 +1,7 @@
 import 'server-only';
 import { getPublicClient } from '@/lib/db/public';
 import type { Database } from '@/types/supabase';
-import { listDeals, type DealWithMerchant } from '@/lib/db/queries/deals';
+import { type DealWithMerchant } from '@/lib/db/queries/deals';
 
 type MerchantRow = Database['public']['Tables']['merchants']['Row'];
 

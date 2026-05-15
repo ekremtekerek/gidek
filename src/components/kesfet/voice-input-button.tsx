@@ -59,6 +59,7 @@ export function VoiceInputButton({ onTranscript, disabled, className }: Props) {
       webkitSpeechRecognition?: SpeechRecognitionCtor;
     };
     const Ctor = w.SpeechRecognition ?? w.webkitSpeechRecognition;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSupported(Boolean(Ctor));
   }, []);
 

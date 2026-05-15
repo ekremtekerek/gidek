@@ -40,6 +40,7 @@ export function NearbyCarousel({ deals, city }: Props) {
   const [nearbyDeals, setNearbyDeals] = useState<DealWithMerchant[] | null>(null);
   useEffect(() => {
     if (!userLocation) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setNearbyDeals(null);
       return;
     }

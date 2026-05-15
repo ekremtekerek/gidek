@@ -19,6 +19,8 @@ export function ConsentBanner() {
     if (typeof window === 'undefined') return;
     try {
       if (window.localStorage.getItem(STORAGE_KEY) !== '1') {
+        // Mount sonrası localStorage check — SSR-safe
+        // eslint-disable-next-line react-hooks/set-state-in-effect
         setVisible(true);
       }
     } catch {

@@ -129,7 +129,7 @@ export default async function AdminReviewsPage({ searchParams }: PageProps) {
 
       <p className="text-muted-foreground text-center text-xs">
         Silinen yorumlar geri alınamaz; sadece gerçekten uygunsuz olanları sil. Şüpheli olanları
-        <strong className="text-foreground"> Gizle</strong>'yle pasifleştir.{' '}
+        <strong className="text-foreground"> Gizle</strong>&apos;yle pasifleştir.{' '}
         <Trash2 className="-mt-0.5 inline size-3" aria-hidden="true" />
       </p>
     </div>

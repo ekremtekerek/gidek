@@ -75,12 +75,14 @@ export function AddressAutocomplete({
 
   useEffect(() => {
     const trimmed = q.trim();
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (trimmed.length < 3 || !MAPBOX_TOKEN) {
       setFeatures([]);
       setLoading(false);
       return;
     }
     setLoading(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
     const timer = window.setTimeout(async () => {
       abortRef.current?.abort();
       const ctrl = new AbortController();
@@ -170,6 +172,7 @@ export function AddressAutocomplete({
                   key={i}
                   type="button"
                   role="option"
+                  aria-selected={false}
                   onClick={() => pick(f)}
                   className={cn(
                     'hover:bg-muted/60 flex w-full items-start gap-2 rounded-md p-2 text-left',

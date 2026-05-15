@@ -30,6 +30,7 @@ export function DealQuickView({ deal, onClose }: Props) {
   // Portal hedefini almak için mount sonrası gerçek render. document.body
   // ancestor'a göre bağımsız konumlandığı için Embla carousel'deki transform
   // hierarşisinden kurtulup viewport'a göre fixed olarak konumlanır.
+  // eslint-disable-next-line react-hooks/set-state-in-effect
   useEffect(() => setMounted(true), []);
 
   // ESC close.

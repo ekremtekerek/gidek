@@ -71,13 +71,17 @@ export function MapView({
 
   const onBoundsChangeRef = useRef(onBoundsChange);
   const onSelectDealRef = useRef(onSelectDeal);
-  onBoundsChangeRef.current = onBoundsChange;
-  onSelectDealRef.current = onSelectDeal;
-
   const dealsRef = useRef<MapDeal[]>(deals);
-  dealsRef.current = deals;
   const aiHighlightIdsRef = useRef<Set<string> | undefined>(aiHighlightIds);
-  aiHighlightIdsRef.current = aiHighlightIds;
+
+  // "Latest props" ref pattern — render bittikten sonra sync olur.
+  // useEffect içinde assignment lint kuralına uyar.
+  useEffect(() => {
+    onBoundsChangeRef.current = onBoundsChange;
+    onSelectDealRef.current = onSelectDeal;
+    dealsRef.current = deals;
+    aiHighlightIdsRef.current = aiHighlightIds;
+  });
 
   // Init map once.
   useEffect(() => {
@@ -179,13 +183,15 @@ export function MapView({
     }
 
     mapRef.current = map;
+    const aiMarkers = aiMarkersRef.current;
     return () => {
       map.remove();
       mapRef.current = null;
-      aiMarkersRef.current.clear();
+      aiMarkers.clear();
       setStyleReady(false);
       setLayersReady(false);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Light toggle.

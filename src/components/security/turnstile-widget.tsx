@@ -86,7 +86,10 @@ export function TurnstileWidget({
   const ref = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
   const onTokenRef = useRef(onToken);
-  onTokenRef.current = onToken;
+
+  useEffect(() => {
+    onTokenRef.current = onToken;
+  });
 
   useEffect(() => {
     if (!SITE_KEY) return;

@@ -1,11 +1,24 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
 import { X } from 'lucide-react';
-import { MapView } from '@/components/map/MapView';
 import { TravelCard } from '@/components/travel/travel-card';
+
+// Mapbox GL JS ~600KB — sadece harita view'a geçince bundle'a katılsın.
+const MapView = dynamic(
+  () => import('@/components/map/MapView').then((m) => m.MapView),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="bg-muted/30 flex h-full items-center justify-center">
+        <p className="text-muted-foreground text-sm">Harita yükleniyor…</p>
+      </div>
+    ),
+  },
+);
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
 import type { MapDeal } from '@/lib/utils/geo';
 import { cn } from '@/lib/utils/cn';

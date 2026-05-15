@@ -118,7 +118,7 @@ export function ShowOnMap({ lat, lng, title, address, className }: Props) {
                     Yol tarifi al
                   </a>
                   <p className="text-muted-foreground mt-1.5 text-[11px]">
-                    Google Maps'te açılır — mobilde harita uygulamana yönlenir.
+                    Google Maps&apos;te açılır — mobilde harita uygulamana yönlenir.
                   </p>
                 </footer>
               </div>

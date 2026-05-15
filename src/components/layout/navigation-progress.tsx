@@ -17,6 +17,8 @@ export function NavigationProgress() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
+    // Route değişti — kısa süreliğine progress bar göster.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setKey((k) => k + 1);
     setVisible(true);
     const t = window.setTimeout(() => setVisible(false), 750);

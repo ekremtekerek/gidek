@@ -76,7 +76,7 @@ export function InstallPrompt() {
           <Download className="size-5" aria-hidden="true" />
         </span>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold">gidek'i yükle</p>
+          <p className="text-sm font-semibold">gidek&apos;i yükle</p>
           <p className="text-muted-foreground text-xs">
             Ana ekrana ekle, çevrimdışı bile temel sayfalara erişebil.
           </p>

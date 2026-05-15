@@ -101,6 +101,7 @@ export function MapExperience({ initialDeals, initialCenter }: Props) {
 
   // Kategori değişince selection temizle + yeniden fetch.
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setSelectedDeal(null);
     if (!lastBoundsRef.current) return;
     fetchBounds(lastBoundsRef.current, filterState.categorySlug);

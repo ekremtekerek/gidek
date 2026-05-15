@@ -1334,6 +1334,7 @@ async function embedDealRows<T extends ReturnType<typeof buildEmbedSeed>>(
  * `seedDeals` içinde literal — fonksiyonu generic tutmak yerine bu yardımcı
  * üzerinden tipi çekiyoruz.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function buildEmbedSeed() {
   return {
     slug: '' as string,

@@ -35,6 +35,8 @@ export function ThemeToggle() {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    // Mount detection + localStorage sync (SSR'da window yok)
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
     setTheme(readStored());
   }, []);

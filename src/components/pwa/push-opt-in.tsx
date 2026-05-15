@@ -29,6 +29,8 @@ export function PushOptIn() {
   const [status, setStatus] = useState<Status>('loading');
 
   useEffect(() => {
+    // Browser capability + permission detection on mount — SSR-safe
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (typeof window === 'undefined') return;
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       setStatus('unsupported');
@@ -51,6 +53,7 @@ export function PushOptIn() {
         setStatus('unsupported');
       }
     })();
+    /* eslint-enable react-hooks/set-state-in-effect */
   }, []);
 
   async function subscribe() {

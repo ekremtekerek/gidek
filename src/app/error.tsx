@@ -19,7 +19,6 @@ interface Props {
 export default function GlobalError({ error, reset }: Props) {
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      // eslint-disable-next-line no-console
       console.error('App error boundary caught:', error);
     }
   }, [error]);

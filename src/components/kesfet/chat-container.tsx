@@ -115,7 +115,9 @@ export function ChatContainer({
   // mevcut chat session'ını sıfırlamasın. prepareSendMessagesRequest her POST
   // anında ref'ten okur — anlık değer her zaman taze gelir.
   const userLocationRef = useRef(effectiveLocation);
-  userLocationRef.current = effectiveLocation;
+  useEffect(() => {
+    userLocationRef.current = effectiveLocation;
+  });
 
   // Turnstile token — anon kullanıcılar için. Widget callback bunu set eder;
   // transport her POST anında ref'ten okur ve bir kez kullanır.
@@ -127,6 +129,7 @@ export function ChatContainer({
   const [userDistrict, setUserDistrict] = useState<string | null>(null);
   useEffect(() => {
     if (!effectiveLocation) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setUserDistrict(null);
       return;
     }
@@ -155,6 +158,8 @@ export function ChatContainer({
   // Transport conversationId değişince yeniden kurulur — body params güncel olsun.
   // prepareSendMessagesRequest her POST anında çağırılır → lat/lng'yi ref'ten
   // okuyarak transport'u yeniden kurmadan taze konum gönderiyoruz.
+  // Ref'ler send anında (render değil) okunduğu için lint false positive.
+  /* eslint-disable react-hooks/refs */
   const transport = useMemo(
     () =>
       new DefaultChatTransport({
@@ -174,6 +179,7 @@ export function ChatContainer({
       }),
     [conversationId],
   );
+  /* eslint-enable react-hooks/refs */
 
   const { messages, sendMessage, status, error, setMessages } = useChat({
     id: conversationId,
@@ -210,7 +216,9 @@ export function ChatContainer({
   // stage'i ref'le tutuyoruz, aksi halde context value her güncellendiğinde
   // effect tekrar tetiklenir → loop.
   const stageRef = useRef(stage);
-  stageRef.current = stage;
+  useEffect(() => {
+    stageRef.current = stage;
+  });
   useEffect(() => {
     const latest = extractLatestSuggestedDeals(messages);
     stageRef.current?.setAiSuggestedDeals(latest);

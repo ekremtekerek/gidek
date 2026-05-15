@@ -157,7 +157,6 @@ export function ImageUploader({
               idx === 0 ? 'border-foreground ring-foreground/30 ring-2' : 'border-border',
             )}
           >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
             <Image
               src={it.url}
               alt={idx === 0 ? 'Kapak' : `Galeri ${idx}`}
@@ -230,7 +229,7 @@ export function ImageUploader({
 
       <p className="text-muted-foreground text-xs">
         İlki kapak fotoğrafı, kalanı galeride. JPG / PNG / WebP / HEIC kabul edilir; her dosya
-        max 8MB. Sunucuda otomatik WebP'ye dönüştürülür ve Cloudinary'de saklanır.
+        max 8MB. Sunucuda otomatik WebP&apos;ye dönüştürülür ve Cloudinary&apos;de saklanır.
       </p>
     </div>
   );

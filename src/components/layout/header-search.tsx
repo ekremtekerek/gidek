@@ -63,6 +63,7 @@ export function HeaderSearch({ size = 'md', onSelect }: Props) {
   // Debounced fetch.
   useEffect(() => {
     const trimmed = q.trim();
+    /* eslint-disable react-hooks/set-state-in-effect */
     if (trimmed.length < 2) {
       setDeals([]);
       setCategories([]);
@@ -71,6 +72,7 @@ export function HeaderSearch({ size = 'md', onSelect }: Props) {
       return;
     }
     setLoading(true);
+    /* eslint-enable react-hooks/set-state-in-effect */
     const timer = window.setTimeout(async () => {
       abortRef.current?.abort();
       const ctrl = new AbortController();
@@ -162,6 +164,7 @@ export function HeaderSearch({ size = 'md', onSelect }: Props) {
           onKeyDown={onKeyDown}
           maxLength={80}
           placeholder={isLarge ? 'Tiyatro, masaj, Bodrum otel…' : 'Tiyatro, masaj, otel…'}
+          role="combobox"
           aria-autocomplete="list"
           aria-expanded={showDropdown}
           aria-controls={`${id}-results`}
