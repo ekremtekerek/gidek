@@ -136,11 +136,13 @@ export const Combobox = forwardRef<HTMLInputElement, Props>(function Combobox(
       ? options
       : options.filter((o) => o.toLocaleLowerCase('tr').includes(normalizedQuery));
   const filtered = asyncSearch
-    ? [
-        ...asyncResults,
-        ...staticFiltered.filter((o) => !asyncResults.includes(o)),
-      ]
-    : staticFiltered;
+    ? Array.from(
+        new Set([
+          ...asyncResults,
+          ...staticFiltered.filter((o) => !asyncResults.includes(o)),
+        ]),
+      )
+    : Array.from(new Set(staticFiltered));
 
   // Dışarı tıklama
   useEffect(() => {
