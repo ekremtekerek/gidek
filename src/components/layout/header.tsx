@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Flame, Users } from 'lucide-react';
+import { ContextLogo } from '@/components/layout/context-logo';
 import { ContextToggleButton } from '@/components/layout/context-toggle-button';
 import { Container } from '@/components/ui/container';
 import { CityChip } from '@/components/layout/context-chips';
@@ -36,14 +37,7 @@ export async function Header() {
   return (
     <header className="border-border bg-background/80 sticky top-0 z-40 border-b backdrop-blur">
       <Container className="flex h-16 items-center gap-3 sm:gap-4">
-        <Link
-          href="/"
-          className="text-2xl sm:text-3xl font-bold tracking-tight shrink-0"
-          aria-label={SITE.name}
-        >
-          {SITE.name}
-          <span className="text-muted-foreground ms-0.5">.</span>
-        </Link>
+        <ContextLogo />
 
         <div className="hidden flex-1 justify-center md:flex">
           <div className="flex w-full max-w-2xl items-center gap-2">
