@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Flame, Users } from 'lucide-react';
+import { Flame, Palmtree, Users } from 'lucide-react';
 import { Container } from '@/components/ui/container';
 import { CityChip } from '@/components/layout/context-chips';
 import { HeaderSearch } from '@/components/layout/header-search';
@@ -52,6 +52,14 @@ export async function Header() {
         </div>
 
         <div className="flex shrink-0 items-center gap-1">
+          <Link
+            href="/tatil"
+            className="from-sky-600 to-cyan-500 hover:from-sky-700 hover:to-cyan-600 hidden h-9 items-center gap-1.5 rounded-full bg-gradient-to-r px-3 text-xs font-bold text-white shadow-sm transition-all hover:shadow-md md:inline-flex"
+            aria-label="Tatil — AI ile planla"
+          >
+            <Palmtree className="size-3.5" aria-hidden="true" />
+            Tatil
+          </Link>
           <Link
             href="/trend"
             className="hidden h-9 items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-3 text-xs font-semibold text-rose-700 transition-all hover:bg-rose-500/15 hover:border-rose-500/60 dark:text-rose-300 md:inline-flex"
