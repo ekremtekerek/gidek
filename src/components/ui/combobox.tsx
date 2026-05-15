@@ -9,7 +9,7 @@ import {
   useState,
   type KeyboardEvent,
 } from 'react';
-import { ChevronDown, MapPin, X } from 'lucide-react';
+import { ChevronDown, Loader2, MapPin, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 interface Props {
@@ -26,6 +26,14 @@ interface Props {
   clearable?: boolean;
   size?: 'sm' | 'md';
   disabled?: boolean;
+  /**
+   * Asenkron arama — kullanıcı yazınca debounced çağrılır. Dönen sonuçlar
+   * statik `options` ile birleştirilip dropdown'a yansır. Boş query'de
+   * sadece options gösterilir.
+   */
+  asyncSearch?: (query: string, signal: AbortSignal) => Promise<string[]>;
+  /** Debounce ms (asyncSearch için) — default 280 */
+  asyncDebounceMs?: number;
 }
 
 /**
@@ -46,11 +54,15 @@ export const Combobox = forwardRef<HTMLInputElement, Props>(function Combobox(
     clearable = true,
     size = 'md',
     disabled,
+    asyncSearch,
+    asyncDebounceMs = 280,
   },
   ref,
 ) {
   const [open, setOpen] = useState(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [asyncResults, setAsyncResults] = useState<string[]>([]);
+  const [asyncLoading, setAsyncLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -65,12 +77,46 @@ export const Combobox = forwardRef<HTMLInputElement, Props>(function Combobox(
     [ref],
   );
 
-  // Filtreli liste — case insensitive, accent-flat
+  // Async fetch — debounced; her input değişiminde önceki abort edilir.
+  useEffect(() => {
+    if (!asyncSearch) return;
+    const q = value.trim();
+    if (q.length < 2) {
+      setAsyncResults([]);
+      setAsyncLoading(false);
+      return;
+    }
+    setAsyncLoading(true);
+    const controller = new AbortController();
+    const id = window.setTimeout(async () => {
+      try {
+        const results = await asyncSearch(q, controller.signal);
+        if (!controller.signal.aborted) {
+          setAsyncResults(results);
+          setAsyncLoading(false);
+        }
+      } catch {
+        if (!controller.signal.aborted) setAsyncLoading(false);
+      }
+    }, asyncDebounceMs);
+    return () => {
+      controller.abort();
+      window.clearTimeout(id);
+    };
+  }, [value, asyncSearch, asyncDebounceMs]);
+
+  // Birleşik liste: önce async (varsa) + sonra static, duplicate'leri kaldır.
   const normalizedQuery = value.toLocaleLowerCase('tr');
-  const filtered =
+  const staticFiltered =
     normalizedQuery.length === 0
       ? options
       : options.filter((o) => o.toLocaleLowerCase('tr').includes(normalizedQuery));
+  const filtered = asyncSearch
+    ? [
+        ...asyncResults,
+        ...staticFiltered.filter((o) => !asyncResults.includes(o)),
+      ]
+    : staticFiltered;
 
   // Dışarı tıklama
   useEffect(() => {
@@ -170,10 +216,14 @@ export const Combobox = forwardRef<HTMLInputElement, Props>(function Combobox(
           }}
           className="text-muted-foreground shrink-0"
         >
-          <ChevronDown
-            className={cn('size-4 transition-transform', open && 'rotate-180')}
-            aria-hidden="true"
-          />
+          {asyncLoading ? (
+            <Loader2 className="size-4 animate-spin" aria-hidden="true" />
+          ) : (
+            <ChevronDown
+              className={cn('size-4 transition-transform', open && 'rotate-180')}
+              aria-hidden="true"
+            />
+          )}
         </button>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { ArrowUp, Sparkles, Wand2 } from 'lucide-react';
+import { Send, Sparkles, Wand2 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
 const QUICK_PROMPTS = [
@@ -180,7 +180,7 @@ export function TravelAIPrompt() {
                 : 'from-sky-600 to-cyan-500 hover:from-sky-700 hover:to-cyan-600 bg-gradient-to-br text-white shadow-md hover:scale-110',
             )}
           >
-            <ArrowUp className="size-4" strokeWidth={2.5} aria-hidden="true" />
+            <Send className="size-4 -translate-x-px translate-y-px" aria-hidden="true" />
           </button>
         </form>
 

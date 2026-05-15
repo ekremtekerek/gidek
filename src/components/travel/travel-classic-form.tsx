@@ -7,6 +7,7 @@ import { Combobox } from '@/components/ui/combobox';
 import { DateField } from '@/components/ui/date-field';
 import { Select, type SelectOption } from '@/components/ui/select';
 import { CONCEPT_LABEL, type Concept } from '@/lib/travel/enrich';
+import { searchPlaces } from '@/lib/travel/geocoding';
 
 interface Props {
   locations: string[];
@@ -85,7 +86,11 @@ export function TravelClassicForm({ locations }: Props) {
             value={dest}
             onChange={setDest}
             options={locations}
-            placeholder="Şehir, ilçe veya bölge"
+            asyncSearch={async (q, signal) => {
+              const results = await searchPlaces(q, signal);
+              return results.map((r) => r.short);
+            }}
+            placeholder="Şehir, ilçe veya bölge yaz..."
             label="Tatil destinasyonu"
             size="md"
           />
