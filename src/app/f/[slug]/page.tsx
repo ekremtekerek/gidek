@@ -14,6 +14,7 @@ import { OpenNowBadge } from '@/components/deal/open-now-badge';
 import { ShowOnMap } from '@/components/deal/show-on-map';
 import { WalkInPressure } from '@/components/deal/walk-in-pressure';
 import { PriceCalendar } from '@/components/travel/price-calendar';
+import { TravelDetailEnrichment } from '@/components/travel/travel-detail-enrichment';
 import { SimilarDeals } from '@/components/deal/similar-deals';
 import { SocialProof } from '@/components/deal/social-proof';
 import { StickyCta } from '@/components/deal/sticky-cta';
@@ -341,16 +342,20 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
             </section>
 
             {isTravelDeal && !expired ? (
-              <section aria-labelledby="price-calendar-heading">
-                <h2 id="price-calendar-heading" className="sr-only">
-                  Fiyat takvimi
-                </h2>
-                <PriceCalendar
-                  basePrice={Number(deal.discounted_price)}
-                  dealId={deal.id}
-                  monthsCount={2}
-                />
-              </section>
+              <>
+                <section aria-labelledby="price-calendar-heading">
+                  <h2 id="price-calendar-heading" className="sr-only">
+                    Fiyat takvimi
+                  </h2>
+                  <PriceCalendar
+                    basePrice={Number(deal.discounted_price)}
+                    dealId={deal.id}
+                    monthsCount={2}
+                  />
+                </section>
+
+                <TravelDetailEnrichment deal={deal} />
+              </>
             ) : null}
 
             {deal.highlights && deal.highlights.length > 0 ? (
