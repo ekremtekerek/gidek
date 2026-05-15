@@ -1,124 +1,83 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { createPortal } from 'react-dom';
-import { CalendarRange, MapPin, Search, Users, X } from 'lucide-react';
-import { TravelTopSearchBar } from '@/components/travel/travel-top-search-bar';
+import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import Link from 'next/link';
+import { Search, SlidersHorizontal } from 'lucide-react';
+import { Combobox } from '@/components/ui/combobox';
+import { searchPlaces } from '@/lib/travel/geocoding';
 
 interface Props {
   locations: string[];
 }
 
 /**
- * Tatil dünyasında header'da gözüken kompakt arama widget'ı. Booking.com
- * benzeri tek trigger button (📍 Nereye? · 📅 Tarih · 👥 Kişi) — tıklanınca
- * full-form modal'a genişler. Mevcut TravelTopSearchBar reuse edilir, böylece
- * tek tutarlılık.
+ * Header'a yerleşen kompakt tatil arama. Trigger button DEĞİL — gerçek
+ * Combobox; kullanıcı doğrudan yazmaya başlayabilir, Mapbox autocomplete
+ * dropdown'u inline açılır. Tarih/kişi default'larla geçer; ileri seçenek
+ * için /tatil/ara'daki tam form (TravelTopSearchBar) "Detaylı arama"
+ * ikonuyla erişilebilir.
  */
 export function TravelHeaderSearch({ locations }: Props) {
-  const [open, setOpen] = useState(false);
-  const [mounted, setMounted] = useState(false);
-  const pathname = usePathname();
-  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [dest, setDest] = useState('');
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setMounted(true);
-  }, []);
-
-  // Route/searchParams değişince modal'ı kapat — form submit sonrası
-  // router.push olunca otomatik kapanma sağlanır.
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setOpen(false);
-  }, [pathname, searchParams]);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('keydown', onKey);
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = '';
-    };
-  }, [open]);
+  const submit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const trimmed = dest.trim();
+    if (!trimmed) {
+      router.push('/tatil/ara');
+      return;
+    }
+    const now = Date.now();
+    const fmt = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+    const tomorrow = fmt(now + 86400000);
+    const week = fmt(now + 7 * 86400000);
+    const params = new URLSearchParams({
+      dest: trimmed,
+      checkin: tomorrow,
+      checkout: week,
+      adults: '2',
+    });
+    router.push(`/tatil/ara?${params.toString()}`);
+  };
 
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        aria-label="Tatil ara"
-        className="border-border bg-background hover:border-foreground/40 hover:shadow-md group flex h-11 w-full max-w-2xl items-center gap-2 rounded-full border px-2 pl-4 text-sm font-medium transition-all"
+    <form
+      onSubmit={submit}
+      className="flex w-full max-w-2xl items-center gap-2"
+    >
+      <div className="min-w-0 flex-1">
+        <Combobox
+          value={dest}
+          onChange={setDest}
+          options={locations}
+          asyncSearch={async (q, signal) => {
+            const results = await searchPlaces(q, signal);
+            return results.map((r) => r.short);
+          }}
+          placeholder="Nereye gidelim? — Bodrum, Antalya…"
+          label="Tatil destinasyonu"
+          size="sm"
+        />
+      </div>
+
+      <Link
+        href="/tatil/ara"
+        aria-label="Detaylı arama (tarih, kişi, oda, konsept)"
+        title="Detaylı arama"
+        className="text-muted-foreground hover:bg-muted border-border hover:border-foreground/30 inline-flex h-9 shrink-0 items-center justify-center rounded-md border px-2.5 transition-colors"
       >
-        <Search className="text-muted-foreground size-4 shrink-0" aria-hidden="true" />
+        <SlidersHorizontal className="size-4" aria-hidden="true" />
+      </Link>
 
-        <div className="flex flex-1 items-center gap-2 overflow-hidden">
-          <Chip icon={<MapPin className="size-3.5" aria-hidden="true" />} label="Nereye gidelim?" />
-          <Divider />
-          <Chip icon={<CalendarRange className="size-3.5" aria-hidden="true" />} label="Tarih" />
-          <Divider />
-          <Chip icon={<Users className="size-3.5" aria-hidden="true" />} label="Kişi" />
-        </div>
-
-        <span className="from-sky-600 to-cyan-500 group-hover:from-sky-700 group-hover:to-cyan-600 ml-auto inline-flex h-9 items-center gap-1.5 rounded-full bg-gradient-to-r px-4 text-xs font-bold text-white shadow transition-colors">
-          <Search className="size-3.5" aria-hidden="true" />
-          Ara
-        </span>
+      <button
+        type="submit"
+        className="from-sky-600 to-cyan-500 hover:from-sky-700 hover:to-cyan-600 inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md bg-gradient-to-r px-4 text-xs font-bold text-white shadow transition-all hover:scale-[1.02]"
+      >
+        <Search className="size-3.5" aria-hidden="true" />
+        Ara
       </button>
-
-      {mounted && open
-        ? createPortal(
-            <div
-              onClick={() => setOpen(false)}
-              className="fixed inset-0 z-[200] flex items-start justify-center bg-black/60 p-4 pt-20 backdrop-blur-sm sm:pt-24"
-            >
-              <div
-                onClick={(e) => e.stopPropagation()}
-                className="border-border bg-background w-full max-w-4xl rounded-2xl border p-4 shadow-2xl sm:p-5"
-              >
-                <header className="mb-3 flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-sky-700 dark:text-sky-300 text-[10px] font-bold uppercase tracking-widest">
-                      Tatil ara
-                    </p>
-                    <h2 className="text-base font-bold tracking-tight">
-                      Nereye gidelim?
-                    </h2>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setOpen(false)}
-                    className="hover:bg-muted inline-flex size-9 items-center justify-center rounded-full transition-colors"
-                    aria-label="Kapat"
-                  >
-                    <X className="size-4" aria-hidden="true" />
-                  </button>
-                </header>
-
-                <TravelTopSearchBar locations={locations} />
-              </div>
-            </div>,
-            document.body,
-          )
-        : null}
-    </>
+    </form>
   );
-}
-
-function Chip({ icon, label }: { icon: React.ReactNode; label: string }) {
-  return (
-    <span className="text-muted-foreground inline-flex items-center gap-1 truncate text-xs">
-      {icon}
-      <span className="truncate">{label}</span>
-    </span>
-  );
-}
-
-function Divider() {
-  return <span className="text-muted-foreground/40 select-none">·</span>;
 }
