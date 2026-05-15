@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ArrowLeft, Compass, Filter, SlidersHorizontal } from 'lucide-react';
+import { CompareBar } from '@/components/travel/compare-bar';
 import { TravelCard } from '@/components/travel/travel-card';
 import { TravelFilters } from '@/components/travel/travel-filters';
 import { TravelMapView } from '@/components/travel/travel-map-view';
@@ -207,6 +208,8 @@ export default async function TatilAraPage({
           </div>
         </div>
       </Container>
+
+      <CompareBar />
     </>
   );
 }

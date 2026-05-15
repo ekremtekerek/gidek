@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -11,6 +13,8 @@ import {
   Umbrella,
   Waves,
 } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
+import { useCompareStore } from '@/lib/travel/compare-store';
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
 import {
   CONCEPT_ACCENT,
@@ -52,6 +56,8 @@ const FEATURE_ICON: Partial<Record<TravelFeature, typeof Coffee>> = {
 export function TravelCard({ deal, priority = false }: Props) {
   const meta = enrichTravelDeal(deal);
   const location = [deal.district, deal.city].filter(Boolean).join(', ');
+  const compare = useCompareStore();
+  const isCompared = compare.ids.includes(deal.id);
   const original = Number(deal.original_price);
   const price = Number(deal.discounted_price);
   const showDiscount = price < original;
@@ -60,10 +66,24 @@ export function TravelCard({ deal, priority = false }: Props) {
   const topFeatures = meta.features.slice(0, 3);
 
   return (
-    <Link
-      href={`/f/${deal.slug}`}
-      className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
-    >
+    <div className="group relative flex h-full flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg">
+      {/* Karşılaştır toggle — sağ üst, kart sınırı dışına etki etmesin */}
+      <label
+        className="bg-background/90 absolute right-3 top-3 z-10 inline-flex cursor-pointer items-center gap-1 rounded-full border border-border px-2 py-1 text-[10px] font-bold backdrop-blur transition-all hover:scale-105"
+        onClick={(e) => e.stopPropagation()}
+        title="Karşılaştırmaya ekle (max 3)"
+      >
+        <Checkbox
+          size="sm"
+          checked={isCompared}
+          onChange={() => compare.toggle(deal.id)}
+        />
+        <span className={isCompared ? 'text-foreground' : 'text-muted-foreground'}>
+          Karşılaştır
+        </span>
+      </label>
+
+      <Link href={`/f/${deal.slug}`} className="flex flex-1 flex-col">
       {/* Görsel + üst rozetler */}
       <div className="relative aspect-[16/10] overflow-hidden">
         <Image
@@ -169,6 +189,7 @@ export function TravelCard({ deal, priority = false }: Props) {
           </div>
         </div>
       </div>
-    </Link>
+      </Link>
+    </div>
   );
 }
