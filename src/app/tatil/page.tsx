@@ -74,6 +74,42 @@ export default async function TatilLandingPage() {
             <TravelAIPrompt />
           </div>
 
+          {/* AI WOW BANTLARI — glass cards, hero içine entegre */}
+          <div className="mt-8 grid gap-3 sm:mt-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
+            <WowCard
+              href="/tatil/foto"
+              icon={<Camera className="size-5 text-white" aria-hidden="true" />}
+              iconGradient="from-fuchsia-500 to-rose-500"
+              badge="Yeni · rakiplerde yok"
+              title="Foto ile tatil ara"
+              subtitle="Bali, Maldivler, Mykonos — Türkiye'den benzerini bul"
+            />
+            <WowCard
+              href="/tatil/plan"
+              icon={<Plane className="size-5 text-white" aria-hidden="true" />}
+              iconGradient="from-violet-500 to-fuchsia-500"
+              badge="Yeni"
+              title="AI saat saat plan"
+              subtitle="Otel + yemek + aktivite — tek planda"
+            />
+            <WowCard
+              href="/tatil/sezon"
+              icon={<CalendarDays className="size-5 text-white" aria-hidden="true" />}
+              iconGradient="from-amber-500 to-orange-500"
+              badge="AI farkımız"
+              title="Hangi ay daha akıllıca?"
+              subtitle="Hava + fiyat + kalabalık AI sezon analizi"
+            />
+            <WowCard
+              href="/tatil/paket"
+              icon={<Sparkles className="size-5 text-white" aria-hidden="true" />}
+              iconGradient="from-emerald-500 to-teal-500"
+              badge="Yeni"
+              title="Bütçeni AI'a paketle"
+              subtitle="Otel + yemek + aktivite + spa — tek paket"
+            />
+          </div>
+
           {/* Klasik tercih edenler için subtle alternatif link */}
           <div className="mx-auto mt-8 flex max-w-4xl items-center justify-center gap-3 text-xs sm:gap-4 sm:text-sm">
             <span className="bg-white/20 text-white/90 hidden h-px flex-1 sm:block" aria-hidden="true" />
@@ -88,138 +124,6 @@ export default async function TatilLandingPage() {
           </div>
         </Container>
       </section>
-
-      {/* FOTO İLE ARA — büyük featured bant, en wow özellik */}
-      <Container className="pt-8 sm:pt-12">
-        <Link
-          href="/tatil/foto"
-          className="group from-violet-600 via-fuchsia-500 to-rose-500 relative flex items-center gap-5 overflow-hidden rounded-2xl bg-gradient-to-r p-5 shadow-xl transition-all hover:scale-[1.005] hover:shadow-2xl sm:p-7"
-        >
-          <Camera
-            aria-hidden="true"
-            className="absolute right-4 -bottom-4 size-32 text-white/15 sm:right-12 sm:size-48"
-          />
-          <Sparkles
-            aria-hidden="true"
-            className="absolute right-32 top-4 size-12 text-white/20 sm:size-16"
-          />
-          <span className="bg-white/20 inline-flex size-14 shrink-0 items-center justify-center rounded-2xl backdrop-blur shadow-md sm:size-16">
-            <Camera className="size-7 text-white sm:size-8" aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1 text-white">
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur">
-              <Sparkles className="size-3" aria-hidden="true" />
-              Yeni · rakiplerde yok
-            </p>
-            <h2 className="mt-1.5 text-xl font-bold leading-tight tracking-tight sm:text-2xl">
-              Foto ile tatil ara
-            </h2>
-            <p className="mt-0.5 text-xs text-white/90 sm:text-sm">
-              Bali, Maldivler, Mykonos… Beğendiğin tatil fotosunu yükle, Türkiye&apos;den
-              benzerini bulalım
-            </p>
-          </div>
-          <ArrowRight
-            className="relative z-10 size-6 shrink-0 text-white transition-transform group-hover:translate-x-1"
-            aria-hidden="true"
-          />
-        </Link>
-      </Container>
-
-      {/* AI WOW BANTLAR — rakiplerde yok özellikler */}
-      <Container className="pt-4 sm:pt-5">
-        <div className="grid gap-4 lg:grid-cols-3">
-          {/* Plan kur */}
-          <Link
-            href="/tatil/plan"
-            className="group from-violet-600 via-fuchsia-500 to-rose-500 relative flex items-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r p-5 shadow-xl transition-all hover:scale-[1.01] hover:shadow-2xl sm:p-6"
-          >
-            <Sparkles
-              aria-hidden="true"
-              className="absolute right-4 top-4 size-20 text-white/15 sm:size-28"
-            />
-            <span className="bg-white/20 inline-flex size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur shadow-md">
-              <Plane className="size-6 text-white" aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1 text-white">
-              <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur">
-                <Sparkles className="size-3" aria-hidden="true" />
-                Yeni
-              </p>
-              <h2 className="mt-1.5 text-lg font-bold leading-tight tracking-tight sm:text-xl">
-                AI saat saat plan
-              </h2>
-              <p className="mt-0.5 text-xs text-white/90 sm:text-sm">
-                Otel + yemek + aktivite — tek planda
-              </p>
-            </div>
-            <ArrowRight
-              className="size-5 shrink-0 text-white transition-transform group-hover:translate-x-1"
-              aria-hidden="true"
-            />
-          </Link>
-
-          {/* Sezon tavsiyesi */}
-          <Link
-            href="/tatil/sezon"
-            className="group from-amber-500 via-orange-500 to-rose-500 relative flex items-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r p-5 shadow-xl transition-all hover:scale-[1.01] hover:shadow-2xl sm:p-6"
-          >
-            <Sparkles
-              aria-hidden="true"
-              className="absolute right-4 top-4 size-20 text-white/15 sm:size-28"
-            />
-            <span className="bg-white/20 inline-flex size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur shadow-md">
-              <CalendarDays className="size-6 text-white" aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1 text-white">
-              <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur">
-                <Sparkles className="size-3" aria-hidden="true" />
-                AI farkımız
-              </p>
-              <h2 className="mt-1.5 text-lg font-bold leading-tight tracking-tight sm:text-xl">
-                Hangi ay daha akıllıca?
-              </h2>
-              <p className="mt-0.5 text-xs text-white/90 sm:text-sm">
-                Hava + fiyat + kalabalık · AI sezon analizi
-              </p>
-            </div>
-            <ArrowRight
-              className="size-5 shrink-0 text-white transition-transform group-hover:translate-x-1"
-              aria-hidden="true"
-            />
-          </Link>
-
-          {/* Tatil paketi tasarla */}
-          <Link
-            href="/tatil/paket"
-            className="group from-emerald-600 via-teal-500 to-cyan-500 relative flex items-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r p-5 shadow-xl transition-all hover:scale-[1.01] hover:shadow-2xl sm:p-6"
-          >
-            <Sparkles
-              aria-hidden="true"
-              className="absolute right-4 top-4 size-20 text-white/15 sm:size-28"
-            />
-            <span className="bg-white/20 inline-flex size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur shadow-md">
-              <Sparkles className="size-6 text-white" aria-hidden="true" />
-            </span>
-            <div className="min-w-0 flex-1 text-white">
-              <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur">
-                <Sparkles className="size-3" aria-hidden="true" />
-                Yeni
-              </p>
-              <h2 className="mt-1.5 text-lg font-bold leading-tight tracking-tight sm:text-xl">
-                Bütçeni AI&apos;a paketle
-              </h2>
-              <p className="mt-0.5 text-xs text-white/90 sm:text-sm">
-                Otel + yemek + aktivite + spa — tek paket
-              </p>
-            </div>
-            <ArrowRight
-              className="size-5 shrink-0 text-white transition-transform group-hover:translate-x-1"
-              aria-hidden="true"
-            />
-          </Link>
-        </div>
-      </Container>
 
       {/* DESTİNASYONLAR */}
       <Container className="py-12 sm:py-16">
@@ -405,5 +309,50 @@ export default async function TatilLandingPage() {
         </Container>
       </section>
     </>
+  );
+}
+
+interface WowCardProps {
+  href: string;
+  icon: React.ReactNode;
+  iconGradient: string;
+  badge: string;
+  title: string;
+  subtitle: string;
+}
+
+/**
+ * Hero içine entegre kompakt AI özellik kartı. Glass-morphism stili —
+ * mavi gradient hero üzerinde beyaz/şeffaf bg + backdrop-blur. Mobile'da
+ * tek sütun, sm:2 sütun, lg:4 sütun.
+ */
+function WowCard({ href, icon, iconGradient, badge, title, subtitle }: WowCardProps) {
+  return (
+    <Link
+      href={href}
+      className="group border-white/25 hover:bg-white/20 hover:border-white/40 relative flex items-start gap-3 overflow-hidden rounded-2xl border bg-white/10 p-3.5 backdrop-blur transition-all hover:scale-[1.02] hover:shadow-xl sm:p-4"
+    >
+      <span
+        className={`bg-gradient-to-br ${iconGradient} inline-flex size-10 shrink-0 items-center justify-center rounded-xl shadow-md`}
+      >
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1 text-white">
+        <p className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest">
+          <Sparkles className="size-2.5" aria-hidden="true" />
+          {badge}
+        </p>
+        <h3 className="mt-1 text-sm font-bold leading-tight tracking-tight sm:text-base">
+          {title}
+        </h3>
+        <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-white/85 sm:text-xs">
+          {subtitle}
+        </p>
+      </div>
+      <ArrowRight
+        className="size-4 shrink-0 text-white/70 transition-all group-hover:translate-x-0.5 group-hover:text-white"
+        aria-hidden="true"
+      />
+    </Link>
   );
 }
