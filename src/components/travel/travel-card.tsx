@@ -1,6 +1,5 @@
 'use client';
 
-import Image from 'next/image';
 import Link from 'next/link';
 import {
   Coffee,
@@ -13,6 +12,7 @@ import {
   Umbrella,
   Waves,
 } from 'lucide-react';
+import { TravelCardGallery } from '@/components/travel/travel-card-gallery';
 import { Checkbox } from '@/components/ui/checkbox';
 import { useCompareStore } from '@/lib/travel/compare-store';
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
@@ -23,7 +23,6 @@ import {
   FEATURE_LABEL,
   type TravelFeature,
 } from '@/lib/travel/enrich';
-import { BLUR_DATA_URL } from '@/lib/utils/blur';
 import { cn } from '@/lib/utils/cn';
 import { formatTRY } from '@/lib/utils/format';
 
@@ -84,16 +83,11 @@ export function TravelCard({ deal, priority = false }: Props) {
       </label>
 
       <Link href={`/f/${deal.slug}`} className="flex flex-1 flex-col">
-      {/* Görsel + üst rozetler */}
-      <div className="relative aspect-[16/10] overflow-hidden">
-        <Image
-          src={deal.cover_image}
+      {/* Görsel galerisi — kapak + ek görseller carousel */}
+      <div className="relative">
+        <TravelCardGallery
+          images={[deal.cover_image, ...(deal.images ?? [])]}
           alt={deal.title}
-          fill
-          sizes="(min-width:1024px) 33vw, (min-width:640px) 50vw, 100vw"
-          className="object-cover transition-transform duration-500 group-hover:scale-105"
-          placeholder="blur"
-          blurDataURL={BLUR_DATA_URL}
           priority={priority}
         />
 

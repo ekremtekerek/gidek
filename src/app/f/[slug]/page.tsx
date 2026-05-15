@@ -13,6 +13,7 @@ import { LastMinuteBadge } from '@/components/deal/last-minute-badge';
 import { OpenNowBadge } from '@/components/deal/open-now-badge';
 import { ShowOnMap } from '@/components/deal/show-on-map';
 import { WalkInPressure } from '@/components/deal/walk-in-pressure';
+import { PriceCalendar } from '@/components/travel/price-calendar';
 import { SimilarDeals } from '@/components/deal/similar-deals';
 import { SocialProof } from '@/components/deal/social-proof';
 import { StickyCta } from '@/components/deal/sticky-cta';
@@ -88,6 +89,10 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
   const duration = formatDuration(deal.duration_minutes);
   const discount = deal.discount_percent ?? 0;
   const showDiscount = discount > 0 && deal.discounted_price < deal.original_price;
+
+  // Tatil kategorilerinde fiyat takvimi göster
+  const TRAVEL_CATS = new Set(['tatil-otelleri', 'sehir-otelleri', 'turlar']);
+  const isTravelDeal = deal.categories.some((c) => TRAVEL_CATS.has(c.slug));
 
   const breadcrumbLd = {
     '@context': 'https://schema.org',
@@ -334,6 +339,19 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                 {deal.description}
               </p>
             </section>
+
+            {isTravelDeal && !expired ? (
+              <section aria-labelledby="price-calendar-heading">
+                <h2 id="price-calendar-heading" className="sr-only">
+                  Fiyat takvimi
+                </h2>
+                <PriceCalendar
+                  basePrice={Number(deal.discounted_price)}
+                  dealId={deal.id}
+                  monthsCount={2}
+                />
+              </section>
+            ) : null}
 
             {deal.highlights && deal.highlights.length > 0 ? (
               <section aria-labelledby="highlights-heading">
