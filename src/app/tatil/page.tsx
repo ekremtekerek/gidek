@@ -126,7 +126,7 @@ export default async function TatilLandingPage() {
 
       {/* AI WOW BANTLAR — rakiplerde yok özellikler */}
       <Container className="pt-4 sm:pt-5">
-        <div className="grid gap-4 lg:grid-cols-2">
+        <div className="grid gap-4 lg:grid-cols-3">
           {/* Plan kur */}
           <Link
             href="/tatil/plan"
@@ -179,6 +179,36 @@ export default async function TatilLandingPage() {
               </h2>
               <p className="mt-0.5 text-xs text-white/90 sm:text-sm">
                 Hava + fiyat + kalabalık · AI sezon analizi
+              </p>
+            </div>
+            <ArrowRight
+              className="size-5 shrink-0 text-white transition-transform group-hover:translate-x-1"
+              aria-hidden="true"
+            />
+          </Link>
+
+          {/* Tatil paketi tasarla */}
+          <Link
+            href="/tatil/paket"
+            className="group from-emerald-600 via-teal-500 to-cyan-500 relative flex items-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r p-5 shadow-xl transition-all hover:scale-[1.01] hover:shadow-2xl sm:p-6"
+          >
+            <Sparkles
+              aria-hidden="true"
+              className="absolute right-4 top-4 size-20 text-white/15 sm:size-28"
+            />
+            <span className="bg-white/20 inline-flex size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur shadow-md">
+              <Sparkles className="size-6 text-white" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1 text-white">
+              <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur">
+                <Sparkles className="size-3" aria-hidden="true" />
+                Yeni
+              </p>
+              <h2 className="mt-1.5 text-lg font-bold leading-tight tracking-tight sm:text-xl">
+                Bütçeni AI&apos;a paketle
+              </h2>
+              <p className="mt-0.5 text-xs text-white/90 sm:text-sm">
+                Otel + yemek + aktivite + spa — tek paket
               </p>
             </div>
             <ArrowRight

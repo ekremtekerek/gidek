@@ -13,11 +13,13 @@ import { LastMinuteBadge } from '@/components/deal/last-minute-badge';
 import { OpenNowBadge } from '@/components/deal/open-now-badge';
 import { ShowOnMap } from '@/components/deal/show-on-map';
 import { WalkInPressure } from '@/components/deal/walk-in-pressure';
+import { PriceAlertButton } from '@/components/travel/price-alert-button';
 import { PriceCalendar } from '@/components/travel/price-calendar';
 import { TravelDetailEnrichment } from '@/components/travel/travel-detail-enrichment';
 import { WeatherWidget } from '@/components/travel/weather-widget';
 import { WhatsAppButton } from '@/components/travel/whatsapp-button';
 import { SimilarDeals } from '@/components/deal/similar-deals';
+import { SimilarTravelDealsSection } from '@/components/travel/similar-travel-deals-section';
 import { SocialProof } from '@/components/deal/social-proof';
 import { StickyCta } from '@/components/deal/sticky-cta';
 import { JsonLd } from '@/components/seo/json-ld';
@@ -393,6 +395,29 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                     location={location}
                   />
                 </section>
+
+                {/* Fiyat alarmı */}
+                <section className="border-amber-500/30 from-amber-500/10 via-background to-orange-500/5 rounded-xl border bg-gradient-to-r p-4 sm:p-5">
+                  <header className="mb-2">
+                    <p className="text-amber-700 dark:text-amber-300 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest">
+                      Akıllı bildirim
+                    </p>
+                    <h3 className="mt-0.5 text-base font-bold">
+                      Bu fiyattan daha ucuza düşsün diye bekleyebilirsin
+                    </h3>
+                    <p className="text-muted-foreground mt-0.5 text-xs">
+                      Hedef fiyatını söyle, indirim olunca seni haberdar edelim.
+                    </p>
+                  </header>
+                  <PriceAlertButton
+                    dealId={deal.id}
+                    dealSlug={deal.slug}
+                    dealTitle={deal.title}
+                    coverImage={deal.cover_image}
+                    city={[deal.district, deal.city].filter(Boolean).join(', ')}
+                    currentPrice={Number(deal.discounted_price)}
+                  />
+                </section>
               </>
             ) : null}
 
@@ -524,7 +549,11 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
             <ReviewsSection dealId={deal.id} dealSlug={deal.slug} />
           </Suspense>
 
-          {primaryCategory ? (
+          {isTravelDeal ? (
+            <Suspense fallback={<SimilarDealsSkeleton />}>
+              <SimilarTravelDealsSection dealId={deal.id} />
+            </Suspense>
+          ) : primaryCategory ? (
             <Suspense fallback={<SimilarDealsSkeleton />}>
               <SimilarDeals categorySlug={primaryCategory.slug} excludeDealId={deal.id} />
             </Suspense>

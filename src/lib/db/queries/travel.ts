@@ -219,6 +219,53 @@ export async function listTravelLocations(): Promise<string[]> {
 }
 
 /**
+ * Tatil paketi tasarlamak için bölgedeki TÜM kategorilerden envanter +
+ * her deal'ın birincil kategori slug'ı. AI paket builder bunu kullanır
+ * — otel, yemek, aktivite, spa hepsi tek listte.
+ */
+export async function fetchPackageInventory(
+  destination: string,
+  limit = 60,
+): Promise<{ deals: DealWithMerchant[]; categoryByDealId: Map<string, string> }> {
+  const supabase = getPublicClient();
+  const dest = destination.trim();
+  if (!dest) return { deals: [], categoryByDealId: new Map() };
+
+  const now = new Date().toISOString();
+  const { data: deals } = await supabase
+    .from('deals')
+    .select(
+      `*, merchant:merchants ( name, slug, city, district, lat, lng, working_hours )`,
+    )
+    .eq('is_active', true)
+    .gt('valid_until', now)
+    .not('published_at', 'is', null)
+    .or(`city.eq.${dest},district.eq.${dest}`)
+    .order('sold_count', { ascending: false })
+    .limit(limit);
+
+  const dealList = (deals ?? []) as unknown as DealWithMerchant[];
+  if (dealList.length === 0) return { deals: [], categoryByDealId: new Map() };
+
+  const ids = dealList.map((d) => d.id);
+  const { data: cats } = await supabase
+    .from('deal_categories')
+    .select('deal_id, category:categories!inner(slug)')
+    .in('deal_id', ids);
+
+  const categoryByDealId = new Map<string, string>();
+  for (const row of cats ?? []) {
+    if (!row.deal_id) continue;
+    const slug = (row as { category: { slug: string } | null }).category?.slug;
+    if (slug && !categoryByDealId.has(row.deal_id)) {
+      categoryByDealId.set(row.deal_id, slug);
+    }
+  }
+
+  return { deals: dealList, categoryByDealId };
+}
+
+/**
  * Tatil için popüler fırsatlar — landing carousel.
  */
 export async function listTravelDeals(limit = 12): Promise<DealWithMerchant[]> {
