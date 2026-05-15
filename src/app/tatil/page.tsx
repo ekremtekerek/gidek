@@ -1,7 +1,17 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, CalendarDays, Compass, Heart, Palmtree, Plane, Sparkles, Waves } from 'lucide-react';
+import {
+  ArrowRight,
+  CalendarDays,
+  Compass,
+  Heart,
+  Palmtree,
+  Plane,
+  Sparkles,
+  Star,
+  Waves,
+} from 'lucide-react';
 import { TravelAIPrompt } from '@/components/travel/travel-ai-prompt';
 import { TravelClassicForm } from '@/components/travel/travel-classic-form';
 import { Container } from '@/components/ui/container';
@@ -195,6 +205,17 @@ export default async function TatilLandingPage() {
                         aria-hidden="true"
                         className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-transparent"
                       />
+                      {d.ratingAvg ? (
+                        <span className="bg-amber-500/95 absolute left-3 top-3 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold text-white shadow backdrop-blur">
+                          <Star className="size-3 fill-current" aria-hidden="true" />
+                          {d.ratingAvg.toFixed(1)}
+                          {d.reviewCount > 0 ? (
+                            <span className="text-[10px] font-normal opacity-90">
+                              ({d.reviewCount})
+                            </span>
+                          ) : null}
+                        </span>
+                      ) : null}
                       <div className="absolute inset-x-3 bottom-3 text-white">
                         <p className="text-base font-bold tracking-tight sm:text-lg">{label}</p>
                         <p className="mt-0.5 text-[11px] opacity-90">

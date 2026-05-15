@@ -15,6 +15,8 @@ import { ShowOnMap } from '@/components/deal/show-on-map';
 import { WalkInPressure } from '@/components/deal/walk-in-pressure';
 import { PriceCalendar } from '@/components/travel/price-calendar';
 import { TravelDetailEnrichment } from '@/components/travel/travel-detail-enrichment';
+import { WeatherWidget } from '@/components/travel/weather-widget';
+import { WhatsAppButton } from '@/components/travel/whatsapp-button';
 import { SimilarDeals } from '@/components/deal/similar-deals';
 import { SocialProof } from '@/components/deal/social-proof';
 import { StickyCta } from '@/components/deal/sticky-cta';
@@ -343,6 +345,22 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
 
             {isTravelDeal && !expired ? (
               <>
+                {deal.merchant?.lat !== null &&
+                deal.merchant?.lat !== undefined &&
+                deal.merchant?.lng !== null &&
+                deal.merchant?.lng !== undefined ? (
+                  <section aria-labelledby="weather-heading">
+                    <h2 id="weather-heading" className="sr-only">
+                      Hava durumu
+                    </h2>
+                    <WeatherWidget
+                      lat={Number(deal.merchant.lat)}
+                      lng={Number(deal.merchant.lng)}
+                      label={deal.district ?? deal.city ?? undefined}
+                    />
+                  </section>
+                ) : null}
+
                 <section aria-labelledby="price-calendar-heading">
                   <h2 id="price-calendar-heading" className="sr-only">
                     Fiyat takvimi
@@ -355,6 +373,26 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                 </section>
 
                 <TravelDetailEnrichment deal={deal} />
+
+                {/* WhatsApp direkt sor */}
+                <section className="border-emerald-500/30 from-emerald-500/10 via-background to-emerald-500/5 rounded-xl border bg-gradient-to-r p-4 sm:p-5">
+                  <header className="mb-2">
+                    <p className="text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-widest">
+                      Anlık iletişim
+                    </p>
+                    <h3 className="mt-0.5 text-base font-bold">
+                      Hızlı soru-cevap için
+                    </h3>
+                    <p className="text-muted-foreground mt-0.5 text-xs">
+                      Konaklama, ekstra hizmet, özel istekler için WhatsApp üzerinden
+                      direkt bağlan.
+                    </p>
+                  </header>
+                  <WhatsAppButton
+                    dealTitle={deal.title}
+                    location={location}
+                  />
+                </section>
               </>
             ) : null}
 

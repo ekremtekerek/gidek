@@ -28,6 +28,10 @@ export interface TravelDestination {
   coverImage: string | null;
   /** Bu destinasyonun en düşük tatil fiyatı (kişi başı tahminî) */
   fromPrice: number | null;
+  /** Bu destinasyondaki tüm tatil deal'larının ortalama yıldız puanı */
+  ratingAvg: number | null;
+  /** Toplam yorum sayısı */
+  reviewCount: number;
 }
 
 export async function listTravelDestinations(limit = 8): Promise<TravelDestination[]> {
@@ -48,34 +52,64 @@ export async function listTravelDestinations(limit = 8): Promise<TravelDestinati
   const now = new Date().toISOString();
   const { data: deals } = await supabase
     .from('deals')
-    .select('id, city, district, cover_image, discounted_price, valid_until, is_active, published_at')
+    .select(
+      'id, city, district, cover_image, discounted_price, rating_avg, rating_count, valid_until, is_active, published_at',
+    )
     .in('id', travelDealIds)
     .eq('is_active', true)
     .gt('valid_until', now)
     .not('published_at', 'is', null)
     .order('discounted_price', { ascending: true });
 
-  const grouped = new Map<string, TravelDestination>();
+  // Her destinasyon için rating ağırlıklı ortalama + toplam yorum
+  interface Accum {
+    dealCount: number;
+    coverImage: string | null;
+    fromPrice: number | null;
+    ratingSum: number;
+    ratingWeights: number;
+    reviewCount: number;
+  }
+  const accum = new Map<string, Accum & { city: string; district: string | null }>();
+
   for (const d of deals ?? []) {
     if (!d.city) continue;
     const key = `${d.city}|${d.district ?? ''}`;
-    const existing = grouped.get(key);
+    const reviewCount = d.rating_count ?? 0;
+    const rating = d.rating_avg ? Number(d.rating_avg) : null;
+    const existing = accum.get(key);
     if (existing) {
       existing.dealCount += 1;
+      existing.reviewCount += reviewCount;
+      if (rating && reviewCount > 0) {
+        existing.ratingSum += rating * reviewCount;
+        existing.ratingWeights += reviewCount;
+      }
     } else {
-      grouped.set(key, {
+      accum.set(key, {
         city: d.city,
         district: d.district,
         dealCount: 1,
         coverImage: d.cover_image,
         fromPrice: Number(d.discounted_price) || null,
+        ratingSum: rating && reviewCount > 0 ? rating * reviewCount : 0,
+        ratingWeights: rating && reviewCount > 0 ? reviewCount : 0,
+        reviewCount,
       });
     }
   }
 
-  return [...grouped.values()]
-    .sort((a, b) => b.dealCount - a.dealCount)
-    .slice(0, limit);
+  const out: TravelDestination[] = [...accum.values()].map((a) => ({
+    city: a.city,
+    district: a.district,
+    dealCount: a.dealCount,
+    coverImage: a.coverImage,
+    fromPrice: a.fromPrice,
+    ratingAvg: a.ratingWeights > 0 ? Number((a.ratingSum / a.ratingWeights).toFixed(1)) : null,
+    reviewCount: a.reviewCount,
+  }));
+
+  return out.sort((a, b) => b.dealCount - a.dealCount).slice(0, limit);
 }
 
 export interface TravelSearchParams {
