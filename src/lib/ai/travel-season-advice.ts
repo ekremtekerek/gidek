@@ -9,49 +9,80 @@ import { CHAT_MODEL, google } from '@/lib/ai/sdk';
  * günleri ile yanıtlar. Rakiplerde yok.
  */
 
+/**
+ * Gemini bazen tam schema'ya uymuyor — min/max kısıtları gevşek tutuyoruz,
+ * enum'ları string olarak alıp runtime'da normalize ediyoruz.
+ */
+
+const CrowdEnum = z.string().describe('sakin / orta / kalabalik (ASCII)');
+const PriceEnum = z.string().describe('ucuz / orta / pahali (ASCII)');
+
 const SeasonSchema = z.object({
-  /** Genel tavsiye — 2-3 cümle */
-  summary: z.string().min(60).max(500),
-  /** Önerilen 2-3 en iyi ay */
+  summary: z.string().min(20).max(800),
   bestMonths: z
     .array(
       z.object({
-        month: z.string().describe('Ocak, Şubat, ..., Aralık'),
-        score: z.number().min(1).max(10).describe('1-10 — bu ay için genel puan'),
-        why: z.string().min(20).max(200).describe('Neden bu ay iyi — somut sebepler'),
-        weather: z.string().min(5).max(80).describe('Tipik hava (sıcaklık, deniz, yağmur)'),
-        crowd: z
-          .enum(['sakin', 'orta', 'kalabalik'])
-          .describe('Beklenen kalabalık seviyesi'),
-        priceLevel: z
-          .enum(['ucuz', 'orta', 'pahali'])
-          .describe('Otel/uçak fiyat seviyesi (rölatif)'),
+        month: z.string(),
+        score: z.number().min(1).max(10),
+        why: z.string().min(5).max(280),
+        weather: z.string().min(3).max(140),
+        crowd: CrowdEnum,
+        priceLevel: PriceEnum,
       }),
     )
-    .min(2)
-    .max(3),
-  /** Kaçınılması gereken aylar (varsa) */
+    .min(1)
+    .max(4),
   avoidMonths: z
     .array(
       z.object({
         month: z.string(),
-        reason: z.string().min(15).max(160),
+        reason: z.string().min(5).max(280),
       }),
     )
-    .max(3),
-  /** Önemli özel tarihler — bayram, festivaller */
+    .max(4)
+    .default([]),
   events: z
     .array(
       z.object({
-        date: z.string().describe('Yaklaşık tarih ("Ağustos sonu", "30 Ekim")'),
+        date: z.string(),
         name: z.string(),
-        impact: z.string().min(10).max(120).describe('Bu olay tatili nasıl etkiler'),
+        impact: z.string().min(5).max(200),
       }),
     )
-    .max(5),
+    .max(8)
+    .default([]),
 });
 
-export type SeasonAdvice = z.infer<typeof SeasonSchema>;
+type CrowdLevel = 'sakin' | 'orta' | 'kalabalik';
+type PriceLevel = 'ucuz' | 'orta' | 'pahali';
+
+export interface SeasonAdvice {
+  summary: string;
+  bestMonths: Array<{
+    month: string;
+    score: number;
+    why: string;
+    weather: string;
+    crowd: CrowdLevel;
+    priceLevel: PriceLevel;
+  }>;
+  avoidMonths: Array<{ month: string; reason: string }>;
+  events: Array<{ date: string; name: string; impact: string }>;
+}
+
+function normalizeCrowd(v: string): CrowdLevel {
+  const t = v.toLocaleLowerCase('tr').replace(/[ıİ]/g, 'i').replace(/[şŞ]/g, 's');
+  if (t.includes('kala')) return 'kalabalik';
+  if (t.includes('orta')) return 'orta';
+  return 'sakin';
+}
+
+function normalizePrice(v: string): PriceLevel {
+  const t = v.toLocaleLowerCase('tr').replace(/[ıİ]/g, 'i');
+  if (t.includes('pah')) return 'pahali';
+  if (t.includes('orta')) return 'orta';
+  return 'ucuz';
+}
 
 const SYSTEM_PROMPT = `Sen gidek.net'in tatil sezon analizcisin.
 
@@ -69,8 +100,9 @@ Kurallar:
 5. events: yarıyıl tatili, kurban bayramı, ramazan, yerel festivaller — etkiler.
 6. Pazarlama dili YASAK ("muhteşem", "olağanüstü").
 7. Türkçe, "sen" hitabı.
-8. crowd: sakin / orta / kalabalik (enum)
-9. priceLevel: ucuz / orta / pahali (rölatif, o destinasyon içinde)
+8. crowd alanı SADECE şu üç değerden biri: "sakin", "orta", "kalabalik" (ASCII, Türkçe karakter yok)
+9. priceLevel alanı SADECE şu üç değerden biri: "ucuz", "orta", "pahali" (ASCII, Türkçe karakter yok)
+10. avoidMonths ve events array — yoksa boş array döndür ([]).
 `;
 
 export async function generateSeasonAdvice(destination: string): Promise<SeasonAdvice> {
@@ -84,6 +116,8 @@ export async function generateSeasonAdvice(destination: string): Promise<SeasonA
     '',
     'Bu destinasyon için yıl içinde en iyi tatil aylarını analiz et.',
     'Hava, kalabalık, fiyat trendleri, Türkiye okul tatili ve dini bayramlar dahil.',
+    '',
+    'ÖNEMLİ: crowd ve priceLevel alanlarını sadece ASCII enum değerleriyle döndür.',
   ].join('\n');
 
   const { object } = await generateObject({
@@ -98,5 +132,18 @@ export async function generateSeasonAdvice(destination: string): Promise<SeasonA
     },
   });
 
-  return object;
+  // Gemini bazen Türkçe karakterlerle dönüyor — normalize et
+  return {
+    summary: object.summary,
+    bestMonths: object.bestMonths.map((m) => ({
+      month: m.month,
+      score: m.score,
+      why: m.why,
+      weather: m.weather,
+      crowd: normalizeCrowd(m.crowd),
+      priceLevel: normalizePrice(m.priceLevel),
+    })),
+    avoidMonths: object.avoidMonths ?? [],
+    events: object.events ?? [],
+  };
 }

@@ -12,46 +12,64 @@ import type { DealWithMerchant } from '@/lib/db/queries/deals';
  * envanterimiz var; tatilsepeti/etstur sadece otel satıyor.
  */
 
+/**
+ * Gemini bazen tam schema'ya uymuyor — min/max'leri esnek tutuyoruz,
+ * enum string + runtime normalize, optional alanlara default.
+ */
+type ActivityKind = 'yemek' | 'aktivite' | 'gezi' | 'dinlence' | 'ulasim' | 'oda';
+
 const ActivitySchema = z.object({
-  /** Saat (örn. "09:00") */
-  time: z.string().min(4).max(5),
-  /** Aktivite başlığı */
-  title: z.string().min(3).max(120),
-  /** Spesifik öneri açıklaması, neden seçildi (1-2 cümle) */
-  rationale: z.string().min(10).max(280),
-  /** Eğer bizim deal envanterinde bir fırsat ise — slug */
-  dealSlug: z.string().nullable(),
-  /** Aktivite kategori: yemek, aktivite, gezi, dinlence, ulasim */
-  kind: z.enum(['yemek', 'aktivite', 'gezi', 'dinlence', 'ulasim', 'oda']),
-  /** Tahminî maliyet TL (yoksa 0) */
-  costEstimate: z.number().min(0).max(50000),
-  /** Süresi dk (yoksa 60) */
-  durationMin: z.number().min(15).max(720).default(60),
+  time: z.string().min(3).max(8),
+  title: z.string().min(2).max(200),
+  rationale: z.string().min(3).max(400).default(''),
+  dealSlug: z.string().nullable().default(null),
+  kind: z.string(),
+  costEstimate: z.number().min(0).max(500000).default(0),
+  durationMin: z.number().min(5).max(1440).default(60),
 });
 
 const DayPlanSchema = z.object({
-  /** Tatil özeti — kullanıcıya tek paragraf sunum (3-4 cümle) */
-  summary: z
-    .string()
-    .min(40)
-    .max(600)
-    .describe('Bu tatilin ne tarz olacağına dair kişiselleştirilmiş özet — pazarlama dili yok'),
-  /** Toplam tahminî maliyet TL */
-  totalEstimate: z.number().min(0).max(500000),
-  /** Gün gün plan */
+  summary: z.string().min(15).max(800),
+  totalEstimate: z.number().min(0).max(5000000).default(0),
   days: z
     .array(
       z.object({
-        dayIndex: z.number().min(1).max(14),
-        dayLabel: z.string().min(3).max(60).describe('"1. Gün — Varış", "2. Gün — Bodrum sahili" gibi'),
-        activities: z.array(ActivitySchema).min(3).max(8),
+        dayIndex: z.number().min(1).max(20),
+        dayLabel: z.string().min(2).max(120),
+        activities: z.array(ActivitySchema).min(1).max(12),
       }),
     )
     .min(1)
-    .max(14),
+    .max(20),
 });
 
-export type TravelDayPlan = z.infer<typeof DayPlanSchema>;
+export interface TravelDayPlan {
+  summary: string;
+  totalEstimate: number;
+  days: Array<{
+    dayIndex: number;
+    dayLabel: string;
+    activities: Array<{
+      time: string;
+      title: string;
+      rationale: string;
+      dealSlug: string | null;
+      kind: ActivityKind;
+      costEstimate: number;
+      durationMin: number;
+    }>;
+  }>;
+}
+
+function normalizeKind(v: string): ActivityKind {
+  const t = v.toLocaleLowerCase('tr').replace(/[ıİ]/g, 'i').replace(/[şŞ]/g, 's');
+  if (t.includes('yem')) return 'yemek';
+  if (t.includes('gez') || t.includes('tur')) return 'gezi';
+  if (t.includes('dinl') || t.includes('spa') || t.includes('hav')) return 'dinlence';
+  if (t.includes('ulas') || t.includes('transfer') || t.includes('uca')) return 'ulasim';
+  if (t.includes('oda') || t.includes('konak') || t.includes('check')) return 'oda';
+  return 'aktivite';
+}
 
 const SYSTEM_PROMPT = `Sen gidek.net'in tatil planlayıcı AI'ısın.
 
@@ -133,5 +151,22 @@ export async function generateTravelPlan(input: PlanInput): Promise<TravelDayPla
     },
   });
 
-  return object;
+  // Kind alanını normalize et — Gemini bazen Türkçe karakter/farklı kelime dönüyor.
+  return {
+    summary: object.summary,
+    totalEstimate: object.totalEstimate ?? 0,
+    days: object.days.map((d) => ({
+      dayIndex: d.dayIndex,
+      dayLabel: d.dayLabel,
+      activities: d.activities.map((a) => ({
+        time: a.time,
+        title: a.title,
+        rationale: a.rationale,
+        dealSlug: a.dealSlug,
+        kind: normalizeKind(a.kind),
+        costEstimate: a.costEstimate,
+        durationMin: a.durationMin,
+      })),
+    })),
+  };
 }

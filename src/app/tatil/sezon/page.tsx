@@ -103,10 +103,21 @@ export default async function TatilSezonPage({ searchParams }: PageProps) {
     );
   }
 
-  let advice: Awaited<ReturnType<typeof generateSeasonAdvice>>;
-  try {
-    advice = await generateSeasonAdvice(dest);
-  } catch (err) {
+  // İki deneme — Gemini schema'ya uymazsa bir kez daha şans ver
+  let advice: Awaited<ReturnType<typeof generateSeasonAdvice>> | null = null;
+  let aiError: string | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      advice = await generateSeasonAdvice(dest);
+      aiError = null;
+      break;
+    } catch (err) {
+      aiError = err instanceof Error ? err.message : 'Bilinmeyen hata';
+      console.error(`[sezon] attempt ${attempt + 1} failed:`, err);
+    }
+  }
+
+  if (!advice) {
     return (
       <Container className="py-12 sm:py-16">
         <Link
@@ -114,13 +125,41 @@ export default async function TatilSezonPage({ searchParams }: PageProps) {
           className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm"
         >
           <ArrowLeft className="size-4" aria-hidden="true" />
-          Yeniden seç
+          Başka destinasyon
         </Link>
-        <div className="mt-6 rounded-xl border border-rose-500/30 bg-rose-50 p-6 text-rose-900 dark:bg-rose-950/30 dark:text-rose-100">
-          <p className="font-bold">AI tavsiye alınamadı</p>
-          <p className="mt-1 text-sm">
-            {err instanceof Error ? err.message : 'Bilinmeyen hata'}
+        <div className="border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 mt-6 rounded-xl border p-6">
+          <p className="text-amber-900 dark:text-amber-100 inline-flex items-center gap-2 text-base font-bold">
+            <Sparkles className="size-5" aria-hidden="true" />
+            AI yanıt veremedi
           </p>
+          <p className="text-amber-900/80 dark:text-amber-100/80 mt-2 text-sm leading-relaxed">
+            Gemini bu destinasyon için tam yanıt üretemedi. Birkaç saniye bekleyip
+            tekrar deneyebilir, ya da farklı bir destinasyon yazabilirsin.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <Link
+              href={`/tatil/sezon?dest=${encodeURIComponent(dest)}`}
+              className="bg-amber-600 hover:bg-amber-700 inline-flex h-10 items-center gap-1.5 rounded-md px-4 text-sm font-bold text-white transition-colors"
+            >
+              Tekrar dene
+            </Link>
+            <Link
+              href="/tatil/sezon"
+              className="border-amber-600/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 inline-flex h-10 items-center gap-1.5 rounded-md border px-4 text-sm font-semibold transition-colors"
+            >
+              Başka destinasyon
+            </Link>
+          </div>
+          {aiError ? (
+            <details className="mt-3">
+              <summary className="text-amber-900/60 dark:text-amber-100/60 cursor-pointer text-[11px]">
+                Teknik detay
+              </summary>
+              <pre className="text-amber-900/70 dark:text-amber-100/70 mt-1 overflow-auto whitespace-pre-wrap text-[10px]">
+                {aiError}
+              </pre>
+            </details>
+          ) : null}
         </div>
       </Container>
     );

@@ -11,21 +11,23 @@ import { enrichTravelDeal } from '@/lib/travel/enrich';
  * "şu sana daha uygun çünkü..." diyebiliyoruz.
  */
 
+/**
+ * Gemini bazen schema'ya tam uymaz — min/max'leri esnek tutuyoruz,
+ * default'larla "alan eksik" durumunu da yakalıyoruz.
+ */
 const ComparisonSchema = z.object({
-  /** Tek cümle özet — hangi seçenek hangi durumda daha iyi */
-  verdict: z.string().min(20).max(280),
-  /** Her otel için artı + eksi listesi (id ile eşlenir) */
+  verdict: z.string().min(10).max(500),
   hotels: z
     .array(
       z.object({
         id: z.string(),
-        pros: z.array(z.string().min(2).max(120)).min(1).max(4),
-        cons: z.array(z.string().min(2).max(120)).min(0).max(3),
-        bestFor: z.string().min(5).max(120).describe('Kime/ne için uygun — "Çiftler için romantik kaçamak" gibi'),
+        pros: z.array(z.string().min(2).max(200)).min(0).max(6).default([]),
+        cons: z.array(z.string().min(2).max(200)).min(0).max(5).default([]),
+        bestFor: z.string().min(3).max(200),
       }),
     )
     .min(2)
-    .max(3),
+    .max(4),
 });
 
 export type ComparisonOutput = z.infer<typeof ComparisonSchema>;
