@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { Combobox } from '@/components/ui/combobox';
+import { searchPlaces } from '@/lib/travel/geocoding';
 
 interface Theme {
   slug: string;
@@ -91,6 +92,10 @@ export function PackageBuilderForm({ locations }: Props) {
           options={locations}
           value={destination}
           onChange={setDestination}
+          asyncSearch={async (q, signal) => {
+            const results = await searchPlaces(q, signal);
+            return results.map((r) => r.short);
+          }}
           placeholder="Bodrum, Antalya, Kapadokya…"
           label="Destinasyon seç"
         />
