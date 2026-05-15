@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar, Search, Users } from 'lucide-react';
 import { Combobox } from '@/components/ui/combobox';
 import { DateField } from '@/components/ui/date-field';
@@ -37,6 +37,14 @@ const KID_OPTS: SelectOption<string>[] = [0, 1, 2, 3, 4].map((n) => ({
   value: String(n),
   label: `${n} çocuk`,
 }));
+const ROOM_OPTS: SelectOption<string>[] = [1, 2, 3].map((n) => ({
+  value: String(n),
+  label: `${n} oda`,
+}));
+const KID_AGE_OPTS: SelectOption<string>[] = Array.from({ length: 18 }, (_, i) => ({
+  value: String(i),
+  label: i === 0 ? '<1 yaş' : `${i} yaş`,
+}));
 
 /**
  * /tatil/ara üstündeki kompakt sticky yatay arama bandı.
@@ -61,6 +69,19 @@ export function TravelTopSearchBar({ locations, initial }: Props) {
   const [adults, setAdults] = useState(String(initial?.adults ?? 2));
   const [kids, setKids] = useState(String(initial?.kids ?? 0));
   const [concept, setConcept] = useState<Concept | ''>(initial?.concept ?? '');
+  const [rooms, setRooms] = useState('1');
+  const [kidAges, setKidAges] = useState<string[]>([]);
+
+  const kidCount = Number(kids);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setKidAges((prev) => {
+      if (prev.length === kidCount) return prev;
+      if (prev.length < kidCount)
+        return [...prev, ...Array(kidCount - prev.length).fill('5')];
+      return prev.slice(0, kidCount);
+    });
+  }, [kidCount]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -70,6 +91,8 @@ export function TravelTopSearchBar({ locations, initial }: Props) {
     if (checkout) p.set('checkout', checkout);
     p.set('adults', adults);
     if (kids !== '0') p.set('kids', kids);
+    if (kidAges.length > 0) p.set('kidAges', kidAges.join(','));
+    if (rooms !== '1') p.set('rooms', rooms);
     if (concept) p.set('concept', concept);
     router.push(`/tatil/ara?${p.toString()}`);
   }
@@ -144,6 +167,39 @@ export function TravelTopSearchBar({ locations, initial }: Props) {
           Ara
         </button>
       </div>
+
+      {/* Oda + çocuk yaşları — sadece gerektiğinde göster */}
+      {(kidCount > 0 || rooms !== '1') ? (
+        <div className="border-border mt-2 grid gap-2 border-t pt-2 sm:grid-cols-[1fr_2fr]">
+          <Select value={rooms} onChange={setRooms} options={ROOM_OPTS} size="sm" label="Oda sayısı" />
+          {kidCount > 0 ? (
+            <div className="grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+              {Array.from({ length: kidCount }).map((_, i) => (
+                <Select
+                  key={i}
+                  value={kidAges[i] ?? '5'}
+                  onChange={(v) =>
+                    setKidAges((prev) => {
+                      const next = [...prev];
+                      next[i] = v;
+                      return next;
+                    })
+                  }
+                  options={KID_AGE_OPTS}
+                  size="sm"
+                  label={`${i + 1}. çocuk yaşı`}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        // Oda 1 + çocuk 0 ise üstte küçük link "Oda ekle / çocuk yaşı"
+        <div className="border-border mt-2 flex items-center gap-3 border-t pt-2 text-xs">
+          <Select value={rooms} onChange={setRooms} options={ROOM_OPTS} size="sm" label="Oda sayısı" />
+          <p className="text-muted-foreground">Çocuk eklediğinde yaş seçimi açılır</p>
+        </div>
+      )}
 
       {/* Sr-only label'lar */}
       <span className="sr-only">

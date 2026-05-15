@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Calendar, Filter, MapPin, Search, Users } from 'lucide-react';
 import { Combobox } from '@/components/ui/combobox';
 import { DateField } from '@/components/ui/date-field';
@@ -31,6 +31,16 @@ const KID_OPTIONS: SelectOption<string>[] = [0, 1, 2, 3, 4].map((n) => ({
   label: `${n} çocuk`,
 }));
 
+const ROOM_OPTIONS: SelectOption<string>[] = [1, 2, 3].map((n) => ({
+  value: String(n),
+  label: `${n} oda`,
+}));
+
+const KID_AGE_OPTIONS: SelectOption<string>[] = Array.from({ length: 18 }, (_, i) => ({
+  value: String(i),
+  label: i === 0 ? '<1 yaş' : `${i} yaş`,
+}));
+
 /**
  * Sağ kolon — klasik filtre/arama formu (alternatif yol).
  * Tüm field'lar custom UI primitives: Combobox (destinasyon), DateField
@@ -53,12 +63,29 @@ export function TravelClassicForm({ locations }: Props) {
   const [checkout, setCheckout] = useState(defaults.week);
   const [adults, setAdults] = useState('2');
   const [kids, setKids] = useState('0');
+  const [kidAges, setKidAges] = useState<string[]>([]);
+  const [rooms, setRooms] = useState('1');
   const [concept, setConcept] = useState<Concept | ''>('');
+
+  // kids değişince yaş array'i otomatik boyutlanır (default 5 yaş)
+  const kidCount = Number(kids);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setKidAges((prev) => {
+      if (prev.length === kidCount) return prev;
+      if (prev.length < kidCount) {
+        return [...prev, ...Array(kidCount - prev.length).fill('5')];
+      }
+      return prev.slice(0, kidCount);
+    });
+  }, [kidCount]);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
     const params = new URLSearchParams();
     if (dest) params.set('dest', dest);
+    if (kidAges.length > 0) params.set('kidAges', kidAges.join(','));
+    if (rooms !== '1') params.set('rooms', rooms);
     if (checkin) params.set('checkin', checkin);
     if (checkout) params.set('checkout', checkout);
     params.set('adults', adults);
@@ -144,6 +171,34 @@ export function TravelClassicForm({ locations }: Props) {
             />
           </FieldLabel>
         </div>
+
+        {/* Çocuk yaşları — sadece çocuk seçildiyse */}
+        {kidCount > 0 ? (
+          <FieldLabel label={`${kidCount} çocuğun yaşı`}>
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {Array.from({ length: kidCount }).map((_, i) => (
+                <Select
+                  key={i}
+                  value={kidAges[i] ?? '5'}
+                  onChange={(v) =>
+                    setKidAges((prev) => {
+                      const next = [...prev];
+                      next[i] = v;
+                      return next;
+                    })
+                  }
+                  options={KID_AGE_OPTIONS}
+                  label={`${i + 1}. çocuk yaşı`}
+                />
+              ))}
+            </div>
+          </FieldLabel>
+        ) : null}
+
+        {/* Oda sayısı */}
+        <FieldLabel label="Oda sayısı">
+          <Select value={rooms} onChange={setRooms} options={ROOM_OPTIONS} label="Oda sayısı" />
+        </FieldLabel>
 
         {/* Konsept — Select */}
         <FieldLabel label="Konsept">

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ArrowRight, Compass, Heart, Palmtree, Plane, Sparkles, Waves } from 'lucide-react';
+import { ArrowRight, CalendarDays, Compass, Heart, Palmtree, Plane, Sparkles, Waves } from 'lucide-react';
 import { TravelAIPrompt } from '@/components/travel/travel-ai-prompt';
 import { TravelClassicForm } from '@/components/travel/travel-classic-form';
 import { Container } from '@/components/ui/container';
@@ -76,38 +76,69 @@ export default async function TatilLandingPage() {
         </Container>
       </section>
 
-      {/* AI PLAN BANT — wow özelliği vurgu */}
+      {/* AI WOW BANTLAR — rakiplerde yok özellikler */}
       <Container className="pt-8 sm:pt-12">
-        <Link
-          href="/tatil/plan"
-          className="group from-violet-600 via-fuchsia-500 to-rose-500 relative flex items-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r p-5 shadow-xl transition-all hover:scale-[1.01] hover:shadow-2xl sm:p-7"
-        >
-          <Sparkles
-            aria-hidden="true"
-            className="absolute right-4 top-4 size-20 text-white/15 sm:size-32"
-          />
-          <span className="bg-white/20 inline-flex size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur shadow-md sm:size-14">
-            <Plane className="size-6 text-white sm:size-7" aria-hidden="true" />
-          </span>
-          <div className="min-w-0 flex-1 text-white">
-            <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-widest backdrop-blur">
-              <Sparkles className="size-3" aria-hidden="true" />
-              Yeni · rakiplerde yok
-            </p>
-            <h2 className="mt-2 text-xl font-bold leading-tight tracking-tight sm:text-2xl md:text-3xl">
-              AI saat saat tatil planlasın
-            </h2>
-            <p className="mt-1 text-sm text-white/90 sm:text-base">
-              Otel + yemek + masaj + tur + aktivite —{' '}
-              <strong className="text-white">tek planda</strong>. 8 saniyede 4
-              günlük gezi.
-            </p>
-          </div>
-          <ArrowRight
-            className="size-5 shrink-0 text-white transition-transform group-hover:translate-x-1 sm:size-6"
-            aria-hidden="true"
-          />
-        </Link>
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Plan kur */}
+          <Link
+            href="/tatil/plan"
+            className="group from-violet-600 via-fuchsia-500 to-rose-500 relative flex items-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r p-5 shadow-xl transition-all hover:scale-[1.01] hover:shadow-2xl sm:p-6"
+          >
+            <Sparkles
+              aria-hidden="true"
+              className="absolute right-4 top-4 size-20 text-white/15 sm:size-28"
+            />
+            <span className="bg-white/20 inline-flex size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur shadow-md">
+              <Plane className="size-6 text-white" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1 text-white">
+              <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur">
+                <Sparkles className="size-3" aria-hidden="true" />
+                Yeni
+              </p>
+              <h2 className="mt-1.5 text-lg font-bold leading-tight tracking-tight sm:text-xl">
+                AI saat saat plan
+              </h2>
+              <p className="mt-0.5 text-xs text-white/90 sm:text-sm">
+                Otel + yemek + aktivite — tek planda
+              </p>
+            </div>
+            <ArrowRight
+              className="size-5 shrink-0 text-white transition-transform group-hover:translate-x-1"
+              aria-hidden="true"
+            />
+          </Link>
+
+          {/* Sezon tavsiyesi */}
+          <Link
+            href="/tatil/sezon"
+            className="group from-amber-500 via-orange-500 to-rose-500 relative flex items-center gap-4 overflow-hidden rounded-2xl bg-gradient-to-r p-5 shadow-xl transition-all hover:scale-[1.01] hover:shadow-2xl sm:p-6"
+          >
+            <Sparkles
+              aria-hidden="true"
+              className="absolute right-4 top-4 size-20 text-white/15 sm:size-28"
+            />
+            <span className="bg-white/20 inline-flex size-12 shrink-0 items-center justify-center rounded-2xl backdrop-blur shadow-md">
+              <CalendarDays className="size-6 text-white" aria-hidden="true" />
+            </span>
+            <div className="min-w-0 flex-1 text-white">
+              <p className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-widest backdrop-blur">
+                <Sparkles className="size-3" aria-hidden="true" />
+                AI farkımız
+              </p>
+              <h2 className="mt-1.5 text-lg font-bold leading-tight tracking-tight sm:text-xl">
+                Hangi ay daha akıllıca?
+              </h2>
+              <p className="mt-0.5 text-xs text-white/90 sm:text-sm">
+                Hava + fiyat + kalabalık · AI sezon analizi
+              </p>
+            </div>
+            <ArrowRight
+              className="size-5 shrink-0 text-white transition-transform group-hover:translate-x-1"
+              aria-hidden="true"
+            />
+          </Link>
+        </div>
       </Container>
 
       {/* DESTİNASYONLAR */}
