@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { DayPicker } from 'react-day-picker';
 import { tr } from 'date-fns/locale';
 import { format, parseISO, isValid } from 'date-fns';
@@ -49,12 +50,26 @@ export function DateField({
   const value = isControlled ? (controlledValue as string) : internal;
 
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [rect, setRect] = useState<{ top: number; left: number; bottom: number; width: number } | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const popupRef = useRef<HTMLDivElement | null>(null);
+
+  // eslint-disable-next-line react-hooks/set-state-in-effect
+  useEffect(() => setMounted(true), []);
 
   useEffect(() => {
     if (!open) return;
     const onDown = (e: MouseEvent) => {
-      if (rootRef.current && !rootRef.current.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (
+        rootRef.current &&
+        !rootRef.current.contains(target) &&
+        popupRef.current &&
+        !popupRef.current.contains(target)
+      ) {
+        setOpen(false);
+      }
     };
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setOpen(false);
@@ -64,6 +79,24 @@ export function DateField({
     return () => {
       document.removeEventListener('mousedown', onDown);
       document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  // Trigger pozisyonu tracking
+  useLayoutEffect(() => {
+    if (!open) return;
+    function updateRect() {
+      const el = rootRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setRect({ top: r.top, left: r.left, bottom: r.bottom, width: r.width });
+    }
+    updateRect();
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
     };
   }, [open]);
 
@@ -121,31 +154,40 @@ export function DateField({
         ) : null}
       </button>
 
-      {open ? (
-        <div
-          role="dialog"
-          className="border-border bg-background absolute left-0 z-50 mt-2 rounded-xl border p-3 shadow-xl"
-        >
-          <DayPicker
-            mode="single"
-            locale={tr}
-            weekStartsOn={1}
-            selected={selected}
-            disabled={[minDate ? { before: minDate } : null, maxDate ? { after: maxDate } : null].filter(
-              Boolean,
-            ) as never[]}
-            onSelect={(d) => {
-              if (!d) {
-                commit('');
-              } else {
-                commit(format(d, 'yyyy-MM-dd'));
-                setOpen(false);
-              }
-            }}
-            classNames={DAYPICKER_CLASSNAMES}
-          />
-        </div>
-      ) : null}
+      {open && mounted && rect
+        ? createPortal(
+            <div
+              ref={popupRef}
+              role="dialog"
+              style={{
+                position: 'fixed',
+                top: rect.bottom + 8,
+                left: rect.left,
+              }}
+              className="border-border bg-background z-[120] rounded-xl border p-3 shadow-xl"
+            >
+              <DayPicker
+                mode="single"
+                locale={tr}
+                weekStartsOn={1}
+                selected={selected}
+                disabled={[minDate ? { before: minDate } : null, maxDate ? { after: maxDate } : null].filter(
+                  Boolean,
+                ) as never[]}
+                onSelect={(d) => {
+                  if (!d) {
+                    commit('');
+                  } else {
+                    commit(format(d, 'yyyy-MM-dd'));
+                    setOpen(false);
+                  }
+                }}
+                classNames={DAYPICKER_CLASSNAMES}
+              />
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }

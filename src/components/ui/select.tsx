@@ -5,10 +5,12 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Check, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -57,9 +59,14 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
   const [activeIdx, setActiveIdx] = useState<number>(
     Math.max(0, options.findIndex((o) => o.value === value)),
   );
+  const [mounted, setMounted] = useState(false);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number; bottom: number } | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
   const id = useId();
+
+  // Portal için SSR-safe mount flag
+  useEffect(() => setMounted(true), []);
 
   const setRefs = useCallback(
     (node: HTMLButtonElement | null) => {
@@ -83,6 +90,24 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
     }
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);
+  }, [open]);
+
+  // Açıkken trigger pozisyonunu takip et — scroll/resize'da güncelle
+  useLayoutEffect(() => {
+    if (!open) return;
+    function updateRect() {
+      const el = triggerRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setRect({ top: r.top, left: r.left, width: r.width, bottom: r.bottom });
+    }
+    updateRect();
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
   }, [open]);
 
   // Açılınca aktif item'a scroll
@@ -164,56 +189,66 @@ export const Select = forwardRef<HTMLButtonElement, SelectProps>(function Select
         />
       </button>
 
-      {open ? (
-        <ul
-          ref={listRef}
-          role="listbox"
-          aria-labelledby={label ? `${id}-label` : undefined}
-          tabIndex={-1}
-          className="border-border bg-background animate-in fade-in-0 zoom-in-95 absolute z-50 mt-1 max-h-64 w-full min-w-[200px] overflow-y-auto rounded-md border p-1 shadow-lg"
-        >
-          {options.map((opt, idx) => {
-            const selected = opt.value === value;
-            const active = idx === activeIdx;
-            return (
-              <li key={opt.value}>
-                <button
-                  type="button"
-                  role="option"
-                  data-idx={idx}
-                  aria-selected={selected}
-                  onMouseEnter={() => setActiveIdx(idx)}
-                  onClick={() => {
-                    onChange(opt.value);
-                    setOpen(false);
-                    triggerRef.current?.focus();
-                  }}
-                  className={cn(
-                    'flex w-full items-center justify-between gap-2 rounded px-2.5 py-1.5 text-left text-sm transition-colors',
-                    active && 'bg-muted',
-                    selected && 'font-semibold',
-                  )}
-                >
-                  <span className="inline-flex min-w-0 items-center gap-2">
-                    {opt.icon}
-                    <span className="truncate">
-                      {opt.label}
-                      {opt.hint ? (
-                        <span className="text-muted-foreground ms-1 text-[11px] font-normal">
-                          {opt.hint}
+      {open && mounted && rect
+        ? createPortal(
+            <ul
+              ref={listRef}
+              role="listbox"
+              aria-labelledby={label ? `${id}-label` : undefined}
+              tabIndex={-1}
+              style={{
+                position: 'fixed',
+                top: rect.bottom + 4,
+                left: rect.left,
+                width: rect.width,
+                minWidth: 200,
+              }}
+              className="border-border bg-background animate-in fade-in-0 zoom-in-95 z-[120] max-h-64 overflow-y-auto rounded-md border p-1 shadow-lg"
+            >
+              {options.map((opt, idx) => {
+                const selected = opt.value === value;
+                const active = idx === activeIdx;
+                return (
+                  <li key={opt.value}>
+                    <button
+                      type="button"
+                      role="option"
+                      data-idx={idx}
+                      aria-selected={selected}
+                      onMouseEnter={() => setActiveIdx(idx)}
+                      onClick={() => {
+                        onChange(opt.value);
+                        setOpen(false);
+                        triggerRef.current?.focus();
+                      }}
+                      className={cn(
+                        'flex w-full items-center justify-between gap-2 rounded px-2.5 py-1.5 text-left text-sm transition-colors',
+                        active && 'bg-muted',
+                        selected && 'font-semibold',
+                      )}
+                    >
+                      <span className="inline-flex min-w-0 items-center gap-2">
+                        {opt.icon}
+                        <span className="truncate">
+                          {opt.label}
+                          {opt.hint ? (
+                            <span className="text-muted-foreground ms-1 text-[11px] font-normal">
+                              {opt.hint}
+                            </span>
+                          ) : null}
                         </span>
+                      </span>
+                      {selected ? (
+                        <Check className="text-foreground size-4 shrink-0" aria-hidden="true" />
                       ) : null}
-                    </span>
-                  </span>
-                  {selected ? (
-                    <Check className="text-foreground size-4 shrink-0" aria-hidden="true" />
-                  ) : null}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>,
+            document.body,
+          )
+        : null}
     </div>
   );
 }) as <T extends string = string>(

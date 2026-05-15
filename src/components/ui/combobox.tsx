@@ -5,10 +5,12 @@ import {
   useCallback,
   useEffect,
   useId,
+  useLayoutEffect,
   useRef,
   useState,
   type KeyboardEvent,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { ChevronDown, Loader2, MapPin, X } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 
@@ -63,10 +65,32 @@ export const Combobox = forwardRef<HTMLInputElement, Props>(function Combobox(
   const [activeIdx, setActiveIdx] = useState(0);
   const [asyncResults, setAsyncResults] = useState<string[]>([]);
   const [asyncLoading, setAsyncLoading] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const [rect, setRect] = useState<{ top: number; left: number; width: number; bottom: number } | null>(null);
   const inputRef = useRef<HTMLInputElement | null>(null);
   const listRef = useRef<HTMLUListElement | null>(null);
   const rootRef = useRef<HTMLDivElement | null>(null);
   const id = useId();
+
+  useEffect(() => setMounted(true), []);
+
+  // Açıkken root pozisyonunu takip et — scroll/resize'da güncelle
+  useLayoutEffect(() => {
+    if (!open) return;
+    function updateRect() {
+      const el = rootRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      setRect({ top: r.top, left: r.left, width: r.width, bottom: r.bottom });
+    }
+    updateRect();
+    window.addEventListener('scroll', updateRect, true);
+    window.addEventListener('resize', updateRect);
+    return () => {
+      window.removeEventListener('scroll', updateRect, true);
+      window.removeEventListener('resize', updateRect);
+    };
+  }, [open]);
 
   const setRefs = useCallback(
     (node: HTMLInputElement | null) => {
@@ -227,46 +251,67 @@ export const Combobox = forwardRef<HTMLInputElement, Props>(function Combobox(
         </button>
       </div>
 
-      {open && filtered.length > 0 ? (
-        <ul
-          ref={listRef}
-          id={`${id}-list`}
-          role="listbox"
-          className="border-border bg-background animate-in fade-in-0 zoom-in-95 absolute z-50 mt-1 max-h-64 w-full overflow-y-auto rounded-md border p-1 shadow-lg"
-        >
-          {filtered.map((opt, idx) => (
-            <li key={opt}>
-              <button
-                type="button"
-                role="option"
-                data-idx={idx}
-                aria-selected={value === opt}
-                onMouseEnter={() => setActiveIdx(idx)}
-                onClick={() => {
-                  onChange(opt);
-                  setOpen(false);
-                }}
-                className={cn(
-                  'flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-sm transition-colors',
-                  idx === activeIdx && 'bg-muted',
-                  value === opt && 'font-semibold',
-                )}
-              >
-                <MapPin className="text-muted-foreground size-3.5 shrink-0" aria-hidden="true" />
-                <span className="truncate">{opt}</span>
-              </button>
-            </li>
-          ))}
-        </ul>
-      ) : null}
+      {/* Portal dropdown — overflow:hidden parent'lardan etkilenmez */}
+      {open && mounted && rect && filtered.length > 0
+        ? createPortal(
+            <ul
+              ref={listRef}
+              id={`${id}-list`}
+              role="listbox"
+              style={{
+                position: 'fixed',
+                top: rect.bottom + 4,
+                left: rect.left,
+                width: rect.width,
+              }}
+              className="border-border bg-background animate-in fade-in-0 zoom-in-95 z-[120] max-h-64 overflow-y-auto rounded-md border p-1 shadow-lg"
+            >
+              {filtered.map((opt, idx) => (
+                <li key={opt}>
+                  <button
+                    type="button"
+                    role="option"
+                    data-idx={idx}
+                    aria-selected={value === opt}
+                    onMouseEnter={() => setActiveIdx(idx)}
+                    onClick={() => {
+                      onChange(opt);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      'flex w-full items-center gap-2 rounded px-2.5 py-1.5 text-left text-sm transition-colors',
+                      idx === activeIdx && 'bg-muted',
+                      value === opt && 'font-semibold',
+                    )}
+                  >
+                    <MapPin className="text-muted-foreground size-3.5 shrink-0" aria-hidden="true" />
+                    <span className="truncate">{opt}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>,
+            document.body,
+          )
+        : null}
 
-      {open && filtered.length === 0 && value ? (
-        <div className="border-border bg-background absolute z-50 mt-1 w-full rounded-md border p-3 text-center text-xs shadow-lg">
-          <span className="text-muted-foreground">
-            &ldquo;{value}&rdquo; için sonuç yok — serbest metin olarak gönderilecek.
-          </span>
-        </div>
-      ) : null}
+      {open && mounted && rect && filtered.length === 0 && value
+        ? createPortal(
+            <div
+              style={{
+                position: 'fixed',
+                top: rect.bottom + 4,
+                left: rect.left,
+                width: rect.width,
+              }}
+              className="border-border bg-background z-[120] rounded-md border p-3 text-center text-xs shadow-lg"
+            >
+              <span className="text-muted-foreground">
+                &ldquo;{value}&rdquo; için sonuç yok — serbest metin olarak gönderilecek.
+              </span>
+            </div>,
+            document.body,
+          )
+        : null}
     </div>
   );
 });
