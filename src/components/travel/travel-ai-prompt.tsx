@@ -73,7 +73,7 @@ export function TravelAIPrompt() {
           </span>{' '}
           anlat
         </h1>
-        <p className="mt-2 max-w-md text-sm text-white/85 sm:text-base">
+        <p className="mt-2 max-w-2xl text-sm text-white/85 sm:text-base">
           Filtre tıklama bitti. Gemini destekli AI sana özel{' '}
           <strong className="text-white">3 paket</strong> çıkarsın.
         </p>
@@ -118,19 +118,19 @@ export function TravelAIPrompt() {
         </div>
 
         {/* Quick prompt önerileri — AI'ın sunduğu hızlı cevaplar */}
-        <ul className="flex flex-col gap-1.5 ps-11">
-          {QUICK_PROMPTS.slice(0, 3).map((p) => (
+        <ul className="grid grid-cols-1 gap-1.5 ps-11 sm:grid-cols-2">
+          {QUICK_PROMPTS.map((p) => (
             <li key={p}>
               <button
                 type="button"
                 onClick={() => quickPick(p)}
-                className="border-border bg-background hover:border-sky-500/40 hover:bg-sky-500/5 group/q inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-all hover:scale-[1.01]"
+                className="border-border bg-background hover:border-sky-500/40 hover:bg-sky-500/5 group/q inline-flex w-full items-center gap-2 rounded-full border px-3 py-1.5 text-xs transition-all hover:scale-[1.01]"
               >
                 <Sparkles
                   className="size-3 shrink-0 text-sky-600 group-hover/q:scale-110 transition-transform"
                   aria-hidden="true"
                 />
-                <span className="text-foreground/80 group-hover/q:text-foreground text-left">
+                <span className="text-foreground/80 group-hover/q:text-foreground line-clamp-1 text-left">
                   {p}
                 </span>
               </button>

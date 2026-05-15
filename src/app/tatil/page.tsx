@@ -14,12 +14,10 @@ import {
   Waves,
 } from 'lucide-react';
 import { TravelAIPrompt } from '@/components/travel/travel-ai-prompt';
-import { TravelClassicForm } from '@/components/travel/travel-classic-form';
 import { Container } from '@/components/ui/container';
 import {
   listTravelDeals,
   listTravelDestinations,
-  listTravelLocations,
 } from '@/lib/db/queries/travel';
 import { BLUR_DATA_URL } from '@/lib/utils/blur';
 import { formatTRY } from '@/lib/utils/format';
@@ -43,10 +41,9 @@ export const metadata: Metadata = {
 export const revalidate = 1800;
 
 export default async function TatilLandingPage() {
-  const [destinations, deals, locations] = await Promise.all([
+  const [destinations, deals] = await Promise.all([
     listTravelDestinations(8),
     listTravelDeals(12),
-    listTravelLocations(),
   ]);
 
   return (
@@ -72,17 +69,22 @@ export default async function TatilLandingPage() {
         />
 
         <Container className="relative py-10 sm:py-16">
-          {/* SPLIT — sol AI vurgusu büyük, sağ klasik filtre */}
-          <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-stretch lg:gap-8">
-            {/* SOL — AI prompt (büyük, ön plan) */}
-            <div>
-              <TravelAIPrompt />
-            </div>
+          {/* AI prompt full-width — wow vurgu maksimum */}
+          <div className="mx-auto w-full max-w-4xl">
+            <TravelAIPrompt />
+          </div>
 
-            {/* SAĞ — klasik filtre formu */}
-            <div className="flex">
-              <TravelClassicForm locations={locations} />
-            </div>
+          {/* Klasik tercih edenler için subtle alternatif link */}
+          <div className="mx-auto mt-8 flex max-w-4xl items-center justify-center gap-3 text-xs sm:gap-4 sm:text-sm">
+            <span className="bg-white/20 text-white/90 hidden h-px flex-1 sm:block" aria-hidden="true" />
+            <Link
+              href="/tatil/ara"
+              className="bg-white/10 hover:bg-white/20 text-white/95 inline-flex h-9 items-center gap-2 rounded-full border border-white/25 px-4 font-semibold backdrop-blur transition-all hover:scale-[1.02]"
+            >
+              Klasik aramayı tercih ediyorum
+              <ArrowRight className="size-3.5" aria-hidden="true" />
+            </Link>
+            <span className="bg-white/20 text-white/90 hidden h-px flex-1 sm:block" aria-hidden="true" />
           </div>
         </Container>
       </section>
