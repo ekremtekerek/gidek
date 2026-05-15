@@ -149,9 +149,10 @@ export async function POST(req: Request) {
         thinkingConfig: { thinkingBudget: 0 },
       },
     },
-    // AI SDK v6 default'u 1 step — model tool çağırıp metin yazmadan kapanırdı.
-    // 5 step: tool → text → opsiyonel ikinci tool → text.
-    stopWhen: stepCountIs(5),
+    // Multi-step agentic — kullanıcı "Bodrum eylül başı paket" derse zincir:
+    // getSeasonAdvice → getWeather → searchDeals → buildTravelPackage → text.
+    // 8 step bu chain'lere yer açar; tool result + text + opsiyonel takip.
+    stopWhen: stepCountIs(8),
   });
 
   // Stream sonrası işler — log + cost track + cache write.

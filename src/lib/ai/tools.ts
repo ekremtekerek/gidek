@@ -2,6 +2,16 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { buildDayPlan, replaceDayPlanStep } from '@/lib/ai/plan';
 import { searchDealsByQuery } from '@/lib/ai/search-core';
+import { generateSeasonAdvice } from '@/lib/ai/travel-season-advice';
+import { buildTravelPackage } from '@/lib/ai/travel-package';
+import { compareHotelsWithAI } from '@/lib/ai/travel-comparison';
+import {
+  enrichSimilarDeals,
+  fetchSimilarTravelDeals,
+} from '@/lib/ai/similar-travel-deals';
+import { fetchPackageInventory } from '@/lib/db/queries/travel';
+import { getServiceClient } from '@/lib/db/service';
+import type { DealWithMerchant } from '@/lib/db/queries/deals';
 
 /**
  * Shape the chat consumes — small, JSON-safe, no nullable mongrels that
@@ -138,6 +148,226 @@ export function buildChatTools(ctx: ChatToolContext = {}) {
             deal: step.deal ? shapeDeal(step.deal) : null,
           },
         };
+      },
+    }),
+
+    getWeather: tool({
+      description:
+        'Bir destinasyonun şu anki + 5 günlük havasını döner. Tatil tavsiyesi/plan kararı vermeden önce çağır. Open-Meteo (ücretsiz, key gerekmez).',
+      inputSchema: z.object({
+        destination: z
+          .string()
+          .min(2)
+          .max(60)
+          .describe('Şehir veya destinasyon adı — Türkçe (Bodrum, Antalya, Kapadokya).'),
+      }),
+      execute: async ({ destination }) => {
+        try {
+          const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(destination)}&count=1&language=tr&country=TR`;
+          const geoRes = await fetch(geoUrl);
+          const geo = (await geoRes.json()) as {
+            results?: Array<{ latitude: number; longitude: number; name: string }>;
+          };
+          const place = geo.results?.[0];
+          if (!place) return { found: false, destination };
+
+          const wxUrl = `https://api.open-meteo.com/v1/forecast?latitude=${place.latitude}&longitude=${place.longitude}&current=temperature_2m,weather_code&daily=temperature_2m_max,temperature_2m_min,weather_code,precipitation_sum&forecast_days=5&timezone=Europe/Istanbul`;
+          const wxRes = await fetch(wxUrl);
+          const wx = (await wxRes.json()) as {
+            current?: { temperature_2m: number; weather_code: number };
+            daily?: {
+              time: string[];
+              temperature_2m_max: number[];
+              temperature_2m_min: number[];
+              weather_code: number[];
+              precipitation_sum: number[];
+            };
+          };
+
+          return {
+            found: true,
+            destination: place.name,
+            now: wx.current
+              ? {
+                  tempC: Math.round(wx.current.temperature_2m),
+                  code: wx.current.weather_code,
+                }
+              : null,
+            forecast: wx.daily
+              ? wx.daily.time.slice(0, 5).map((date, i) => ({
+                  date,
+                  tempMax: Math.round(wx.daily!.temperature_2m_max[i]),
+                  tempMin: Math.round(wx.daily!.temperature_2m_min[i]),
+                  code: wx.daily!.weather_code[i],
+                  precipitationMm: wx.daily!.precipitation_sum[i],
+                }))
+              : [],
+          };
+        } catch (err) {
+          return { found: false, destination, error: String(err) };
+        }
+      },
+    }),
+
+    getSeasonAdvice: tool({
+      description:
+        'Bir destinasyon için AI sezon analizi — yıl içinde en iyi tatil ayları, hava, kalabalık, fiyat trendleri. Kullanıcı "ne zaman gitmeliyim", "hangi ay daha iyi" gibi sorduğunda çağır.',
+      inputSchema: z.object({
+        destination: z
+          .string()
+          .min(2)
+          .max(60)
+          .describe('Destinasyon — Bodrum, Antalya, Kapadokya vs.'),
+      }),
+      execute: async ({ destination }) => {
+        try {
+          const advice = await generateSeasonAdvice(destination);
+          return {
+            ok: true,
+            destination,
+            summary: advice.summary,
+            bestMonths: advice.bestMonths.slice(0, 3).map((m) => ({
+              month: m.month,
+              score: m.score,
+              why: m.why,
+              weather: m.weather,
+              crowd: m.crowd,
+              priceLevel: m.priceLevel,
+            })),
+            avoidMonths: advice.avoidMonths.slice(0, 3),
+            events: advice.events.slice(0, 3),
+          };
+        } catch (err) {
+          return { ok: false, destination, error: String(err) };
+        }
+      },
+    }),
+
+    buildTravelPackage: tool({
+      description:
+        'Bir destinasyon için TAM tatil paketi kurar — otel + yemek + aktivite + ekstra. Bütçe + yolcu profilini optimize eder. Kullanıcı "tatil paketi kur", "her şey dahil planla" derse çağır.',
+      inputSchema: z.object({
+        destination: z.string().min(2).max(60),
+        budget: z
+          .number()
+          .int()
+          .min(3000)
+          .max(500000)
+          .describe('Toplam bütçe TL.'),
+        adults: z.number().int().min(1).max(8).default(2),
+        kids: z.number().int().min(0).max(6).default(0),
+        days: z.number().int().min(1).max(14).default(4),
+        themes: z
+          .array(z.string())
+          .max(6)
+          .default([])
+          .describe('Tarz: deniz, romantik, aile, kultur, yemek, spa, doga, eglence.'),
+      }),
+      execute: async ({ destination, budget, adults, kids, days, themes }) => {
+        try {
+          const { deals, categoryByDealId } = await fetchPackageInventory(destination, 60);
+          if (deals.length === 0) {
+            return { ok: false, reason: 'no_inventory', destination };
+          }
+          const pkg = await buildTravelPackage({
+            destination,
+            budget,
+            adults,
+            kids,
+            days,
+            themes,
+            inventory: deals,
+            categoryByDealId,
+          });
+          return {
+            ok: true,
+            vibeName: pkg.vibeName,
+            summary: pkg.summary,
+            estimatedTotal: pkg.estimatedTotal,
+            budgetMatch: pkg.budgetMatch,
+            hotel: { title: pkg.hotel.title, why: pkg.hotel.why, price: pkg.hotel.estimatedTotal },
+            dining: pkg.dining.map((d) => ({ title: d.title, when: d.when, why: d.why })),
+            activities: pkg.activities.map((a) => ({ title: a.title, day: a.day, why: a.why })),
+            extras: pkg.extras.map((e) => ({ title: e.title, why: e.why })),
+          };
+        } catch (err) {
+          return { ok: false, destination, error: String(err) };
+        }
+      },
+    }),
+
+    compareDeals: tool({
+      description:
+        '2-3 fırsatı AI ile karşılaştırır, her biri için artı/eksi + "kime uygun" çıkarır. Kullanıcı "şu ikisini karşılaştır", "hangisi daha iyi" derse çağır. dealIds searchDeals sonuçlarından alınır.',
+      inputSchema: z.object({
+        dealIds: z
+          .array(z.string())
+          .min(2)
+          .max(3)
+          .describe('Karşılaştırılacak deal ID\'leri (önceki searchDeals sonucundan).'),
+      }),
+      execute: async ({ dealIds }) => {
+        try {
+          const supabase = getServiceClient();
+          const { data } = await supabase
+            .from('deals')
+            .select(
+              `*, merchant:merchants ( name, slug, city, district, lat, lng, working_hours )`,
+            )
+            .in('id', dealIds);
+
+          const deals = (data ?? []) as unknown as DealWithMerchant[];
+          if (deals.length < 2) {
+            return { ok: false, reason: 'insufficient_deals' };
+          }
+
+          const result = await compareHotelsWithAI(deals);
+          return {
+            ok: true,
+            verdict: result.verdict,
+            hotels: result.hotels.map((h) => ({
+              id: h.id,
+              pros: h.pros,
+              cons: h.cons,
+              bestFor: h.bestFor,
+            })),
+          };
+        } catch (err) {
+          return { ok: false, error: String(err) };
+        }
+      },
+    }),
+
+    findSimilarHotels: tool({
+      description:
+        'pgvector embedding similarity ile bir tatil deal\'ına benzer otelleri bulur. Kullanıcı "buna benzer öner", "bunu beğendim, başka var mı" derse çağır.',
+      inputSchema: z.object({
+        dealId: z.string().describe('Referans alınacak deal ID.'),
+        limit: z.number().int().min(2).max(8).default(5),
+      }),
+      execute: async ({ dealId, limit }) => {
+        try {
+          const matches = await fetchSimilarTravelDeals(dealId, limit);
+          const enriched = await enrichSimilarDeals(matches);
+          return {
+            ok: true,
+            count: enriched.length,
+            similar: enriched.map((d, idx) => ({
+              id: d.id,
+              slug: d.slug,
+              title: d.title,
+              city: d.city ?? '',
+              district: d.district ?? '',
+              price: Number(d.discounted_price),
+              originalPrice: Number(d.original_price),
+              discountPct: d.discount_percent ?? 0,
+              coverImage: d.cover_image,
+              similarity: Math.round((matches[idx]?.similarity ?? 0) * 100),
+            })),
+          };
+        } catch (err) {
+          return { ok: false, error: String(err) };
+        }
       },
     }),
 
