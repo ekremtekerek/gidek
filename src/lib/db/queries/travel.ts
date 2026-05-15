@@ -78,6 +78,112 @@ export async function listTravelDestinations(limit = 8): Promise<TravelDestinati
     .slice(0, limit);
 }
 
+export interface TravelSearchParams {
+  destination?: string;
+  /** En düşük kişi başı fiyat */
+  minPrice?: number;
+  /** En yüksek kişi başı fiyat */
+  maxPrice?: number;
+  /** Sıralama anahtarı */
+  sort?: 'recommended' | 'price-asc' | 'price-desc' | 'discount';
+  limit?: number;
+}
+
+/**
+ * Filtrelenmiş tatil aramaları. UI tarafı (feature/concept/stars) zaten
+ * enrich.ts ile post-filter; bu fonksiyon sadece DB-level filtreleri yapar
+ * (destinasyon, fiyat, sıralama).
+ */
+export async function searchTravelDeals(
+  params: TravelSearchParams = {},
+): Promise<DealWithMerchant[]> {
+  const supabase = getPublicClient();
+  const limit = Math.min(60, Math.max(1, params.limit ?? 36));
+
+  const { data: dealCats } = await supabase
+    .from('deal_categories')
+    .select('deal_id, category:categories!inner(slug)')
+    .in('category.slug', TRAVEL_CATEGORY_SLUGS);
+  const travelDealIds = [
+    ...new Set((dealCats ?? []).map((r) => r.deal_id).filter(Boolean)),
+  ];
+  if (travelDealIds.length === 0) return [];
+
+  const now = new Date().toISOString();
+  let query = supabase
+    .from('deals')
+    .select(
+      `*, merchant:merchants ( name, slug, city, district, lat, lng, working_hours )`,
+    )
+    .in('id', travelDealIds)
+    .eq('is_active', true)
+    .gt('valid_until', now)
+    .not('published_at', 'is', null);
+
+  // Destinasyon — city veya district eşleşmesi
+  if (params.destination && params.destination.trim().length > 0) {
+    const d = params.destination.trim();
+    query = query.or(`city.eq.${d},district.eq.${d}`);
+  }
+  if (typeof params.minPrice === 'number') {
+    query = query.gte('discounted_price', params.minPrice);
+  }
+  if (typeof params.maxPrice === 'number') {
+    query = query.lte('discounted_price', params.maxPrice);
+  }
+
+  switch (params.sort) {
+    case 'price-asc':
+      query = query.order('discounted_price', { ascending: true });
+      break;
+    case 'price-desc':
+      query = query.order('discounted_price', { ascending: false });
+      break;
+    case 'discount':
+      query = query.order('discount_percent', { ascending: false });
+      break;
+    default:
+      query = query
+        .order('sold_count', { ascending: false })
+        .order('discount_percent', { ascending: false });
+  }
+
+  const { data } = await query.limit(limit);
+  return (data ?? []) as unknown as DealWithMerchant[];
+}
+
+/**
+ * Mevcut destinasyon listesi (district + city kombinasyonları).
+ * Arama formundaki autocomplete için.
+ */
+export async function listTravelLocations(): Promise<string[]> {
+  const supabase = getPublicClient();
+  const { data: dealCats } = await supabase
+    .from('deal_categories')
+    .select('deal_id, category:categories!inner(slug)')
+    .in('category.slug', TRAVEL_CATEGORY_SLUGS);
+  const travelDealIds = [
+    ...new Set((dealCats ?? []).map((r) => r.deal_id).filter(Boolean)),
+  ];
+  if (travelDealIds.length === 0) return [];
+
+  const now = new Date().toISOString();
+  const { data: deals } = await supabase
+    .from('deals')
+    .select('city, district')
+    .in('id', travelDealIds)
+    .eq('is_active', true)
+    .gt('valid_until', now)
+    .not('published_at', 'is', null);
+
+  const set = new Set<string>();
+  for (const d of deals ?? []) {
+    if (d.district) set.add(d.district);
+    if (d.city) set.add(d.city);
+  }
+  return [...set].sort((a, b) => a.localeCompare(b, 'tr'));
+}
+
 /**
  * Tatil için popüler fırsatlar — landing carousel.
  */

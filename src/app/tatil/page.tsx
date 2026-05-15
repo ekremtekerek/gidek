@@ -2,10 +2,14 @@ import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Compass, Heart, Palmtree, Plane, Sparkles, Waves } from 'lucide-react';
-import { TravelHeroSearch } from '@/components/travel/travel-hero-search';
 import { TravelMoodChips } from '@/components/travel/travel-mood-chips';
+import { TravelSearchForm } from '@/components/travel/travel-search-form';
 import { Container } from '@/components/ui/container';
-import { listTravelDeals, listTravelDestinations } from '@/lib/db/queries/travel';
+import {
+  listTravelDeals,
+  listTravelDestinations,
+  listTravelLocations,
+} from '@/lib/db/queries/travel';
 import { BLUR_DATA_URL } from '@/lib/utils/blur';
 import { formatTRY } from '@/lib/utils/format';
 import { SITE } from '@/lib/utils/site-config';
@@ -28,9 +32,10 @@ export const metadata: Metadata = {
 export const revalidate = 1800;
 
 export default async function TatilLandingPage() {
-  const [destinations, deals] = await Promise.all([
+  const [destinations, deals, locations] = await Promise.all([
     listTravelDestinations(8),
     listTravelDeals(12),
+    listTravelLocations(),
   ]);
 
   return (
@@ -69,9 +74,9 @@ export default async function TatilLandingPage() {
               Gemini ile binlerce paket arasından sana özel 3 seçenek.
             </p>
 
-            {/* Quick search */}
-            <div className="mx-auto mt-8 max-w-2xl">
-              <TravelHeroSearch />
+            {/* Gelişmiş arama formu */}
+            <div className="mx-auto mt-8 max-w-4xl text-left">
+              <TravelSearchForm locations={locations} variant="inline" />
             </div>
 
             {/* Mood chips */}
