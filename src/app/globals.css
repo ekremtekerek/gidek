@@ -71,18 +71,25 @@
   --primary-foreground: #fafafa;
 }
 
-/* Global focus-visible — daha belirgin klavye odak halkası. Mouse/dokunma
- * etkileşimlerinde browser default kalır; sadece tab gibi klavye-odak'ta
- * görünür. Smooth transition reduced-motion'da devre dışı. */
+/* Global focus outline tamamen kapalı — her component kendi ring'iyle
+ * (focus:ring-* / focus-visible:ring-*) odak göstergesini yönetir.
+ * Tarayıcı default outline (siyah/mavi) hiçbir yerde çıkmaz.
+ *
+ * Erişilebilirlik notu: shadcn-style primitives (Button, Input, Select,
+ * Checkbox, Combobox) hepsi focus-visible:ring-2 ring-foreground/* kullanıyor;
+ * klavye navigasyonu görünür kalır. Native elementler için de aynı stilde
+ * ring uygulanmıştır. Outline yok demek "focus state yok" demek değil. */
+:focus,
 :focus-visible {
-  outline: 2px solid var(--foreground);
-  outline-offset: 2px;
-  border-radius: 4px;
+  outline: none !important;
 }
-@media (prefers-reduced-motion: no-preference) {
-  :focus-visible {
-    transition: outline-offset 100ms;
-  }
+button:focus,
+input:focus,
+textarea:focus,
+select:focus,
+[role='button']:focus,
+[contenteditable='true']:focus {
+  outline: none !important;
 }
 
 /* Yatay overflow guard — Mapbox veya başka bir 3rd-party widget yanlışlıkla
