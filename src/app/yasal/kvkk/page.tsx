@@ -54,6 +54,43 @@ export default function KvkkPage() {
           <strong>İşlem güvenliği bilgileri:</strong> IP adresinin tek-yönlü özet (hash) hali,
           oturum bilgileri, çerez verileri.
         </li>
+        <li>
+          <strong>Otel/konaklama rezervasyon misafir bilgileri</strong> (yalnızca otel rezervasyonu
+          yaptığında): konaklayan misafirlerin adı-soyadı, T.C. kimlik numarası (yabancı uyruklular
+          için pasaport no), doğum tarihi, cinsiyeti, vatandaşlığı, lead misafir için telefon ve
+          e-posta. Bu veriler 1774 sayılı{' '}
+          <strong>Kimlik Bildirme Kanunu</strong>, 2634 sayılı{' '}
+          <strong>Turizmi Teşvik Kanunu</strong> ve{' '}
+          <strong>Konaklama Tesisleri Yönetmeliği</strong> uyarınca zorunlu olarak alınır ve ilgili
+          tesise + yetkili kolluk kuvvetlerine (Emniyet Genel Müdürlüğü Kimlik Bildirim Sistemi —
+          KBS) bildirilir.
+        </li>
+      </ul>
+
+      <h3>2.1 Otel Rezervasyonu Misafir Verilerinin İşlenmesi</h3>
+      <p>
+        Otel/tatil rezervasyonu yaptığında konaklayan tüm misafirlerin kimlik bilgileri alınır.
+        Bunun yasal sebebi <strong>1774 sayılı Kimlik Bildirme Kanunu</strong>
+        {' '}m. 2/3 ile <strong>Konaklama Tesisleri Yönetmeliği</strong>&apos;nin tesislere
+        getirdiği &ldquo;konaklayan her şahsın kimlik bilgilerini günlük olarak yetkili mercilere
+        bildirme&rdquo; yükümlülüğüdür. Bu yükümlülük tesise aittir; gidek.net rezervasyon sırasında
+        bu bilgileri toplar ve tesisle güvenli kanaldan paylaşır.
+      </p>
+      <ul>
+        <li>
+          <strong>Saklama süresi:</strong> konaklama tarihinden itibaren 2 yıl (Kanun ile
+          öngörülen asgari süre), sonrasında otomatik silinir veya anonim hale getirilir.
+        </li>
+        <li>
+          <strong>Aktarılan üçüncü taraf:</strong> rezervasyon yapılan konaklama tesisi (zorunlu) +
+          gerektiğinde adli ve idari merciler (kanun gereği).
+        </li>
+        <li>
+          <strong>Profil/UI&apos;da gösterim:</strong> T.C. kimlik no veya pasaport no uygulamada
+          gösterilirken kısmen maskelenir (örn. <code>123•••••89</code>) — yalnızca son 2 + ilk 3
+          hane görünür. Tam değer sadece veritabanında tutulur ve tesise/kolluk merciine
+          bildirilirken eksiksiz aktarılır.
+        </li>
       </ul>
 
       <h2>3. Kişisel Verilerin İşlenme Amaçları ve Hukuki Sebepleri</h2>
@@ -85,6 +122,16 @@ export default function KvkkPage() {
         <li>Supabase Inc. (veritabanı, kimlik doğrulama, dosya saklama).</li>
         <li>Vercel Inc. (uygulama hosting).</li>
         <li>Google LLC (Gemini API üzerinden AI öneri motoru).</li>
+        <li>Cloudinary Ltd. (görsel CDN ve dönüştürme).</li>
+        <li>
+          <strong>Konaklama tesisleri:</strong> otel rezervasyonu yaptığında, yalnızca o tesise
+          (rezervasyonu kabul eden işletmeye) misafir kimlik bilgileri aktarılır.
+        </li>
+        <li>
+          <strong>Emniyet Genel Müdürlüğü Kimlik Bildirim Sistemi (KBS):</strong> 1774 sayılı kanun
+          gereği konaklama tesisi tarafından yapılan bildirimin bir parçası olarak (gidek.net
+          doğrudan aktarmaz; tesisin yükümlülüğüdür).
+        </li>
       </ul>
       <p>
         Bu sağlayıcılar yurt dışında bulunabilir. Aktarımlar KVKK m. 9 ve gerekli güvenceler (Standart
