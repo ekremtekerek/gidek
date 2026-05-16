@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useMemo, useState } from 'react';
+import { useActionState, useEffect, useMemo, useState } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -78,12 +78,31 @@ interface Guest {
   room_index: number;
 }
 
+interface SavedDraft {
+  step: 1 | 2 | 3 | 4;
+  checkIn: string;
+  checkOut: string;
+  adults: number;
+  kids: number;
+  roomId: string;
+  guests: Guest[];
+  specialRequests: string;
+  savedAt: number;
+}
+
 interface Props {
   deal: HotelDealForWizard;
   rooms: RoomTypeOption[];
   meta: HotelMetaForWizard | null;
   /** /f/[slug]'daki oda kartından gelen `?room=` param'ı — varsayılan seçim */
   initialRoomId?: string;
+  /** Giriş yapmış kullanıcının profili — lead misafir otomatik doldurulur */
+  initialLead?: {
+    first_name?: string;
+    last_name?: string;
+    phone?: string;
+    email?: string;
+  };
 }
 
 // ----------------------------------------------------------------------------
@@ -102,29 +121,39 @@ function nightsBetween(ci: string, co: string): number {
   const diff = (new Date(co).getTime() - new Date(ci).getTime()) / 86_400_000;
   return Math.max(0, Math.round(diff));
 }
-function makeGuest(type: 'adult' | 'child', idx: number): Guest {
+function makeGuest(
+  type: 'adult' | 'child',
+  idx: number,
+  lead?: { first_name?: string; last_name?: string; phone?: string; email?: string },
+): Guest {
+  const isLead = type === 'adult' && idx === 0;
   return {
     guest_type: type,
     guest_index: idx,
-    first_name: '',
-    last_name: '',
+    first_name: isLead ? lead?.first_name ?? '' : '',
+    last_name: isLead ? lead?.last_name ?? '' : '',
     nationality: 'TR',
     national_id: '',
     passport_no: '',
     birth_date: '',
     gender: '',
-    phone: '',
-    email: '',
-    is_lead: type === 'adult' && idx === 0,
+    phone: isLead ? lead?.phone ?? '' : '',
+    email: isLead ? lead?.email ?? '' : '',
+    is_lead: isLead,
     room_index: 0,
   };
 }
 
-function resyncGuests(prev: Guest[], adults: number, kids: number): Guest[] {
+function resyncGuests(
+  prev: Guest[],
+  adults: number,
+  kids: number,
+  lead?: { first_name?: string; last_name?: string; phone?: string; email?: string },
+): Guest[] {
   const next: Guest[] = [];
   for (let i = 0; i < adults; i++) {
     const existing = prev.find((g) => g.guest_type === 'adult' && g.guest_index === i);
-    next.push(existing ?? makeGuest('adult', i));
+    next.push(existing ?? makeGuest('adult', i, i === 0 ? lead : undefined));
   }
   for (let i = 0; i < kids; i++) {
     const existing = prev.find((g) => g.guest_type === 'child' && g.guest_index === i);
@@ -207,7 +236,7 @@ const NATIONALITIES: { code: string; label: string; flag: string }[] = [
 // ----------------------------------------------------------------------------
 // Main
 // ----------------------------------------------------------------------------
-export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) {
+export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLead }: Props) {
   const [step, setStep] = useState<1 | 2 | 3 | 4>(1);
 
   const [checkIn, setCheckIn] = useState<string>(() => plusDaysISO(todayISO(), 7));
@@ -221,10 +250,89 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
       : rooms[0]?.id ?? '';
   const [roomId, setRoomId] = useState<string>(defaultRoomId);
   const [guests, setGuests] = useState<Guest[]>(() =>
-    resyncGuests([], adults, kids),
+    resyncGuests([], adults, kids, initialLead),
   );
   const [specialRequests, setSpecialRequests] = useState('');
   const [acceptPolicies, setAcceptPolicies] = useState(false);
+
+  // Availability: tarihler değişince odaların müsaitlik durumu fetch edilir.
+  const [availability, setAvailability] = useState<Map<string, { available: number; total: number }>>(
+    new Map(),
+  );
+  const [availLoading, setAvailLoading] = useState(false);
+
+  // localStorage'a kaydedilmiş yarım kalan rezervasyon — mount'ta okunur,
+  // null değilse Step 1'in başında "Devam et / Sıfırla" banner'ı çıkar.
+  const STORAGE_KEY = `gidek-hotel-wizard-${deal.id}`;
+  const MAX_DRAFT_AGE_MS = 24 * 60 * 60 * 1000;
+  const [savedDraft, setSavedDraft] = useState<SavedDraft | null>(null);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as SavedDraft;
+      if (
+        !parsed ||
+        typeof parsed.savedAt !== 'number' ||
+        Date.now() - parsed.savedAt > MAX_DRAFT_AGE_MS
+      ) {
+        window.localStorage.removeItem(STORAGE_KEY);
+        return;
+      }
+      void Promise.resolve().then(() => setSavedDraft(parsed));
+    } catch {
+      /* corrupted draft, ignore */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [STORAGE_KEY]);
+
+  // Auto-save (debounced) — kullanıcı her etkileşimde state localStorage'a yazılır
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const t = window.setTimeout(() => {
+      try {
+        const draft: SavedDraft = {
+          step,
+          checkIn,
+          checkOut,
+          adults,
+          kids,
+          roomId,
+          guests,
+          specialRequests,
+          savedAt: Date.now(),
+        };
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+      } catch {
+        /* quota/disabled */
+      }
+    }, 600);
+    return () => window.clearTimeout(t);
+  }, [STORAGE_KEY, step, checkIn, checkOut, adults, kids, roomId, guests, specialRequests]);
+
+  function applyDraft(d: SavedDraft) {
+    setStep(d.step);
+    setCheckIn(d.checkIn);
+    setCheckOut(d.checkOut);
+    setAdults(d.adults);
+    setKids(d.kids);
+    if (d.roomId && rooms.some((r) => r.id === d.roomId)) setRoomId(d.roomId);
+    setGuests(d.guests);
+    setSpecialRequests(d.specialRequests);
+    setSavedDraft(null);
+  }
+  function discardDraft() {
+    if (typeof window !== 'undefined') {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+      } catch {
+        /* ignore */
+      }
+    }
+    setSavedDraft(null);
+  }
 
   const [state, formAction, pending] = useActionState<CreateHotelBookingState, FormData>(
     createHotelBookingAction,
@@ -241,16 +349,52 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
   function setAdultCount(n: number) {
     const v = Math.max(1, Math.min(12, n));
     setAdults(v);
-    setGuests((prev) => resyncGuests(prev, v, kids));
+    setGuests((prev) => resyncGuests(prev, v, kids, initialLead));
   }
   function setKidCount(n: number) {
     const v = Math.max(0, Math.min(8, n));
     setKids(v);
-    setGuests((prev) => resyncGuests(prev, adults, v));
+    setGuests((prev) => resyncGuests(prev, adults, v, initialLead));
   }
   function updateGuest(idx: number, patch: Partial<Guest>) {
     setGuests((prev) => prev.map((g, i) => (i === idx ? { ...g, ...patch } : g)));
   }
+
+  // Availability fetch — tarihler değişince
+  useEffect(() => {
+    if (!checkIn || !checkOut || nightsBetween(checkIn, checkOut) < 1) return;
+    const ctrl = new AbortController();
+    // setState'i microtask'a defer ediyoruz; effect body'sinde direkt setState
+    // çağrısı React 19 strict mode'da uyarı veriyor.
+    void Promise.resolve().then(() => setAvailLoading(true));
+    fetch(
+      `/api/hotel/availability?deal=${deal.id}&checkin=${checkIn}&checkout=${checkOut}`,
+      { signal: ctrl.signal },
+    )
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data: { rooms?: { id: string; total_units: number | null; available: number | null }[] } | null) => {
+        if (!data?.rooms) return;
+        const map = new Map<string, { available: number; total: number }>();
+        for (const r of data.rooms) {
+          if (r.total_units !== null && r.available !== null) {
+            map.set(r.id, { available: r.available, total: r.total_units });
+          }
+        }
+        setAvailability(map);
+      })
+      .catch(() => {
+        // sessiz fail — UI fallback olarak availability rozetini gizler
+      })
+      .finally(() => setAvailLoading(false));
+    return () => ctrl.abort();
+  }, [checkIn, checkOut, deal.id]);
+
+  // En düşük gece başı fiyat — Step 1 preview için
+  const minPricePerNight = useMemo(
+    () => (rooms.length === 0 ? 0 : Math.min(...rooms.map((r) => r.base_price_per_night))),
+    [rooms],
+  );
+  const previewMinTotal = nights > 0 ? minPricePerNight * nights : 0;
 
   // Validation per step
   const step1Valid =
@@ -265,19 +409,30 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
     selectedRoom!.capacity_adults >= adults &&
     selectedRoom!.capacity_children >= kids;
 
-  function adultIdValid(g: Guest): boolean {
-    if (g.guest_type !== 'adult') return true;
-    if (g.nationality === 'TR') return isValidTCKimlik(g.national_id);
-    return g.passport_no.trim().length >= 4;
+  function guestErrors(g: Guest): string[] {
+    const errs: string[] = [];
+    const label = g.guest_type === 'adult' ? `Yetişkin ${g.guest_index + 1}` : `Çocuk ${g.guest_index + 1}`;
+    if (g.first_name.trim().length < 2) errs.push(`${label}: ad eksik`);
+    if (g.last_name.trim().length < 2) errs.push(`${label}: soyad eksik`);
+    if (!g.birth_date) errs.push(`${label}: doğum tarihi eksik`);
+    if (g.guest_type === 'adult') {
+      if (g.nationality === 'TR' && !isValidTCKimlik(g.national_id)) {
+        errs.push(`${label}: TC kimlik geçersiz`);
+      }
+      if (g.nationality !== 'TR' && g.passport_no.trim().length < 4) {
+        errs.push(`${label}: pasaport no eksik`);
+      }
+    }
+    if (g.is_lead && g.phone.trim().length < 7) {
+      errs.push(`${label} (sahip): telefon eksik`);
+    }
+    return errs;
   }
-  const step3Valid = guests.every(
-    (g) =>
-      g.first_name.trim().length >= 2 &&
-      g.last_name.trim().length >= 2 &&
-      g.birth_date &&
-      adultIdValid(g) &&
-      (g.is_lead ? g.phone.trim().length >= 7 : true),
+  const allStep3Errors = useMemo(
+    () => guests.flatMap((g) => guestErrors(g)),
+    [guests],
   );
+  const step3Valid = allStep3Errors.length === 0;
 
   const canSubmit = step1Valid && step2Valid && step3Valid && acceptPolicies && !pending;
 
@@ -292,13 +447,38 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
         { n: 4, label: 'Özet' },
       ]} />
 
+      {savedDraft ? (
+        <div role="region" aria-label="Yarım kalan rezervasyon" className="border-sky-500/40 bg-sky-500/10 flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center">
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">Yarım kalan rezervasyonun var</p>
+            <p className="text-muted-foreground mt-0.5 text-xs">
+              {new Date(savedDraft.savedAt).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} ·
+              {' '}{savedDraft.adults} yetişkin{savedDraft.kids > 0 ? ` + ${savedDraft.kids} çocuk` : ''} ·
+              Adım {savedDraft.step}/4
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={discardDraft}>
+              Sıfırla
+            </Button>
+            <Button type="button" variant="primary" size="sm" onClick={() => applyDraft(savedDraft)}>
+              Devam et
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
       {state?.error ? (
         <div role="alert" className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
           {state.error}
         </div>
       ) : null}
 
-      <form action={formAction} className="flex flex-col gap-6">
+      <form
+        action={formAction}
+        onSubmit={() => discardDraft()}
+        className="flex flex-col gap-6"
+      >
         {/* Tüm step'lerin hidden state'i — son submit'te gönderilir.
             check_in/out_date DateField içinde hidden input olarak üretiliyor. */}
         <input type="hidden" name="deal_id" value={deal.id} />
@@ -363,6 +543,25 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
               </p>
             ) : null}
 
+            {/* Anlık özet — tarih+kişi seçildikçe en düşük tahmini fiyat */}
+            {nights > 0 && minPricePerNight > 0 ? (
+              <div className="border-sky-500/30 bg-sky-500/5 flex items-center justify-between rounded-lg border p-3">
+                <div>
+                  <p className="text-xs font-semibold text-sky-700 dark:text-sky-300">
+                    Tahmini en düşük tutar
+                  </p>
+                  <p className="text-muted-foreground mt-0.5 text-[11px]">
+                    {nights} gece × {adults} yetişkin{kids > 0 ? ` + ${kids} çocuk` : ''} ·
+                    en uygun odadan
+                  </p>
+                </div>
+                <p className="text-foreground text-lg font-bold tracking-tight">
+                  {formatTRY(previewMinTotal)}
+                  <span className="text-muted-foreground ms-1 text-[11px] font-normal">&apos;dan</span>
+                </p>
+              </div>
+            ) : null}
+
             <div className="grid gap-4 sm:grid-cols-2">
               <Counter
                 label="Yetişkin (13+)"
@@ -422,6 +621,10 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
               <div className="flex flex-col gap-3">
                 {rooms.map((r) => {
                   const fits = r.capacity_adults >= adults && r.capacity_children >= kids;
+                  const avail = availability.get(r.id) ?? null;
+                  const isFull = avail !== null && avail.available === 0;
+                  const isLow = avail !== null && avail.available > 0 && avail.available <= 3;
+                  const selectable = fits && !isFull;
                   const isSelected = roomId === r.id;
                   const total = r.base_price_per_night * nights;
                   return (
@@ -431,7 +634,7 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
                         'flex cursor-pointer items-stretch gap-3 rounded-xl border p-3 transition-colors sm:p-4',
                         isSelected
                           ? 'border-foreground bg-foreground/5'
-                          : fits
+                          : selectable
                             ? 'border-border hover:border-foreground/40'
                             : 'border-border bg-muted/30 cursor-not-allowed opacity-60',
                       )}
@@ -441,8 +644,8 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
                         name="room_select"
                         value={r.id}
                         checked={isSelected}
-                        onChange={() => fits && setRoomId(r.id)}
-                        disabled={!fits}
+                        onChange={() => selectable && setRoomId(r.id)}
+                        disabled={!selectable}
                         className="sr-only"
                       />
                       <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -462,7 +665,7 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
                             </p>
                           </div>
                         </div>
-                        <div className="text-muted-foreground flex flex-wrap gap-2 text-[11px]">
+                        <div className="text-muted-foreground flex flex-wrap items-center gap-2 text-[11px]">
                           <span>
                             <Users className="me-0.5 inline size-3" aria-hidden="true" />
                             {r.capacity_adults}+{r.capacity_children}
@@ -470,6 +673,24 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
                           {r.bed_setup ? <span>· {r.bed_setup}</span> : null}
                           {r.size_sqm ? <span>· {r.size_sqm} m²</span> : null}
                           {r.view_type ? <span>· {r.view_type} manzara</span> : null}
+                          {/* Müsaitlik rozeti */}
+                          {availLoading ? (
+                            <span className="text-muted-foreground/70">· kontrol ediliyor…</span>
+                          ) : avail !== null ? (
+                            isFull ? (
+                              <span className="rounded-full bg-rose-100 px-2 py-0.5 font-semibold text-rose-700 dark:bg-rose-950/40 dark:text-rose-300">
+                                Dolu
+                              </span>
+                            ) : isLow ? (
+                              <span className="rounded-full bg-amber-100 px-2 py-0.5 font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-300">
+                                Son {avail.available} oda
+                              </span>
+                            ) : (
+                              <span className="rounded-full bg-emerald-100 px-2 py-0.5 font-semibold text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300">
+                                Müsait
+                              </span>
+                            )
+                          ) : null}
                           <span className="bg-muted ms-auto rounded-full px-2 py-0.5">
                             {BOARD_LABELS[r.board_basis] ?? r.board_basis}
                           </span>
@@ -541,6 +762,22 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
                 className="border-border bg-background w-full rounded-md border p-3 text-sm"
               />
             </div>
+
+            {!step3Valid && allStep3Errors.length > 0 ? (
+              <div role="alert" className="border-amber-500/40 bg-amber-500/10 rounded-lg border p-3">
+                <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
+                  Devam etmek için {allStep3Errors.length} alan eksik
+                </p>
+                <ul className="mt-1.5 list-disc space-y-0.5 ps-5 text-xs text-amber-700 dark:text-amber-300">
+                  {allStep3Errors.slice(0, 8).map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                  {allStep3Errors.length > 8 ? (
+                    <li>…ve {allStep3Errors.length - 8} tane daha</li>
+                  ) : null}
+                </ul>
+              </div>
+            ) : null}
 
             <NavRow
               left={
@@ -687,6 +924,29 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId }: Props) 
 // ----------------------------------------------------------------------------
 // Sub-components
 // ----------------------------------------------------------------------------
+function HelpHint({ text }: { text: string }) {
+  return (
+    <span
+      title={text}
+      aria-label={text}
+      tabIndex={0}
+      role="button"
+      className="text-muted-foreground hover:text-foreground inline-flex size-4 cursor-help items-center justify-center rounded-full bg-muted text-[10px] font-bold leading-none"
+    >
+      ?
+    </span>
+  );
+}
+
+// Tailwind JIT'in tüm w-X/4'leri build'e dahil etmesi için sabit liste —
+// dinamik string ile yapılamaz çünkü class isimleri compile-time çıkarılır.
+const PROGRESS_WIDTH_CLASS: Record<number, string> = {
+  1: 'w-1/4',
+  2: 'w-2/4',
+  3: 'w-3/4',
+  4: 'w-full',
+};
+
 function Stepper({
   current,
   steps,
@@ -694,36 +954,61 @@ function Stepper({
   current: number;
   steps: { n: number; label: string }[];
 }) {
+  const currentStep = steps.find((s) => s.n === current);
+  const pct = PROGRESS_WIDTH_CLASS[current] ?? 'w-0';
+
   return (
-    <ol className="flex items-center gap-1 overflow-x-auto text-xs sm:text-sm">
-      {steps.map((s, i) => {
-        const done = s.n < current;
-        const active = s.n === current;
-        return (
-          <li key={s.n} className="flex items-center gap-1">
-            <span
-              className={cn(
-                'inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
-                done
-                  ? 'bg-emerald-500 text-white'
-                  : active
-                    ? 'bg-foreground text-background'
-                    : 'bg-muted text-muted-foreground',
-              )}
-              aria-current={active ? 'step' : undefined}
-            >
-              {done ? <Check className="size-3.5" aria-hidden="true" /> : s.n}
-            </span>
-            <span className={cn(active ? 'text-foreground font-semibold' : 'text-muted-foreground', 'whitespace-nowrap')}>
-              {s.label}
-            </span>
-            {i < steps.length - 1 ? (
-              <ChevronRight className="text-muted-foreground mx-1 size-3.5 shrink-0" aria-hidden="true" />
-            ) : null}
-          </li>
-        );
-      })}
-    </ol>
+    <div
+      role="progressbar"
+      aria-valuemin={1}
+      aria-valuemax={steps.length}
+      aria-valuenow={current}
+      aria-label={`Adım ${current} / ${steps.length} — ${currentStep?.label ?? ''}`}
+    >
+      {/* Mobile: compact progress bar */}
+      <div className="sm:hidden">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-foreground font-semibold">{currentStep?.label}</span>
+          <span className="text-muted-foreground">
+            Adım {current}/{steps.length}
+          </span>
+        </div>
+        <div className="bg-muted mt-2 h-1.5 overflow-hidden rounded-full">
+          <div className={cn('bg-foreground h-full rounded-full transition-all', pct)} />
+        </div>
+      </div>
+
+      {/* sm+: full stepper */}
+      <ol className="hidden items-center gap-1 text-sm sm:flex">
+        {steps.map((s, i) => {
+          const done = s.n < current;
+          const active = s.n === current;
+          return (
+            <li key={s.n} className="flex items-center gap-1">
+              <span
+                className={cn(
+                  'inline-flex size-6 shrink-0 items-center justify-center rounded-full text-[11px] font-bold',
+                  done
+                    ? 'bg-emerald-500 text-white'
+                    : active
+                      ? 'bg-foreground text-background'
+                      : 'bg-muted text-muted-foreground',
+                )}
+                aria-current={active ? 'step' : undefined}
+              >
+                {done ? <Check className="size-3.5" aria-hidden="true" /> : s.n}
+              </span>
+              <span className={cn(active ? 'text-foreground font-semibold' : 'text-muted-foreground', 'whitespace-nowrap')}>
+                {s.label}
+              </span>
+              {i < steps.length - 1 ? (
+                <ChevronRight className="text-muted-foreground mx-1 size-3.5 shrink-0" aria-hidden="true" />
+              ) : null}
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 
@@ -902,7 +1187,10 @@ function GuestCard({
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           {g.nationality === 'TR' ? (
             <div>
-              <Label htmlFor={`tc-${idx}`}>{idHint}</Label>
+              <Label htmlFor={`tc-${idx}`} className="inline-flex items-center gap-1.5">
+                {idHint}
+                <HelpHint text="11 hane, sadece rakam. Kimliğinizin ön yüzünde T.C. KİMLİK NO yazısının altında bulunur. Otele giriş için yasal zorunluluktur." />
+              </Label>
               <Input
                 id={`tc-${idx}`}
                 inputMode="numeric"
@@ -927,7 +1215,10 @@ function GuestCard({
             </div>
           ) : (
             <div>
-              <Label htmlFor={`pp-${idx}`}>{idHint}</Label>
+              <Label htmlFor={`pp-${idx}`} className="inline-flex items-center gap-1.5">
+                {idHint}
+                <HelpHint text="Pasaport numaranızın tamamı (harf+rakam). Kimliği fotoğraflı sayfasının üst sağında bulunur. Otele giriş için yasal zorunluluktur." />
+              </Label>
               <Input
                 id={`pp-${idx}`}
                 value={g.passport_no}

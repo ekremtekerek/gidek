@@ -76,3 +76,15 @@ export async function requireMerchant(): Promise<{ user: User; merchantId: strin
   if (!merchantId) redirect('/');
   return { user, merchantId };
 }
+
+/**
+ * Guard for shared endpoints (image upload vb.) — admin VEYA bir merchant'a
+ * bağlı kullanıcı geçer. İkisi de değilse 403.
+ */
+export async function requireAdminOrMerchant(): Promise<User> {
+  const user = await requireUser('/giris');
+  if (isAdmin(user)) return user;
+  const merchantId = await getCurrentMerchantId(user);
+  if (!merchantId) redirect('/');
+  return user;
+}

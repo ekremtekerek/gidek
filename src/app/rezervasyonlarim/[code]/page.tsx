@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Clock, Gift, MessageSquare, Tag } from 'lucide-react';
+import { ArrowLeft, Clock, Gift, MapPin, MessageSquare, Navigation, Tag } from 'lucide-react';
 import { AddToCalendar } from '@/components/booking/add-to-calendar';
 import { AttendeesSection } from '@/components/booking/attendees-section';
 import { CancelButton } from '@/components/booking/cancel-button';
@@ -18,6 +18,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { getBookingByCode } from '@/lib/db/queries/bookings';
 import { getHotelExtrasForBooking } from '@/lib/db/queries/hotel';
+import { googleMapsDirectionsUrl } from '@/lib/utils/maps';
 import { requireUser } from '@/lib/security/auth';
 import {
   BOOKING_STATUS_BADGE,
@@ -98,7 +99,12 @@ export default async function RezervasyonDetailPage({
                   location={location ?? undefined}
                   selectedDate={booking.selected_date}
                   selectedTime={booking.selected_time}
-                  durationMinutes={booking.deal.duration_minutes}
+                  // Otel rezervasyonunda nights × 24 × 60 dk; etkinlikte deal süresi
+                  durationMinutes={
+                    booking.nights && booking.nights > 0
+                      ? booking.nights * 24 * 60
+                      : booking.deal.duration_minutes
+                  }
                   detailUrl={`${process.env.NEXT_PUBLIC_SITE_URL ?? ''}/rezervasyonlarim/${booking.booking_code}`}
                 />
               ) : null}
@@ -194,6 +200,36 @@ export default async function RezervasyonDetailPage({
               guests={hotelExtras.guests}
               variant="full"
             />
+
+            {/* Yol tarifi — otelin koordinatları varsa Google Maps yön ver */}
+            {booking.deal?.merchant?.lat !== null &&
+            booking.deal?.merchant?.lat !== undefined &&
+            booking.deal?.merchant?.lng !== null &&
+            booking.deal?.merchant?.lng !== undefined ? (
+              <div className="gidek-no-print border-border bg-muted/30 mt-4 flex items-center justify-between gap-3 rounded-lg border p-4">
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold inline-flex items-center gap-1.5">
+                    <MapPin className="size-4" aria-hidden="true" />
+                    {booking.deal.merchant.name}
+                  </p>
+                  <p className="text-muted-foreground mt-0.5 text-xs">
+                    {[booking.deal.district, booking.deal.city].filter(Boolean).join(', ')}
+                  </p>
+                </div>
+                <a
+                  href={googleMapsDirectionsUrl(
+                    Number(booking.deal.merchant.lat),
+                    Number(booking.deal.merchant.lng),
+                  )}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-1.5')}
+                >
+                  <Navigation className="size-3.5" aria-hidden="true" />
+                  Yol tarifi
+                </a>
+              </div>
+            ) : null}
           </section>
         ) : null}
 

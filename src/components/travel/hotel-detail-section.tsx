@@ -32,6 +32,7 @@ import {
   Wifi,
   Wine,
 } from 'lucide-react';
+import { RoomImageLightbox } from '@/components/travel/room-image-lightbox';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import type { HotelMeta, HotelRoom } from '@/lib/db/queries/hotel';
@@ -294,6 +295,14 @@ export function HotelDetailSection({ slug, meta, rooms }: Props) {
                 key={r.id}
                 className="border-border hover:border-foreground/40 flex flex-col gap-3 rounded-xl border p-4 transition-colors sm:flex-row sm:items-stretch sm:gap-4 sm:p-5"
               >
+                {r.cover_image ? (
+                  <RoomImageLightbox
+                    src={r.cover_image}
+                    alt={r.name}
+                    className="aspect-[4/3] h-32 w-full shrink-0 sm:h-auto sm:w-40"
+                  />
+                ) : null}
+
                 <div className="flex min-w-0 flex-1 flex-col gap-1.5">
                   <div className="flex items-start justify-between gap-3">
                     <h3 className="text-base font-semibold tracking-tight">{r.name}</h3>

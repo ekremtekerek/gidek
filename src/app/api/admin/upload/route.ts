@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { CLOUDINARY_READY, uploadBuffer } from '@/lib/cloudinary/client';
-import { requireAdmin } from '@/lib/security/auth';
+import { requireAdminOrMerchant } from '@/lib/security/auth';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -17,7 +17,7 @@ const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
 const MAX_DIM = 1920;
 
 export async function POST(req: Request) {
-  await requireAdmin();
+  await requireAdminOrMerchant();
   if (!CLOUDINARY_READY) {
     return Response.json(
       { error: 'Cloudinary yapılandırılmamış. .env.local: CLOUDINARY_CLOUD_NAME / API_KEY / API_SECRET' },

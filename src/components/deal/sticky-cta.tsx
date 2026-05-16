@@ -14,6 +14,9 @@ interface Props {
   originalPrice: number | string;
   discountedPrice: number | string;
   discountPercent: number | null;
+  /** Otel/tatil deal'ında "Tarihleri seç" daha açıklayıcı, diğerlerinde
+   *  "Rezervasyon Yap" default. */
+  ctaLabel?: string;
 }
 
 /**
@@ -31,6 +34,7 @@ export function StickyCta({
   originalPrice,
   discountedPrice,
   discountPercent,
+  ctaLabel = 'Rezervasyon Yap',
 }: Props) {
   const [show, setShow] = useState(false);
 
@@ -80,7 +84,7 @@ export function StickyCta({
           )}
         >
           <Calendar className="size-4" aria-hidden="true" />
-          Rezervasyon Yap
+          {ctaLabel}
         </Link>
       </div>
     </div>

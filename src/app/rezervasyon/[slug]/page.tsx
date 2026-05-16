@@ -130,6 +130,22 @@ export default async function RezervasyonPage({
     district: deal.district,
   };
 
+  // Lead misafir auto-fill için profile + auth email — user zaten giriş yapmış
+  const svc = getServiceClient();
+  const { data: profile } = await svc
+    .from('profiles')
+    .select('display_name, phone')
+    .eq('id', user.id)
+    .maybeSingle();
+  const displayName = profile?.display_name?.trim() ?? '';
+  const nameParts = displayName.split(/\s+/);
+  const initialLead = {
+    first_name: nameParts[0] ?? '',
+    last_name: nameParts.length > 1 ? nameParts.slice(1).join(' ') : '',
+    phone: profile?.phone ?? '',
+    email: user.email ?? '',
+  };
+
   return (
     <Container className="py-10 sm:py-14">
       <div className="mx-auto grid max-w-5xl gap-8 lg:grid-cols-[1fr_1.2fr]">
@@ -204,6 +220,7 @@ export default async function RezervasyonPage({
               rooms={hotelData.rooms}
               meta={hotelData.meta}
               initialRoomId={initialRoomId}
+              initialLead={initialLead}
             />
           ) : (
             <BookingForm

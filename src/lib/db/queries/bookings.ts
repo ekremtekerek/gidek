@@ -16,7 +16,11 @@ export type BookingWithDeal = BookingRow & {
         | 'district'
         | 'duration_minutes'
         | 'max_per_user'
-      > & { merchant: { name: string } | null })
+      > & {
+        merchant:
+          | { name: string; lat: number | null; lng: number | null }
+          | null;
+      })
     | null;
 };
 
@@ -24,7 +28,7 @@ const BOOKING_SELECT = `
   *,
   deal:deals (
     id, slug, title, cover_image, city, district, duration_minutes, max_per_user,
-    merchant:merchants ( name )
+    merchant:merchants ( name, lat, lng )
   )
 `;
 

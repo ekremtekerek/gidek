@@ -1,9 +1,10 @@
 import Link from 'next/link';
-import { CalendarCheck, LayoutDashboard, Store, Ticket } from 'lucide-react';
+import { CalendarCheck, Hotel, LayoutDashboard, Store, Ticket } from 'lucide-react';
 
 const ITEMS = [
   { href: '/isletme', label: 'Genel', Icon: LayoutDashboard },
   { href: '/isletme/firsatlar', label: 'Fırsatlarım', Icon: Ticket },
+  { href: '/isletme/oteller', label: 'Otellerim', Icon: Hotel },
   { href: '/isletme/rezervasyonlar', label: 'Rezervasyonlar', Icon: CalendarCheck },
 ] as const;
 

@@ -1,10 +1,11 @@
 import { notFound } from 'next/navigation';
-import { saveHotelAction } from '@/app/admin/oteller/actions';
+import { saveHotelAsMerchantAction } from '@/app/isletme/oteller/actions';
 import { HotelForm } from '@/components/admin/hotel-form';
 import { getServiceClient } from '@/lib/db/service';
+import { requireMerchant } from '@/lib/security/auth';
 
 export const metadata = {
-  title: 'Otel düzenle · Admin',
+  title: 'Otel düzenle · İşletme',
   robots: { index: false, follow: false },
 };
 
@@ -13,12 +14,13 @@ interface PageProps {
   searchParams: Promise<{ saved?: string }>;
 }
 
-export default async function AdminHotelEditPage({ params, searchParams }: PageProps) {
+export default async function MerchantHotelEditPage({ params, searchParams }: PageProps) {
+  const { merchantId } = await requireMerchant();
   const { id } = await params;
   const { saved } = await searchParams;
   const supabase = getServiceClient();
 
-  const [{ data: deal }, { data: merchants }, { data: cats }, { data: meta }, { data: rooms }] =
+  const [{ data: deal }, { data: merchant }, { data: cats }, { data: meta }, { data: rooms }] =
     await Promise.all([
       supabase
         .from('deals')
@@ -27,7 +29,7 @@ export default async function AdminHotelEditPage({ params, searchParams }: PageP
         )
         .eq('id', id)
         .maybeSingle(),
-      supabase.from('merchants').select('id, name, city, district').eq('is_active', true).order('name').limit(500),
+      supabase.from('merchants').select('id, name, city, district').eq('id', merchantId).maybeSingle(),
       supabase
         .from('deal_categories')
         .select('category:categories(slug)')
@@ -36,7 +38,8 @@ export default async function AdminHotelEditPage({ params, searchParams }: PageP
       supabase.from('deal_room_types').select('*').eq('deal_id', id).order('sort_order'),
     ]);
 
-  if (!deal) notFound();
+  // 404 ya da yetkisiz: aynı sebepten 404 — bilgi sızdırma
+  if (!deal || deal.merchant_id !== merchantId) notFound();
 
   const categories = (cats ?? [])
     .map((c) => {
@@ -103,21 +106,23 @@ export default async function AdminHotelEditPage({ params, searchParams }: PageP
     <div className="flex flex-col gap-5">
       <header>
         <p className="text-muted-foreground mb-1 text-xs font-semibold tracking-wide uppercase">
-          Oteller &amp; Tatil
+          İşletme paneli · Otelim
         </p>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
           {deal.title}
         </h1>
-        <p className="text-muted-foreground mt-1 text-sm">
-          Otel meta, oda tipleri ve politikalar.
-        </p>
         {saved ? (
           <p className="mt-2 inline-block rounded-md bg-emerald-50 px-3 py-1 text-sm text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300">
             Kaydedildi.
           </p>
         ) : null}
       </header>
-      <HotelForm merchants={(merchants ?? []) as never[]} initial={initial as never} action={saveHotelAction} />
+      <HotelForm
+        merchants={merchant ? [merchant] : []}
+        initial={initial as never}
+        action={saveHotelAsMerchantAction}
+        lockedMerchantId={merchantId}
+      />
     </div>
   );
 }

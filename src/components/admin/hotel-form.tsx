@@ -2,7 +2,10 @@
 
 import { useActionState, useMemo, useState } from 'react';
 import { Plus, Trash2 } from 'lucide-react';
-import { saveHotelAction, type HotelFormState } from '@/app/admin/oteller/actions';
+import type { HotelFormState } from '@/lib/admin/hotel-save';
+import { DealAiAssist } from '@/components/admin/deal-ai-assist';
+import { ImageUploader } from '@/components/admin/image-uploader';
+import { SingleImageUpload } from '@/components/admin/single-image-upload';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -11,6 +14,8 @@ import { cn } from '@/lib/utils/cn';
 
 // Bu constant'lar actions.ts'den re-export ediliyor; tarafımıza UI tarafından
 // bağlanır. Tip için sabit liste şart.
+const HOTEL_FORM_ID = 'admin-hotel-form';
+
 const CONCEPTS = [
   'her-sey-dahil','ultra-her-sey-dahil','butik','tasarim-otel','aile-resort',
   'spa-otel','plaj-resort','doga-ici','eko-otel','bungalov','yayla-evi',
@@ -86,6 +91,31 @@ type Room = {
   has_tv: boolean;
 };
 
+const ROOM_PRESETS: Record<string, Partial<Room>[]> = {
+  'classic': [
+    { name: 'Standart Oda', capacity_adults: 2, base_price_per_night: 2000, board_basis: 'oda-kahvalti', size_sqm: '28' },
+    { name: 'Deluxe Oda', capacity_adults: 2, base_price_per_night: 2800, board_basis: 'oda-kahvalti', size_sqm: '34', view_type: 'deniz' },
+    { name: 'Aile Suit', capacity_adults: 2, capacity_children: 2, bed_setup: 'King + 2 çekyat', base_price_per_night: 3500, board_basis: 'oda-kahvalti', size_sqm: '48' },
+  ],
+  'her-sey-dahil': [
+    { name: 'Standart Oda', capacity_adults: 2, base_price_per_night: 3000, board_basis: 'her-sey-dahil', size_sqm: '30' },
+    { name: 'Aile Suit', capacity_adults: 2, capacity_children: 2, bed_setup: 'King + bunk yatak', base_price_per_night: 4500, board_basis: 'her-sey-dahil', size_sqm: '50' },
+    { name: 'Deniz Manzaralı Suite', capacity_adults: 2, base_price_per_night: 5200, board_basis: 'her-sey-dahil', size_sqm: '42', view_type: 'deniz' },
+  ],
+  'butik': [
+    { name: 'Butik Oda', capacity_adults: 2, base_price_per_night: 2500, board_basis: 'oda-kahvalti', size_sqm: '26' },
+    { name: 'Junior Suit Jakuzili', capacity_adults: 2, base_price_per_night: 4200, board_basis: 'oda-kahvalti', size_sqm: '42', view_type: 'bahce', has_jacuzzi: true },
+  ],
+  'doga': [
+    { name: 'Ahşap Bungalov', capacity_adults: 2, bed_setup: 'Fransız yatak', base_price_per_night: 1800, board_basis: 'oda-kahvalti', size_sqm: '30', view_type: 'dag', has_kitchenette: true },
+    { name: 'Aile Bungalov', capacity_adults: 2, capacity_children: 2, base_price_per_night: 2600, board_basis: 'yarim-pansiyon', size_sqm: '48', view_type: 'dag', has_kitchenette: true },
+  ],
+  'spa': [
+    { name: 'Standart Oda', capacity_adults: 2, base_price_per_night: 2400, board_basis: 'yarim-pansiyon', size_sqm: '30' },
+    { name: 'Spa Suit', capacity_adults: 2, base_price_per_night: 4200, board_basis: 'yarim-pansiyon', size_sqm: '50', view_type: 'havuz', has_jacuzzi: true },
+  ],
+};
+
 function emptyRoom(): Room {
   return {
     name: 'Standart Oda',
@@ -159,6 +189,12 @@ type HotelInitial = {
 interface Props {
   merchants: Array<{ id: string; name: string; city: string | null; district: string | null }>;
   initial?: HotelInitial;
+  /** Form'u submit edecek server action. Admin saveHotelAction veya merchant
+   *  saveHotelAsMerchantAction. */
+  action: (prev: HotelFormState, formData: FormData) => Promise<HotelFormState>;
+  /** Set ise merchant dropdown'u gizlenir, hidden input ile bu id submit edilir.
+   *  Merchant tarafında işletme sahibi sadece kendi merchant'ı için ekleyebilir. */
+  lockedMerchantId?: string;
 }
 
 function toDateTimeLocal(iso: string | null | undefined, fallback: () => string): string {
@@ -166,10 +202,10 @@ function toDateTimeLocal(iso: string | null | undefined, fallback: () => string)
   return new Date(iso).toISOString().slice(0, 16);
 }
 
-export function HotelForm({ merchants, initial }: Props) {
+export function HotelForm({ merchants, initial, action, lockedMerchantId }: Props) {
   const editing = Boolean(initial);
   const [state, formAction, pending] = useActionState<HotelFormState, FormData>(
-    saveHotelAction,
+    action,
     null,
   );
 
@@ -190,9 +226,6 @@ export function HotelForm({ merchants, initial }: Props) {
     return init;
   });
   const [rooms, setRooms] = useState<Room[]>(initial?.rooms ?? [emptyRoom()]);
-  const [extraImages, setExtraImages] = useState<string[]>(
-    initial?.images?.filter((u) => u !== initial?.cover_image) ?? [],
-  );
 
   const err = state?.fieldErrors;
   const formError = state?.error;
@@ -227,10 +260,21 @@ export function HotelForm({ merchants, initial }: Props) {
     setRooms((prev) => prev.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
   }
   function removeRoom(idx: number) {
+    if (typeof window !== 'undefined') {
+      const ok = window.confirm('Bu odayı silmek istediğine emin misin?');
+      if (!ok) return;
+    }
     setRooms((prev) => prev.filter((_, i) => i !== idx));
   }
   function addRoom() {
     setRooms((prev) => [...prev, { ...emptyRoom(), sort_order: prev.length }]);
+  }
+  function applyRoomPreset(preset: keyof typeof ROOM_PRESETS) {
+    const tpls = ROOM_PRESETS[preset];
+    setRooms((prev) => [
+      ...prev,
+      ...tpls.map((t, i) => ({ ...emptyRoom(), ...t, sort_order: prev.length + i })),
+    ]);
   }
 
   const [todayLocal] = useState(() => new Date().toISOString().slice(0, 16));
@@ -239,29 +283,45 @@ export function HotelForm({ merchants, initial }: Props) {
   );
 
   return (
-    <form action={formAction} className="flex flex-col gap-8" noValidate>
+    <form id={HOTEL_FORM_ID} action={formAction} className="flex flex-col gap-8" noValidate>
       {initial?.id ? <input type="hidden" name="id" value={initial.id} /> : null}
       <input type="hidden" name="rooms_json" value={JSON.stringify(rooms)} />
+
+      {/* AI yardımcı — yalnızca yeni otel oluştururken. Subtitle/açıklama/
+          highlights/meta DOM event ile dolar; tags/audience controlled state
+          olduğundan otomatik uygulanmaz (chip'lere manuel tıklamak gerekir). */}
+      {!editing ? <DealAiAssist formId={HOTEL_FORM_ID} /> : null}
 
       {/* ---------------- TEMEL ---------------- */}
       <Section title="Temel bilgiler" description="Liste ve detay sayfasında görünen ana içerik">
         <div className="grid gap-4 sm:grid-cols-2">
-          <Field label="İşletme (Merchant)" error={err?.merchant_id?.[0]}>
-            <select
-              name="merchant_id"
-              required
-              defaultValue={initial?.merchant_id ?? ''}
-              onChange={onMerchantChange}
-              className="border-border bg-background h-10 w-full rounded-md border px-3 text-sm"
-            >
-              <option value="">— işletme seç —</option>
-              {merchants.map((m) => (
-                <option key={m.id} value={m.id}>
-                  {m.name} {m.city ? `· ${m.city}` : ''}
-                </option>
-              ))}
-            </select>
-          </Field>
+          {lockedMerchantId ? (
+            // Merchant modunda dropdown gizli; merchant_id server tarafında zaten
+            // override ediliyor ama UI'da görünsün diye lock'lu işletme bilgisini gösteriyoruz.
+            <Field label="İşletme">
+              <input type="hidden" name="merchant_id" value={lockedMerchantId} />
+              <div className="border-border bg-muted/30 inline-flex h-10 items-center rounded-md border px-3 text-sm text-muted-foreground">
+                {merchants.find((m) => m.id === lockedMerchantId)?.name ?? 'İşletmeniz'}
+              </div>
+            </Field>
+          ) : (
+            <Field label="İşletme (Merchant)" error={err?.merchant_id?.[0]}>
+              <select
+                name="merchant_id"
+                required
+                defaultValue={initial?.merchant_id ?? ''}
+                onChange={onMerchantChange}
+                className="border-border bg-background h-10 w-full rounded-md border px-3 text-sm"
+              >
+                <option value="">— işletme seç —</option>
+                {merchants.map((m) => (
+                  <option key={m.id} value={m.id}>
+                    {m.name} {m.city ? `· ${m.city}` : ''}
+                  </option>
+                ))}
+              </select>
+            </Field>
+          )}
           <Field label="Başlık" error={err?.title?.[0]}>
             <Input
               name="title"
@@ -361,27 +421,16 @@ export function HotelForm({ merchants, initial }: Props) {
           </Field>
         </div>
 
-        <Field label="Kapak görseli (URL)" error={err?.cover_image?.[0]}>
-          <Input
-            name="cover_image"
-            type="url"
-            required
-            defaultValue={initial?.cover_image ?? ''}
-            placeholder="https://…"
+        <Field label="Fotoğraflar (kapak + galeri)" error={err?.cover_image?.[0]}>
+          <ImageUploader
+            initialCover={initial?.cover_image}
+            initialImages={initial?.images}
+            maxFiles={8}
           />
-        </Field>
-
-        <Field label="Ek görseller (URL, satır başına 1 — max 7)">
-          <textarea
-            rows={3}
-            value={extraImages.join('\n')}
-            onChange={(e) => setExtraImages(e.target.value.split('\n').map((s) => s.trim()).filter(Boolean).slice(0, 7))}
-            className="border-border bg-background w-full rounded-md border p-3 text-sm"
-            placeholder={'https://…\nhttps://…'}
-          />
-          {extraImages.map((url) => (
-            <input key={url} type="hidden" name="images[]" value={url} />
-          ))}
+          <p className="text-muted-foreground mt-1 text-[11px]">
+            İlk fotoğraf kapak olur. JPG/PNG/WebP/HEIC, max 8 MB. Yüklenince
+            otomatik webp&apos;e dönüşür ve CDN&apos;e gider.
+          </p>
         </Field>
 
         <Field label="Kategoriler" error={err?.categories?.[0]}>
@@ -776,14 +825,13 @@ export function HotelForm({ merchants, initial }: Props) {
                 </Field>
               </div>
 
-              <Field label="Oda kapak görseli (URL)">
-                <Input
-                  type="url"
-                  value={room.cover_image}
-                  onChange={(e) => updateRoom(idx, { cover_image: e.target.value })}
-                  placeholder="https://…"
-                />
-              </Field>
+              <SingleImageUpload
+                label="Oda kapak görseli"
+                value={room.cover_image}
+                onChange={(url) => updateRoom(idx, { cover_image: url })}
+                aspect="4/3"
+                className="max-w-[240px]"
+              />
 
               <div className="flex flex-wrap gap-3">
                 {(
@@ -818,10 +866,34 @@ export function HotelForm({ merchants, initial }: Props) {
               </div>
             </div>
           ))}
-          <Button type="button" variant="outline" onClick={addRoom} className="self-start">
-            <Plus className="me-1.5 size-4" aria-hidden="true" />
-            Oda tipi ekle
-          </Button>
+          <div className="flex flex-wrap items-center gap-3">
+            <Button type="button" variant="outline" onClick={addRoom}>
+              <Plus className="me-1.5 size-4" aria-hidden="true" />
+              Oda tipi ekle
+            </Button>
+            <div className="border-border bg-muted/20 flex items-center gap-2 rounded-md border px-2 py-1 text-xs">
+              <span className="text-muted-foreground">Hızlı şablon:</span>
+              <select
+                onChange={(e) => {
+                  const val = e.target.value;
+                  if (val) {
+                    applyRoomPreset(val as keyof typeof ROOM_PRESETS);
+                    e.target.value = '';
+                  }
+                }}
+                defaultValue=""
+                className="border-border bg-background h-8 rounded-md border px-2 text-xs"
+                aria-label="Oda şablonu seç"
+              >
+                <option value="">— seç —</option>
+                <option value="classic">Klasik (3 oda: Standart + Deluxe + Aile)</option>
+                <option value="her-sey-dahil">Her Şey Dahil (3 oda)</option>
+                <option value="butik">Butik (2 oda + jakuzili suit)</option>
+                <option value="doga">Doğa / Bungalov (2 oda)</option>
+                <option value="spa">Spa Otel (2 oda + jakuzili)</option>
+              </select>
+            </div>
+          </div>
         </div>
       </Section>
 

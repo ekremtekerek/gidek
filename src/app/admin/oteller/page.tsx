@@ -1,8 +1,9 @@
 import Link from 'next/link';
-import { Hotel } from 'lucide-react';
+import { Hotel, Search } from 'lucide-react';
 import { DealRowToggle } from '@/components/admin/deal-row-toggle';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { getServiceClient } from '@/lib/db/service';
 import { TRAVEL_CATEGORY_SLUGS } from '@/lib/db/queries/travel';
 import { cn } from '@/lib/utils/cn';
@@ -13,16 +14,24 @@ export const metadata = {
   robots: { index: false, follow: false },
 };
 
-/**
- * Admin tarafında otel/tatil deal&apos;larının listesi. Normal `/admin/deals`'ten
- * ayrılmasının sebebi: bu deal&apos;lar için ekstra meta (yıldız, oda tipleri,
- * amenities, politikalar) yönetiliyor.
- */
-export default async function AdminHotelsPage() {
+type Status = 'all' | 'published' | 'draft';
+type Sort = 'newest' | 'oldest' | 'price-asc' | 'price-desc';
+
+interface SP {
+  q?: string;
+  status?: Status;
+  sort?: Sort;
+}
+
+export default async function AdminHotelsPage({
+  searchParams,
+}: {
+  searchParams: Promise<SP>;
+}) {
+  const { q, status, sort } = await searchParams;
   const supabase = getServiceClient();
 
-  // Tatil/otel kategorisinde olan deal&apos;ları çek + room_types/meta sayıları.
-  const { data: deals } = await supabase
+  let query = supabase
     .from('deals')
     .select(
       `id, slug, title, city, district, original_price, discounted_price, is_active,
@@ -31,9 +40,39 @@ export default async function AdminHotelsPage() {
        hotel_meta:deal_hotel_meta(star_rating, concept),
        room_types:deal_room_types(id)`,
     )
-    .in('deal_categories.category.slug', TRAVEL_CATEGORY_SLUGS as unknown as string[])
-    .order('created_at', { ascending: false })
-    .limit(200);
+    .in('deal_categories.category.slug', TRAVEL_CATEGORY_SLUGS as unknown as string[]);
+
+  // Filtre — search query
+  if (q && q.trim().length > 0) {
+    const term = q.trim();
+    query = query.or(
+      `title.ilike.%${term}%,city.ilike.%${term}%,district.ilike.%${term}%`,
+    );
+  }
+
+  // Filtre — status
+  if (status === 'published') {
+    query = query.eq('is_active', true).not('published_at', 'is', null);
+  } else if (status === 'draft') {
+    query = query.or('is_active.eq.false,published_at.is.null');
+  }
+
+  // Sıralama
+  switch (sort) {
+    case 'oldest':
+      query = query.order('created_at', { ascending: true });
+      break;
+    case 'price-asc':
+      query = query.order('discounted_price', { ascending: true });
+      break;
+    case 'price-desc':
+      query = query.order('discounted_price', { ascending: false });
+      break;
+    default:
+      query = query.order('created_at', { ascending: false });
+  }
+
+  const { data: deals } = await query.limit(200);
 
   type Row = NonNullable<typeof deals>[number];
   const rows = (deals ?? []) as Row[];
@@ -62,6 +101,52 @@ export default async function AdminHotelsPage() {
           Yeni otel / tatil paketi
         </Link>
       </header>
+
+      {/* Arama + filtre + sıralama — GET form ile server-side */}
+      <form className="border-border bg-background flex flex-wrap items-end gap-2 rounded-lg border p-3 sm:gap-3 sm:p-4">
+        <div className="relative min-w-[200px] flex-1">
+          <Search
+            aria-hidden="true"
+            className="text-muted-foreground absolute left-3 top-1/2 size-4 -translate-y-1/2"
+          />
+          <Input
+            name="q"
+            defaultValue={q ?? ''}
+            placeholder="Başlık, şehir, ilçe ara…"
+            className="ps-9"
+          />
+        </div>
+        <select
+          name="status"
+          defaultValue={status ?? 'all'}
+          className="border-border bg-background h-10 rounded-md border px-3 text-sm"
+        >
+          <option value="all">Tümü</option>
+          <option value="published">Yayında</option>
+          <option value="draft">Taslak</option>
+        </select>
+        <select
+          name="sort"
+          defaultValue={sort ?? 'newest'}
+          className="border-border bg-background h-10 rounded-md border px-3 text-sm"
+        >
+          <option value="newest">En yeni</option>
+          <option value="oldest">En eski</option>
+          <option value="price-asc">Fiyat: artan</option>
+          <option value="price-desc">Fiyat: azalan</option>
+        </select>
+        <button type="submit" className={cn(buttonVariants({ variant: 'outline' }))}>
+          Filtrele
+        </button>
+        {(q || status || sort) ? (
+          <Link
+            href="/admin/oteller"
+            className={cn(buttonVariants({ variant: 'ghost', size: 'sm' }))}
+          >
+            Temizle
+          </Link>
+        ) : null}
+      </form>
 
       <div className="border-border bg-background overflow-hidden rounded-lg border">
         <ul className="divide-y divide-[var(--border)]">

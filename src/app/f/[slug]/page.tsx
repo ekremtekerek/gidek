@@ -587,6 +587,7 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
         originalPrice={deal.original_price}
         discountedPrice={deal.discounted_price}
         discountPercent={deal.discount_percent}
+        ctaLabel={isHotelDeal ? 'Tarihleri seç' : 'Rezervasyon Yap'}
       />
     </>
   );
