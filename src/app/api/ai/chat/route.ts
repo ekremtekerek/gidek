@@ -98,7 +98,14 @@ export async function POST(req: Request) {
     ? `Kullanıcının ŞU ANKİ konumu: ${geo.label} (lat=${parsed.lat!.toFixed(4)}, lng=${parsed.lng!.toFixed(4)}). "Bana yakın", "yakınımda", "buradan", "yakın" ifadelerini bu konum olarak yorumla — searchDeals çağırırken query metnine bu semti ekle.`
     : null;
 
-  const contextLine = `Aktif şehir: ${ctx.city}. searchDeals çağırırken city argümanı bu şehir olsun; başka bir şehir kullanıcı tarafından açıkça belirtilmedikçe değiştirme.`;
+  const contextLine = `Aktif şehir (kullanıcının default'u): ${ctx.city}.
+
+searchDeals.city parametresi seçim kuralı (KRİTİK — yanlış şehir göndermek 0 sonuç döndürür):
+1) Kullanıcının mesajında bir destinasyon/şehir/ilçe/koy adı varsa (örn. Bodrum, Antalya, Marmaris, Yalıkavak, Türkbükü, Çeşme, Alaçatı, Kapadokya, Göreme, Uludağ, Uzungöl, Kemer, Lara, Didim, Fethiye, vb.) → city='<tam o ad>' kullan. Aktif şehri TAMAMEN YOK SAY.
+2) "Yakın", "yakınımda", "buradan" gibi konum referansı varsa → city=aktif şehir.
+3) Kullanıcı hiçbir konum söylemediyse → city=aktif şehir.
+
+DB'de Bodrum = Muğla'nın district'i, Yalıkavak = Bodrum'un alt-koyu vs. — city parametresi hem city hem district eşleşmesi yapar; tam destinasyon adını yolla.`;
   const systemPrompt = [
     CHAT_SYSTEM_PROMPT,
     timeLine,

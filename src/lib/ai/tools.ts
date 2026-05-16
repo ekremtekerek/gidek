@@ -413,6 +413,153 @@ export function buildChatTools(ctx: ChatToolContext = {}) {
         };
       },
     }),
+
+    /**
+     * Tek otelin TÜM detayları — kullanıcı bir otele odaklandığında AI
+     * müşteri temsilcisi gibi konuşabilsin: yıldız, check-in/out, amenities,
+     * oda tipleri (fiyat × gece dahil), politikalar (iptal/çocuk/pet),
+     * ödeme adımları + taksit seçenekleri (mock).
+     *
+     * AI bu tool'u çağırdıktan sonra "Bu otelde 3 farklı oda var: ...
+     * 2 yetişkin × 3 gece = X TL. Ödeme adımları: tarihleri seç → oda seç
+     * → misafir bilgileri → ödeme. 9 taksit imkânı var" gibi rep tonunda
+     * konuşur.
+     */
+    getHotelDetail: tool({
+      description:
+        'Belirli bir otelin TÜM detaylarını döner: yıldız, check-in/out, tesis özellikleri, oda tipleri (fiyat dahil), politikalar (iptal/çocuk/pet), ödeme adımları + taksit. Kullanıcı bir otele odaklanınca (slug ile) çağır — müşteri temsilcisi gibi rezervasyon detaylarını anlatmak için.',
+      inputSchema: z.object({
+        slug: z
+          .string()
+          .min(3)
+          .max(140)
+          .describe(
+            "Otelin slug'ı (searchDeals sonuçlarındaki slug alanından). Örn. 'tdest-bodrum-yalikavak-butik-5g-1'.",
+          ),
+      }),
+      execute: async ({ slug }) => {
+        const supabase = getServiceClient();
+        const { data: deal } = await supabase
+          .from('deals')
+          .select(
+            `id, slug, title, subtitle, description, city, district,
+             original_price, discounted_price, discount_percent, currency,
+             max_per_user, tags, audience,
+             merchant:merchants ( name, lat, lng )`,
+          )
+          .eq('slug', slug)
+          .maybeSingle();
+
+        if (!deal) {
+          return { found: false, error: 'Otel bulunamadı (slug eşleşmedi)' };
+        }
+
+        const [{ data: meta }, { data: rooms }] = await Promise.all([
+          supabase.from('deal_hotel_meta').select('*').eq('deal_id', deal.id).maybeSingle(),
+          supabase
+            .from('deal_room_types')
+            .select(
+              'id, name, description, capacity_adults, capacity_children, bed_setup, size_sqm, view_type, base_price_per_night, board_basis, has_balcony, has_jacuzzi',
+            )
+            .eq('deal_id', deal.id)
+            .eq('is_active', true)
+            .order('base_price_per_night', { ascending: true }),
+        ]);
+
+        // Aktif amenity'leri ad listesi olarak topla
+        const activeAmenities: string[] = [];
+        if (meta) {
+          for (const [k, v] of Object.entries(meta)) {
+            if (k.startsWith('has_') && v === true) {
+              activeAmenities.push(k.replace(/^has_/, '').replace(/_/g, ' '));
+            }
+          }
+        }
+
+        // Taksit önerisi — mock; gerçek PSP entegrasyonunda burası dinamik
+        const totalPrice = Number(deal.discounted_price);
+        const installments = [
+          { months: 1, perMonth: totalPrice, label: 'Tek çekim' },
+          { months: 3, perMonth: Math.round(totalPrice / 3), label: '3 taksit' },
+          { months: 6, perMonth: Math.round(totalPrice / 6), label: '6 taksit' },
+          { months: 9, perMonth: Math.round(totalPrice / 9), label: '9 taksit' },
+          { months: 12, perMonth: Math.round(totalPrice / 12), label: '12 taksit' },
+        ];
+
+        return {
+          found: true,
+          hotel: {
+            slug: deal.slug,
+            title: deal.title,
+            subtitle: deal.subtitle ?? '',
+            description: deal.description.slice(0, 800),
+            city: deal.city,
+            district: deal.district ?? '',
+            merchantName: (() => {
+              const m = deal.merchant as { name: string } | { name: string }[] | null;
+              if (!m) return null;
+              return Array.isArray(m) ? m[0]?.name ?? null : m.name;
+            })(),
+            currency: deal.currency,
+            packagePrice: totalPrice,
+            originalPrice: Number(deal.original_price),
+            discountPct: deal.discount_percent,
+            maxPerUser: deal.max_per_user,
+            tags: deal.tags ?? [],
+            audience: deal.audience ?? [],
+          },
+          meta: meta
+            ? {
+                star: meta.star_rating,
+                checkIn: meta.check_in_time?.slice(0, 5) ?? '14:00',
+                checkOut: meta.check_out_time?.slice(0, 5) ?? '12:00',
+                concept: meta.concept,
+                totalRooms: meta.total_rooms,
+                distanceToBeachM: meta.distance_to_beach_m,
+                distanceToCenterM: meta.distance_to_center_m,
+                distanceToAirportKm: meta.distance_to_airport_km !== null
+                  ? Number(meta.distance_to_airport_km)
+                  : null,
+                tourismTaxPerNight: Number(meta.tourism_tax_per_night),
+                petFriendly: meta.pet_friendly,
+                smokingAllowed: meta.smoking_allowed,
+                cancellationPolicy: meta.cancellation_policy,
+                childPolicy: meta.child_policy,
+                petPolicy: meta.pet_policy,
+                extraBedAvailable: meta.extra_bed_available,
+                extraBedPrice: meta.extra_bed_price !== null ? Number(meta.extra_bed_price) : null,
+                amenities: activeAmenities,
+              }
+            : null,
+          rooms: (rooms ?? []).map((r) => ({
+            id: r.id,
+            name: r.name,
+            description: r.description ?? '',
+            capacity: `${r.capacity_adults} yetişkin + ${r.capacity_children} çocuk`,
+            bedSetup: r.bed_setup ?? '',
+            sizeM2: r.size_sqm,
+            view: r.view_type ?? '',
+            pricePerNight: Number(r.base_price_per_night),
+            board: r.board_basis,
+            hasBalcony: r.has_balcony,
+            hasJacuzzi: r.has_jacuzzi,
+          })),
+          paymentOptions: {
+            currency: deal.currency,
+            installments,
+            reservationSteps: [
+              '1) Tarih + kişi sayısı seç',
+              '2) Oda tipi seç (kapasite + manzara + pansiyon)',
+              '3) Misafirlerin kimlik bilgilerini gir (TC kimlik / pasaport)',
+              '4) İptal politikası onayı + KVKK',
+              '5) Ödeme (kart bilgileri — şu an mock)',
+            ],
+            note: 'V1 mock ödeme — gerçek tahsilat yok. Üretimde iyzico/PayTR entegrasyonu olacak.',
+          },
+          reservationUrl: `/rezervasyon/${deal.slug}`,
+        };
+      },
+    }),
   };
 }
 
