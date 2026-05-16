@@ -111,6 +111,15 @@ export interface AdminBookingRow {
   customerName: string | null;
   customerEmail: string | null;
   customerPhone: string | null;
+  // Otel rezervasyonları için ek alanlar (event/etkinlik için null)
+  checkInDate: string | null;
+  checkOutDate: string | null;
+  nights: number | null;
+  adultCount: number | null;
+  childCount: number | null;
+  roomTypeId: string | null;
+  boardBasis: string | null;
+  tourismTaxTotal: number;
 }
 
 /**
@@ -129,6 +138,8 @@ export async function getAdminBookings(limit = 100): Promise<AdminBookingRow[]> 
        cancelled_by_admin_at, refunded_at,
        created_at, updated_at, user_id,
        guest_name, guest_email, guest_phone,
+       check_in_date, check_out_date, nights, adult_count, child_count,
+       room_type_id, board_basis, tourism_tax_total,
        deal:deals ( id, title, slug ),
        profile:profiles ( display_name, phone )`,
     )
@@ -187,6 +198,14 @@ export async function getAdminBookings(limit = 100): Promise<AdminBookingRow[]> 
       customerName: profile?.display_name ?? b.guest_name ?? null,
       customerEmail: authEmail ?? b.guest_email ?? null,
       customerPhone: profile?.phone ?? b.guest_phone ?? null,
+      checkInDate: b.check_in_date,
+      checkOutDate: b.check_out_date,
+      nights: b.nights,
+      adultCount: b.adult_count,
+      childCount: b.child_count,
+      roomTypeId: b.room_type_id,
+      boardBasis: b.board_basis,
+      tourismTaxTotal: Number(b.tourism_tax_total ?? 0),
     };
   });
 }
@@ -206,6 +225,8 @@ export async function getAdminBookingByCode(code: string): Promise<AdminBookingR
        cancelled_by_admin_at, refunded_at,
        created_at, updated_at, user_id,
        guest_name, guest_email, guest_phone,
+       check_in_date, check_out_date, nights, adult_count, child_count,
+       room_type_id, board_basis, tourism_tax_total,
        deal:deals ( id, title, slug ),
        profile:profiles ( display_name, phone )`,
     )
@@ -256,6 +277,14 @@ export async function getAdminBookingByCode(code: string): Promise<AdminBookingR
     customerName: profile?.display_name ?? b.guest_name ?? null,
     customerEmail: authEmail ?? b.guest_email ?? null,
     customerPhone: profile?.phone ?? b.guest_phone ?? null,
+    checkInDate: b.check_in_date,
+    checkOutDate: b.check_out_date,
+    nights: b.nights,
+    adultCount: b.adult_count,
+    childCount: b.child_count,
+    roomTypeId: b.room_type_id,
+    boardBasis: b.board_basis,
+    tourismTaxTotal: Number(b.tourism_tax_total ?? 0),
   };
 }
 

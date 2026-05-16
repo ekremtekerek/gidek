@@ -69,50 +69,49 @@ export default async function TatilLandingPage() {
         />
 
         <Container className="relative py-10 sm:py-16">
-          {/* AI prompt full-width — wow vurgu maksimum */}
-          <div className="mx-auto w-full max-w-4xl">
-            <TravelAIPrompt />
-          </div>
+          {/* SPLIT — sol AI prompt, sağ 4 wow kart 2x2 — hero genişliğini full kullan */}
+          <div className="grid gap-6 lg:grid-cols-[1.35fr_1fr] lg:items-stretch lg:gap-8">
+            {/* SOL — AI prompt */}
+            <div className="min-w-0">
+              <TravelAIPrompt />
+            </div>
 
-          {/* AI WOW BANTLARI — glass cards, hero içine entegre */}
-          <div className="mt-8 grid gap-3 sm:mt-10 sm:grid-cols-2 lg:grid-cols-4 lg:gap-4">
-            <WowCard
-              href="/tatil/foto"
-              icon={<Camera className="size-5 text-white" aria-hidden="true" />}
-              iconGradient="from-fuchsia-500 to-rose-500"
-              badge="Yeni · rakiplerde yok"
-              title="Foto ile tatil ara"
-              subtitle="Bali, Maldivler, Mykonos — Türkiye'den benzerini bul"
-            />
-            <WowCard
-              href="/tatil/plan"
-              icon={<Plane className="size-5 text-white" aria-hidden="true" />}
-              iconGradient="from-violet-500 to-fuchsia-500"
-              badge="Yeni"
-              title="AI saat saat plan"
-              subtitle="Otel + yemek + aktivite — tek planda"
-            />
-            <WowCard
-              href="/tatil/sezon"
-              icon={<CalendarDays className="size-5 text-white" aria-hidden="true" />}
-              iconGradient="from-amber-500 to-orange-500"
-              badge="AI farkımız"
-              title="Hangi ay daha akıllıca?"
-              subtitle="Hava + fiyat + kalabalık AI sezon analizi"
-            />
-            <WowCard
-              href="/tatil/paket"
-              icon={<Sparkles className="size-5 text-white" aria-hidden="true" />}
-              iconGradient="from-emerald-500 to-teal-500"
-              badge="Yeni"
-              title="Bütçeni AI'a paketle"
-              subtitle="Otel + yemek + aktivite + spa — tek paket"
-            />
+            {/* SAĞ — 4 wow kart 2x2 grid (solid gradient — belirgin) */}
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:gap-4">
+              <WowCard
+                href="/tatil/foto"
+                icon={<Camera className="size-6 text-white" aria-hidden="true" />}
+                cardGradient="from-fuchsia-600 via-pink-600 to-rose-600"
+                title="Foto ile tatil ara"
+                subtitle="Bali, Mykonos — Türkiye'den benzerini bul"
+              />
+              <WowCard
+                href="/tatil/plan"
+                icon={<Plane className="size-6 text-white" aria-hidden="true" />}
+                cardGradient="from-violet-600 via-purple-600 to-fuchsia-600"
+                title="AI saat saat plan"
+                subtitle="Otel + yemek + aktivite tek planda"
+              />
+              <WowCard
+                href="/tatil/sezon"
+                icon={<CalendarDays className="size-6 text-white" aria-hidden="true" />}
+                cardGradient="from-amber-500 via-orange-500 to-red-500"
+                title="Hangi ay daha akıllıca?"
+                subtitle="Hava + fiyat + kalabalık AI analizi"
+              />
+              <WowCard
+                href="/tatil/paket"
+                icon={<Sparkles className="size-6 text-white" aria-hidden="true" />}
+                cardGradient="from-emerald-600 via-teal-600 to-cyan-600"
+                title="Bütçeni AI'a paketle"
+                subtitle="Otel + yemek + aktivite + spa tek paket"
+              />
+            </div>
           </div>
 
           {/* Klasik tercih edenler için subtle alternatif link */}
-          <div className="mx-auto mt-8 flex max-w-4xl items-center justify-center gap-3 text-xs sm:gap-4 sm:text-sm">
-            <span className="bg-white/20 text-white/90 hidden h-px flex-1 sm:block" aria-hidden="true" />
+          <div className="mt-8 flex items-center justify-center gap-3 text-xs sm:gap-4 sm:text-sm">
+            <span className="bg-white/20 hidden h-px flex-1 sm:block" aria-hidden="true" />
             <Link
               href="/tatil/ara"
               className="bg-white/10 hover:bg-white/20 text-white/95 inline-flex h-9 items-center gap-2 rounded-full border border-white/25 px-4 font-semibold backdrop-blur transition-all hover:scale-[1.02]"
@@ -120,7 +119,7 @@ export default async function TatilLandingPage() {
               Klasik aramayı tercih ediyorum
               <ArrowRight className="size-3.5" aria-hidden="true" />
             </Link>
-            <span className="bg-white/20 text-white/90 hidden h-px flex-1 sm:block" aria-hidden="true" />
+            <span className="bg-white/20 hidden h-px flex-1 sm:block" aria-hidden="true" />
           </div>
         </Container>
       </section>
@@ -137,12 +136,20 @@ export default async function TatilLandingPage() {
               Sezonun favori noktaları
             </h2>
           </div>
-          <Link
-            href="/tatil/kesfet"
-            className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm transition-colors"
-          >
-            Hepsini gör <ArrowRight className="size-3.5" aria-hidden="true" />
-          </Link>
+          <div className="flex items-center gap-3 sm:gap-4">
+            <Link
+              href="/tatil/ara"
+              className="text-muted-foreground hover:text-foreground hidden text-sm transition-colors sm:inline"
+            >
+              Klasik liste
+            </Link>
+            <Link
+              href="/tatil/kesfet"
+              className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1 text-sm transition-colors"
+            >
+              Hepsini gör <ArrowRight className="size-3.5" aria-hidden="true" />
+            </Link>
+          </div>
         </header>
 
         {destinations.length === 0 ? (
@@ -315,42 +322,47 @@ export default async function TatilLandingPage() {
 interface WowCardProps {
   href: string;
   icon: React.ReactNode;
-  iconGradient: string;
-  badge: string;
+  cardGradient: string;
   title: string;
   subtitle: string;
 }
 
 /**
- * Hero içine entegre kompakt AI özellik kartı. Glass-morphism stili —
- * mavi gradient hero üzerinde beyaz/şeffaf bg + backdrop-blur. Mobile'da
- * tek sütun, sm:2 sütun, lg:4 sütun.
+ * Hero içine entegre AI özellik kartı. Solid gradient bg — her kart kendi
+ * renginde belirgin durur. Glass değil, doygun renk + shine overlay.
  */
-function WowCard({ href, icon, iconGradient, badge, title, subtitle }: WowCardProps) {
+function WowCard({ href, icon, cardGradient, title, subtitle }: WowCardProps) {
   return (
     <Link
       href={href}
-      className="group border-white/25 hover:bg-white/20 hover:border-white/40 relative flex items-start gap-3 overflow-hidden rounded-2xl border bg-white/10 p-3.5 backdrop-blur transition-all hover:scale-[1.02] hover:shadow-xl sm:p-4"
+      className={`bg-gradient-to-br ${cardGradient} group relative flex flex-col gap-3 overflow-hidden rounded-2xl p-4 shadow-lg ring-1 ring-white/20 transition-all hover:scale-[1.03] hover:shadow-2xl sm:p-5`}
     >
+      {/* Üst-sağ shine overlay */}
       <span
-        className={`bg-gradient-to-br ${iconGradient} inline-flex size-10 shrink-0 items-center justify-center rounded-xl shadow-md`}
-      >
+        aria-hidden="true"
+        className="pointer-events-none absolute -right-8 -top-8 size-32 rounded-full bg-white/15 blur-2xl"
+      />
+      {/* Alt iç parlak çizgi */}
+      <span
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/40 to-transparent"
+      />
+
+      <span className="relative inline-flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/20 shadow-inner ring-1 ring-white/30 backdrop-blur-sm">
         {icon}
       </span>
-      <div className="min-w-0 flex-1 text-white">
-        <p className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold uppercase tracking-widest">
-          <Sparkles className="size-2.5" aria-hidden="true" />
-          {badge}
-        </p>
-        <h3 className="mt-1 text-sm font-bold leading-tight tracking-tight sm:text-base">
+
+      <div className="relative min-w-0 flex-1 text-white">
+        <h3 className="text-base font-bold leading-tight tracking-tight sm:text-lg">
           {title}
         </h3>
-        <p className="mt-0.5 line-clamp-2 text-[11px] leading-snug text-white/85 sm:text-xs">
+        <p className="mt-1 text-[12px] leading-snug text-white/90 sm:text-sm">
           {subtitle}
         </p>
       </div>
+
       <ArrowRight
-        className="size-4 shrink-0 text-white/70 transition-all group-hover:translate-x-0.5 group-hover:text-white"
+        className="relative size-4 shrink-0 self-end text-white/85 transition-all group-hover:translate-x-0.5 group-hover:text-white"
         aria-hidden="true"
       />
     </Link>

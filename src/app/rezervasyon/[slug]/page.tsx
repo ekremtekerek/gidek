@@ -4,11 +4,86 @@ import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { MapPin } from 'lucide-react';
 import { BookingForm } from '@/components/booking/booking-form';
+import {
+  HotelBookingWizard,
+  type HotelDealForWizard,
+  type HotelMetaForWizard,
+  type RoomTypeOption,
+} from '@/components/booking/hotel-booking-wizard';
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/ui/container';
 import { getDealBySlug, isDealExpired } from '@/lib/db/queries/deals';
+import { getServiceClient } from '@/lib/db/service';
 import { getCurrentUser } from '@/lib/security/auth';
 import { formatTRY } from '@/lib/utils/format';
+
+const HOTEL_CATEGORY_SLUGS = new Set(['tatil-otelleri', 'sehir-otelleri']);
+
+async function loadHotelData(dealId: string): Promise<{
+  isHotel: boolean;
+  rooms: RoomTypeOption[];
+  meta: HotelMetaForWizard | null;
+}> {
+  const supabase = getServiceClient();
+  const [{ data: cats }, { data: rooms }, { data: meta }] = await Promise.all([
+    supabase
+      .from('deal_categories')
+      .select('category:categories(slug)')
+      .eq('deal_id', dealId),
+    supabase
+      .from('deal_room_types')
+      .select(
+        'id, name, description, capacity_adults, capacity_children, bed_setup, size_sqm, view_type, base_price_per_night, board_basis, cover_image, has_balcony, has_jacuzzi',
+      )
+      .eq('deal_id', dealId)
+      .eq('is_active', true)
+      .order('sort_order'),
+    supabase
+      .from('deal_hotel_meta')
+      .select(
+        'star_rating, check_in_time, check_out_time, tourism_tax_per_night, cancellation_policy, child_policy, pet_policy',
+      )
+      .eq('deal_id', dealId)
+      .maybeSingle(),
+  ]);
+
+  const isHotel = (cats ?? []).some((c) => {
+    const cat = c.category as { slug: string } | { slug: string }[] | null;
+    if (!cat) return false;
+    const slug = Array.isArray(cat) ? cat[0]?.slug : cat.slug;
+    return slug ? HOTEL_CATEGORY_SLUGS.has(slug) : false;
+  });
+
+  return {
+    isHotel,
+    rooms: (rooms ?? []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      description: r.description,
+      capacity_adults: r.capacity_adults,
+      capacity_children: r.capacity_children,
+      bed_setup: r.bed_setup,
+      size_sqm: r.size_sqm,
+      view_type: r.view_type,
+      base_price_per_night: Number(r.base_price_per_night),
+      board_basis: r.board_basis,
+      cover_image: r.cover_image,
+      has_balcony: r.has_balcony,
+      has_jacuzzi: r.has_jacuzzi,
+    })),
+    meta: meta
+      ? {
+          star_rating: meta.star_rating,
+          check_in_time: meta.check_in_time,
+          check_out_time: meta.check_out_time,
+          tourism_tax_per_night: Number(meta.tourism_tax_per_night),
+          cancellation_policy: meta.cancellation_policy,
+          child_policy: meta.child_policy,
+          pet_policy: meta.pet_policy,
+        }
+      : null,
+  };
+}
 
 export const metadata: Metadata = {
   title: 'Rezervasyon',
@@ -19,9 +94,17 @@ export const metadata: Metadata = {
 export const dynamic = 'force-dynamic';
 
 type Params = { slug: string };
+type SearchParams = { room?: string };
 
-export default async function RezervasyonPage({ params }: { params: Promise<Params> }) {
+export default async function RezervasyonPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<Params>;
+  searchParams: Promise<SearchParams>;
+}) {
   const { slug } = await params;
+  const { room: initialRoomId } = await searchParams;
 
   const user = await getCurrentUser();
   if (!user) redirect(`/giris?next=/rezervasyon/${slug}`);
@@ -36,6 +119,16 @@ export default async function RezervasyonPage({ params }: { params: Promise<Para
   const validUntilDate = new Date(deal.valid_until).toISOString().slice(0, 10);
   const unitPrice = Number(deal.discounted_price);
   const showDiscount = (deal.discount_percent ?? 0) > 0 && unitPrice < Number(deal.original_price);
+
+  const hotelData = await loadHotelData(deal.id);
+  const useHotelWizard = hotelData.isHotel && hotelData.rooms.length > 0;
+  const hotelDealForWizard: HotelDealForWizard = {
+    id: deal.id,
+    slug: deal.slug,
+    title: deal.title,
+    city: deal.city,
+    district: deal.district,
+  };
 
   return (
     <Container className="py-10 sm:py-14">
@@ -96,19 +189,30 @@ export default async function RezervasyonPage({ params }: { params: Promise<Para
               Rezervasyon
             </p>
             <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">
-              Detayları gir, hazır
+              {useHotelWizard ? 'Tatil rezervasyonu' : 'Detayları gir, hazır'}
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
-              Bilgilerini doğrula ve rezervasyonu tamamla. Mock akış — gerçek ödeme alınmaz.
+              {useHotelWizard
+                ? 'Tarihleri ve misafirleri seç, adım adım tamamla. Mock akış — gerçek ödeme alınmaz.'
+                : 'Bilgilerini doğrula ve rezervasyonu tamamla. Mock akış — gerçek ödeme alınmaz.'}
             </p>
           </header>
 
-          <BookingForm
-            dealId={deal.id}
-            unitPrice={unitPrice}
-            maxPerUser={deal.max_per_user}
-            validUntilDate={validUntilDate}
-          />
+          {useHotelWizard ? (
+            <HotelBookingWizard
+              deal={hotelDealForWizard}
+              rooms={hotelData.rooms}
+              meta={hotelData.meta}
+              initialRoomId={initialRoomId}
+            />
+          ) : (
+            <BookingForm
+              dealId={deal.id}
+              unitPrice={unitPrice}
+              maxPerUser={deal.max_per_user}
+              validUntilDate={validUntilDate}
+            />
+          )}
         </section>
       </div>
     </Container>

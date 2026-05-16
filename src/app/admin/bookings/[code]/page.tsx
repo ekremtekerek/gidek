@@ -3,9 +3,12 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { ArrowLeft, Mail, Phone, ShieldAlert, User } from 'lucide-react';
 import { BookingAdminActions } from '@/components/admin/booking-admin-actions';
+import { HotelBookingSummary } from '@/components/booking/hotel-booking-summary';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { getAdminBookingByCode } from '@/lib/db/queries/admin';
+import { getServiceClient } from '@/lib/db/service';
+import type { BookingGuest, BookingRoomInfo } from '@/lib/db/queries/hotel';
 import { BOOKING_STATUS_BADGE, BOOKING_STATUS_LABEL } from '@/lib/utils/booking-status';
 import { cn } from '@/lib/utils/cn';
 import { formatDate, formatTRY } from '@/lib/utils/format';
@@ -35,6 +38,35 @@ export default async function AdminBookingDetailPage({
   if (!b) notFound();
 
   const refunded = Boolean(b.refundedAt);
+  const isHotelBooking = Boolean(b.roomTypeId);
+
+  // Service client ile hotel ekleri — admin RLS'i bypass eder
+  let room: BookingRoomInfo | null = null;
+  let guests: BookingGuest[] = [];
+  if (isHotelBooking) {
+    const svc = getServiceClient();
+    const [{ data: r }, { data: gs }] = await Promise.all([
+      b.roomTypeId
+        ? svc
+            .from('deal_room_types')
+            .select(
+              'id, name, bed_setup, size_sqm, view_type, board_basis, capacity_adults, capacity_children',
+            )
+            .eq('id', b.roomTypeId)
+            .maybeSingle()
+        : Promise.resolve({ data: null }),
+      svc
+        .from('booking_guests')
+        .select(
+          'id, guest_type, guest_index, first_name, last_name, nationality, national_id, passport_no, birth_date, gender, phone, email, is_lead',
+        )
+        .eq('booking_id', b.id)
+        .order('is_lead', { ascending: false })
+        .order('guest_index', { ascending: true }),
+    ]);
+    room = r as BookingRoomInfo | null;
+    guests = (gs ?? []) as unknown as BookingGuest[];
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -113,6 +145,30 @@ export default async function AdminBookingDetailPage({
                 Müşteri notu
               </p>
               <p className="text-sm whitespace-pre-line">{b.notes}</p>
+            </div>
+          ) : null}
+
+          {isHotelBooking ? (
+            <div className="border-border border-t pt-4">
+              <h3 className="mb-3 text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+                Konaklama
+              </h3>
+              <HotelBookingSummary
+                booking={{
+                  check_in_date: b.checkInDate,
+                  check_out_date: b.checkOutDate,
+                  nights: b.nights,
+                  adult_count: b.adultCount,
+                  child_count: b.childCount,
+                  board_basis: b.boardBasis,
+                  tourism_tax_total: b.tourismTaxTotal,
+                  unit_price: b.unitPrice,
+                  total_amount: b.totalAmount,
+                }}
+                room={room}
+                guests={guests}
+                variant="full"
+              />
             </div>
           ) : null}
         </section>

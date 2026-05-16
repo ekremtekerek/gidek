@@ -20,6 +20,8 @@
     "db:gen-types": "supabase gen types typescript --local > src/types/supabase.ts",
     "seed": "tsx --env-file=.env.local scripts/seed.ts",
     "seed:fill": "tsx --env-file=.env.local scripts/seed-fill-cities.ts",
+    "seed:travel": "tsx --env-file=.env.local scripts/seed-travel-destinations.ts",
+    "seed:hotel-backfill": "tsx --env-file=.env.local scripts/backfill-hotel-meta-rooms.ts",
     "seed:personas": "tsx --env-file=.env.local scripts/seed-demo-personas.ts",
     "seed:badges": "tsx --env-file=.env.local scripts/backfill-badges.ts",
     "ai:backfill": "tsx --env-file=.env.local scripts/backfill-embeddings.ts",

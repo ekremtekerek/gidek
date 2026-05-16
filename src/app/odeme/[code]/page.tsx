@@ -3,10 +3,12 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { CalendarDays, Lock, MapPin, ShieldCheck, Tag } from 'lucide-react';
+import { HotelBookingSummary } from '@/components/booking/hotel-booking-summary';
 import { Container } from '@/components/ui/container';
 import { CouponInput } from '@/components/payment/coupon-input';
 import { PaymentForm } from '@/components/payment/payment-form';
 import { getBookingByCode } from '@/lib/db/queries/bookings';
+import { getHotelExtrasForBooking } from '@/lib/db/queries/hotel';
 import { requireUser } from '@/lib/security/auth';
 import { formatDate, formatTRY } from '@/lib/utils/format';
 
@@ -37,6 +39,11 @@ export default async function PaymentPage({ params }: { params: Promise<Params> 
   const location = booking.deal
     ? [booking.deal.district, booking.deal.city].filter(Boolean).join(', ')
     : '';
+
+  const isHotelBooking = Boolean(booking.room_type_id);
+  const hotelExtras = isHotelBooking
+    ? await getHotelExtrasForBooking(booking.id, booking.room_type_id)
+    : null;
 
   return (
     <Container className="py-10 sm:py-14">
@@ -89,22 +96,41 @@ export default async function PaymentPage({ params }: { params: Promise<Params> 
             </Link>
           ) : null}
 
-          <ul className="text-muted-foreground flex flex-col gap-2 text-xs">
-            {booking.selected_date ? (
-              <li className="inline-flex items-center gap-1.5">
-                <CalendarDays className="size-3.5" aria-hidden="true" />
-                {formatDate(booking.selected_date)}
-                {booking.selected_time ? ` · ${booking.selected_time.slice(0, 5)}` : ''}
-              </li>
-            ) : null}
-            {location ? (
-              <li className="inline-flex items-center gap-1.5">
-                <MapPin className="size-3.5" aria-hidden="true" />
-                {location}
-              </li>
-            ) : null}
-            <li>{booking.quantity} adet</li>
-          </ul>
+          {isHotelBooking && hotelExtras ? (
+            <HotelBookingSummary
+              booking={{
+                check_in_date: booking.check_in_date,
+                check_out_date: booking.check_out_date,
+                nights: booking.nights,
+                adult_count: booking.adult_count,
+                child_count: booking.child_count,
+                board_basis: booking.board_basis,
+                tourism_tax_total: Number(booking.tourism_tax_total ?? 0),
+                unit_price: Number(booking.unit_price),
+                total_amount: Number(booking.total_amount),
+              }}
+              room={hotelExtras.room}
+              guests={hotelExtras.guests}
+              variant="compact"
+            />
+          ) : (
+            <ul className="text-muted-foreground flex flex-col gap-2 text-xs">
+              {booking.selected_date ? (
+                <li className="inline-flex items-center gap-1.5">
+                  <CalendarDays className="size-3.5" aria-hidden="true" />
+                  {formatDate(booking.selected_date)}
+                  {booking.selected_time ? ` · ${booking.selected_time.slice(0, 5)}` : ''}
+                </li>
+              ) : null}
+              {location ? (
+                <li className="inline-flex items-center gap-1.5">
+                  <MapPin className="size-3.5" aria-hidden="true" />
+                  {location}
+                </li>
+              ) : null}
+              <li>{booking.quantity} adet</li>
+            </ul>
+          )}
 
           {(() => {
             const total = Number(booking.total_amount);

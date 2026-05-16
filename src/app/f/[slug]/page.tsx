@@ -13,6 +13,7 @@ import { LastMinuteBadge } from '@/components/deal/last-minute-badge';
 import { OpenNowBadge } from '@/components/deal/open-now-badge';
 import { ShowOnMap } from '@/components/deal/show-on-map';
 import { WalkInPressure } from '@/components/deal/walk-in-pressure';
+import { HotelDetailSection } from '@/components/travel/hotel-detail-section';
 import { PriceAlertButton } from '@/components/travel/price-alert-button';
 import { PriceCalendar } from '@/components/travel/price-calendar';
 import { TravelDetailEnrichment } from '@/components/travel/travel-detail-enrichment';
@@ -28,6 +29,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { Skeleton } from '@/components/ui/skeleton';
 import { getDealBySlug, isDealExpired, listPublishedDealSlugs } from '@/lib/db/queries/deals';
+import { getHotelDataForDeal } from '@/lib/db/queries/hotel';
 import { cn } from '@/lib/utils/cn';
 import { AUDIENCE_LABEL, DEAL_TAG_LABEL } from '@/lib/utils/constants';
 import { formatDuration, formatTRY } from '@/lib/utils/format';
@@ -97,7 +99,13 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
 
   // Tatil kategorilerinde fiyat takvimi göster
   const TRAVEL_CATS = new Set(['tatil-otelleri', 'sehir-otelleri', 'turlar']);
+  const HOTEL_CATS = new Set(['tatil-otelleri', 'sehir-otelleri']);
   const isTravelDeal = deal.categories.some((c) => TRAVEL_CATS.has(c.slug));
+  const isHotelDeal = deal.categories.some((c) => HOTEL_CATS.has(c.slug));
+
+  // Otel meta + oda tipleri — yalnızca otel kategorisindeyse fetch
+  const hotelData = isHotelDeal ? await getHotelDataForDeal(deal.id) : null;
+  const hasHotelMeta = Boolean(hotelData?.meta);
 
   const breadcrumbLd = {
     '@context': 'https://schema.org',
@@ -344,6 +352,14 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                 {deal.description}
               </p>
             </section>
+
+            {hasHotelMeta && hotelData?.meta ? (
+              <HotelDetailSection
+                slug={deal.slug}
+                meta={hotelData.meta}
+                rooms={hotelData.rooms}
+              />
+            ) : null}
 
             {isTravelDeal && !expired ? (
               <>

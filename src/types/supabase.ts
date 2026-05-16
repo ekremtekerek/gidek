@@ -151,6 +151,13 @@ export type Database = {
             foreignKeyName: "ai_query_logs_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ai_query_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -198,173 +205,84 @@ export type Database = {
         }
         Relationships: []
       }
-      user_badges: {
+      booking_guests: {
         Row: {
-          badge_id: string
-          earned_at: string
-          user_id: string
-        }
-        Insert: {
-          badge_id: string
-          earned_at?: string
-          user_id: string
-        }
-        Update: {
-          badge_id?: string
-          earned_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      event_messages: {
-        Row: {
-          body: string
+          birth_date: string
+          booking_id: string
           created_at: string
+          email: string | null
+          first_name: string
+          gender: string | null
+          guest_index: number
+          guest_type: string
           id: string
-          room_key: string
-          sender_id: string
+          is_lead: boolean
+          last_name: string
+          national_id: string | null
+          nationality: string
+          passport_no: string | null
+          phone: string | null
+          room_index: number | null
+          special_requests: string | null
         }
         Insert: {
-          body: string
-          created_at?: string
-          id?: string
-          room_key: string
-          sender_id: string
-        }
-        Update: {
-          body?: string
-          created_at?: string
-          id?: string
-          room_key?: string
-          sender_id?: string
-        }
-        Relationships: []
-      }
-      follows: {
-        Row: {
-          created_at: string
-          follower_id: string
-          followee_id: string
-        }
-        Insert: {
-          created_at?: string
-          follower_id: string
-          followee_id: string
-        }
-        Update: {
-          created_at?: string
-          follower_id?: string
-          followee_id?: string
-        }
-        Relationships: []
-      }
-      user_refund_coupons: {
-        Row: {
+          birth_date: string
           booking_id: string
-          coupon_code: string
-          created_at: string
-          refund_value: number
-          user_id: string
-        }
-        Insert: {
-          booking_id: string
-          coupon_code: string
           created_at?: string
-          refund_value: number
-          user_id: string
+          email?: string | null
+          first_name: string
+          gender?: string | null
+          guest_index: number
+          guest_type: string
+          id?: string
+          is_lead?: boolean
+          last_name: string
+          national_id?: string | null
+          nationality?: string
+          passport_no?: string | null
+          phone?: string | null
+          room_index?: number | null
+          special_requests?: string | null
         }
         Update: {
+          birth_date?: string
           booking_id?: string
-          coupon_code?: string
           created_at?: string
-          refund_value?: number
-          user_id?: string
+          email?: string | null
+          first_name?: string
+          gender?: string | null
+          guest_index?: number
+          guest_type?: string
+          id?: string
+          is_lead?: boolean
+          last_name?: string
+          national_id?: string | null
+          nationality?: string
+          passport_no?: string | null
+          phone?: string | null
+          room_index?: number | null
+          special_requests?: string | null
         }
-        Relationships: []
-      }
-      user_loyalty_rewards: {
-        Row: {
-          coupon_code: string
-          granted_at: string
-          threshold: number
-          user_id: string
-        }
-        Insert: {
-          coupon_code: string
-          granted_at?: string
-          threshold: number
-          user_id: string
-        }
-        Update: {
-          coupon_code?: string
-          granted_at?: string
-          threshold?: number
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_daily_spins: {
-        Row: {
-          coupon_code: string | null
-          coupon_value: number | null
-          label: string
-          points: number | null
-          prize_kind: string
-          spin_date: string
-          spun_at: string
-          user_id: string
-        }
-        Insert: {
-          coupon_code?: string | null
-          coupon_value?: number | null
-          label: string
-          points?: number | null
-          prize_kind: string
-          spin_date?: string
-          spun_at?: string
-          user_id: string
-        }
-        Update: {
-          coupon_code?: string | null
-          coupon_value?: number | null
-          label?: string
-          points?: number | null
-          prize_kind?: string
-          spin_date?: string
-          spun_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
-      user_city_bingos: {
-        Row: {
-          city: string
-          claimed_at: string
-          coupon_code: string
-          district_count: number
-          user_id: string
-        }
-        Insert: {
-          city: string
-          claimed_at?: string
-          coupon_code: string
-          district_count: number
-          user_id: string
-        }
-        Update: {
-          city?: string
-          claimed_at?: string
-          coupon_code?: string
-          district_count?: number
-          user_id?: string
-        }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "booking_guests_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       bookings: {
         Row: {
           admin_notes: string | null
+          adult_count: number | null
+          board_basis: string | null
           booking_code: string
           cancelled_by_admin_at: string | null
+          check_in_date: string | null
+          check_out_date: string | null
+          child_count: number | null
           coupon_code: string | null
           coupon_id: string | null
           created_at: string
@@ -379,21 +297,29 @@ export type Database = {
           insurance_fee: number
           insurance_purchased: boolean
           is_gift: boolean
+          nights: number | null
           notes: string | null
           quantity: number
           refunded_at: string | null
+          room_type_id: string | null
           selected_date: string | null
           selected_time: string | null
           status: string
           total_amount: number
+          tourism_tax_total: number
           unit_price: number
           updated_at: string
           user_id: string | null
         }
         Insert: {
           admin_notes?: string | null
+          adult_count?: number | null
+          board_basis?: string | null
           booking_code?: string
           cancelled_by_admin_at?: string | null
+          check_in_date?: string | null
+          check_out_date?: string | null
+          child_count?: number | null
           coupon_code?: string | null
           coupon_id?: string | null
           created_at?: string
@@ -408,21 +334,29 @@ export type Database = {
           insurance_fee?: number
           insurance_purchased?: boolean
           is_gift?: boolean
+          nights?: number | null
           notes?: string | null
           quantity?: number
           refunded_at?: string | null
+          room_type_id?: string | null
           selected_date?: string | null
           selected_time?: string | null
           status?: string
           total_amount: number
+          tourism_tax_total?: number
           unit_price: number
           updated_at?: string
           user_id?: string | null
         }
         Update: {
           admin_notes?: string | null
+          adult_count?: number | null
+          board_basis?: string | null
           booking_code?: string
           cancelled_by_admin_at?: string | null
+          check_in_date?: string | null
+          check_out_date?: string | null
+          child_count?: number | null
           coupon_code?: string | null
           coupon_id?: string | null
           created_at?: string
@@ -437,24 +371,48 @@ export type Database = {
           insurance_fee?: number
           insurance_purchased?: boolean
           is_gift?: boolean
+          nights?: number | null
           notes?: string | null
           quantity?: number
           refunded_at?: string | null
+          room_type_id?: string | null
           selected_date?: string | null
           selected_time?: string | null
           status?: string
           total_amount?: number
+          tourism_tax_total?: number
           unit_price?: number
           updated_at?: string
           user_id?: string | null
         }
         Relationships: [
           {
+            foreignKeyName: "bookings_coupon_id_fkey"
+            columns: ["coupon_id"]
+            isOneToOne: false
+            referencedRelation: "coupons"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "bookings_deal_id_fkey"
             columns: ["deal_id"]
             isOneToOne: false
             referencedRelation: "deals"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_room_type_id_fkey"
+            columns: ["room_type_id"]
+            isOneToOne: false
+            referencedRelation: "deal_room_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
           },
           {
             foreignKeyName: "bookings_user_id_fkey"
@@ -649,6 +607,241 @@ export type Database = {
           },
         ]
       }
+      deal_hotel_meta: {
+        Row: {
+          cancellation_policy: string | null
+          check_in_time: string
+          check_out_time: string
+          child_policy: string | null
+          concept: string | null
+          created_at: string
+          deal_id: string
+          distance_to_airport_km: number | null
+          distance_to_beach_m: number | null
+          distance_to_center_m: number | null
+          extra_bed_available: boolean
+          extra_bed_price: number | null
+          has_aircon: boolean
+          has_aquapark: boolean
+          has_bar: boolean
+          has_beach_access: boolean
+          has_breakfast: boolean
+          has_business_center: boolean
+          has_disabled_access: boolean
+          has_gym: boolean
+          has_hamam: boolean
+          has_indoor_pool: boolean
+          has_kids_club: boolean
+          has_kids_pool: boolean
+          has_laundry: boolean
+          has_meeting_room: boolean
+          has_parking: boolean
+          has_pool: boolean
+          has_private_beach: boolean
+          has_restaurant: boolean
+          has_room_service: boolean
+          has_sauna: boolean
+          has_spa: boolean
+          has_transfer: boolean
+          has_valet: boolean
+          has_wifi: boolean
+          pet_friendly: boolean
+          pet_policy: string | null
+          smoking_allowed: boolean
+          star_rating: number | null
+          total_rooms: number | null
+          tourism_tax_per_night: number
+          updated_at: string
+        }
+        Insert: {
+          cancellation_policy?: string | null
+          check_in_time?: string
+          check_out_time?: string
+          child_policy?: string | null
+          concept?: string | null
+          created_at?: string
+          deal_id: string
+          distance_to_airport_km?: number | null
+          distance_to_beach_m?: number | null
+          distance_to_center_m?: number | null
+          extra_bed_available?: boolean
+          extra_bed_price?: number | null
+          has_aircon?: boolean
+          has_aquapark?: boolean
+          has_bar?: boolean
+          has_beach_access?: boolean
+          has_breakfast?: boolean
+          has_business_center?: boolean
+          has_disabled_access?: boolean
+          has_gym?: boolean
+          has_hamam?: boolean
+          has_indoor_pool?: boolean
+          has_kids_club?: boolean
+          has_kids_pool?: boolean
+          has_laundry?: boolean
+          has_meeting_room?: boolean
+          has_parking?: boolean
+          has_pool?: boolean
+          has_private_beach?: boolean
+          has_restaurant?: boolean
+          has_room_service?: boolean
+          has_sauna?: boolean
+          has_spa?: boolean
+          has_transfer?: boolean
+          has_valet?: boolean
+          has_wifi?: boolean
+          pet_friendly?: boolean
+          pet_policy?: string | null
+          smoking_allowed?: boolean
+          star_rating?: number | null
+          total_rooms?: number | null
+          tourism_tax_per_night?: number
+          updated_at?: string
+        }
+        Update: {
+          cancellation_policy?: string | null
+          check_in_time?: string
+          check_out_time?: string
+          child_policy?: string | null
+          concept?: string | null
+          created_at?: string
+          deal_id?: string
+          distance_to_airport_km?: number | null
+          distance_to_beach_m?: number | null
+          distance_to_center_m?: number | null
+          extra_bed_available?: boolean
+          extra_bed_price?: number | null
+          has_aircon?: boolean
+          has_aquapark?: boolean
+          has_bar?: boolean
+          has_beach_access?: boolean
+          has_breakfast?: boolean
+          has_business_center?: boolean
+          has_disabled_access?: boolean
+          has_gym?: boolean
+          has_hamam?: boolean
+          has_indoor_pool?: boolean
+          has_kids_club?: boolean
+          has_kids_pool?: boolean
+          has_laundry?: boolean
+          has_meeting_room?: boolean
+          has_parking?: boolean
+          has_pool?: boolean
+          has_private_beach?: boolean
+          has_restaurant?: boolean
+          has_room_service?: boolean
+          has_sauna?: boolean
+          has_spa?: boolean
+          has_transfer?: boolean
+          has_valet?: boolean
+          has_wifi?: boolean
+          pet_friendly?: boolean
+          pet_policy?: string | null
+          smoking_allowed?: boolean
+          star_rating?: number | null
+          total_rooms?: number | null
+          tourism_tax_per_night?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_hotel_meta_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      deal_room_types: {
+        Row: {
+          base_price_per_night: number
+          bed_setup: string | null
+          board_basis: string
+          capacity_adults: number
+          capacity_children: number
+          cover_image: string | null
+          created_at: string
+          deal_id: string
+          description: string | null
+          has_balcony: boolean
+          has_jacuzzi: boolean
+          has_kitchenette: boolean
+          has_minibar: boolean
+          has_safe: boolean
+          has_tv: boolean
+          id: string
+          images: string[]
+          is_active: boolean
+          name: string
+          size_sqm: number | null
+          sort_order: number
+          total_units: number | null
+          updated_at: string
+          view_type: string | null
+        }
+        Insert: {
+          base_price_per_night: number
+          bed_setup?: string | null
+          board_basis?: string
+          capacity_adults?: number
+          capacity_children?: number
+          cover_image?: string | null
+          created_at?: string
+          deal_id: string
+          description?: string | null
+          has_balcony?: boolean
+          has_jacuzzi?: boolean
+          has_kitchenette?: boolean
+          has_minibar?: boolean
+          has_safe?: boolean
+          has_tv?: boolean
+          id?: string
+          images?: string[]
+          is_active?: boolean
+          name: string
+          size_sqm?: number | null
+          sort_order?: number
+          total_units?: number | null
+          updated_at?: string
+          view_type?: string | null
+        }
+        Update: {
+          base_price_per_night?: number
+          bed_setup?: string | null
+          board_basis?: string
+          capacity_adults?: number
+          capacity_children?: number
+          cover_image?: string | null
+          created_at?: string
+          deal_id?: string
+          description?: string | null
+          has_balcony?: boolean
+          has_jacuzzi?: boolean
+          has_kitchenette?: boolean
+          has_minibar?: boolean
+          has_safe?: boolean
+          has_tv?: boolean
+          id?: string
+          images?: string[]
+          is_active?: boolean
+          name?: string
+          size_sqm?: number | null
+          sort_order?: number
+          total_units?: number | null
+          updated_at?: string
+          view_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "deal_room_types_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       deals: {
         Row: {
           audience: string[]
@@ -789,6 +982,45 @@ export type Database = {
           },
         ]
       }
+      event_messages: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          room_key: string
+          sender_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          room_key: string
+          sender_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          room_key?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "event_messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       favorites: {
         Row: {
           created_at: string
@@ -816,6 +1048,60 @@ export type Database = {
           {
             foreignKeyName: "favorites_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "favorites_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      follows: {
+        Row: {
+          created_at: string
+          followee_id: string
+          follower_id: string
+        }
+        Insert: {
+          created_at?: string
+          followee_id: string
+          follower_id: string
+        }
+        Update: {
+          created_at?: string
+          followee_id?: string
+          follower_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "follows_followee_id_fkey"
+            columns: ["followee_id"]
+            isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "follows_followee_id_fkey"
+            columns: ["followee_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "follows_follower_id_fkey"
+            columns: ["follower_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -967,7 +1253,15 @@ export type Database = {
           streak_weeks?: number
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_merchant_id_fkey"
+            columns: ["merchant_id"]
+            isOneToOne: false
+            referencedRelation: "merchants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       push_subscriptions: {
         Row: {
@@ -1071,7 +1365,15 @@ export type Database = {
           sort_order?: number
           url?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "review_photos_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       review_replies: {
         Row: {
@@ -1107,7 +1409,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "review_replies_review_id_fkey"
+            columns: ["review_id"]
+            isOneToOne: false
+            referencedRelation: "reviews"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       review_summaries: {
         Row: {
@@ -1137,7 +1447,15 @@ export type Database = {
           review_count_at_gen?: number
           summary?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "review_summaries_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: true
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       reviews: {
         Row: {
@@ -1207,6 +1525,169 @@ export type Database = {
         }
         Relationships: []
       }
+      user_badges: {
+        Row: {
+          badge_id: string
+          earned_at: string
+          user_id: string
+        }
+        Insert: {
+          badge_id: string
+          earned_at?: string
+          user_id: string
+        }
+        Update: {
+          badge_id?: string
+          earned_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_badges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_city_bingos: {
+        Row: {
+          city: string
+          claimed_at: string
+          coupon_code: string
+          district_count: number
+          user_id: string
+        }
+        Insert: {
+          city: string
+          claimed_at?: string
+          coupon_code: string
+          district_count: number
+          user_id: string
+        }
+        Update: {
+          city?: string
+          claimed_at?: string
+          coupon_code?: string
+          district_count?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_city_bingos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_city_bingos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_daily_spins: {
+        Row: {
+          coupon_code: string | null
+          coupon_value: number | null
+          label: string
+          points: number | null
+          prize_kind: string
+          spin_date: string
+          spun_at: string
+          user_id: string
+        }
+        Insert: {
+          coupon_code?: string | null
+          coupon_value?: number | null
+          label: string
+          points?: number | null
+          prize_kind: string
+          spin_date?: string
+          spun_at?: string
+          user_id: string
+        }
+        Update: {
+          coupon_code?: string | null
+          coupon_value?: number | null
+          label?: string
+          points?: number | null
+          prize_kind?: string
+          spin_date?: string
+          spun_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_daily_spins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_daily_spins_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_loyalty_rewards: {
+        Row: {
+          coupon_code: string
+          granted_at: string
+          threshold: number
+          user_id: string
+        }
+        Insert: {
+          coupon_code: string
+          granted_at?: string
+          threshold: number
+          user_id: string
+        }
+        Update: {
+          coupon_code?: string
+          granted_at?: string
+          threshold?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_loyalty_rewards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_loyalty_rewards_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_preferences: {
         Row: {
           accessibility: string[] | null
@@ -1273,6 +1754,59 @@ export type Database = {
             foreignKeyName: "user_preferences_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: true
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_preferences_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_refund_coupons: {
+        Row: {
+          booking_id: string
+          coupon_code: string
+          created_at: string
+          refund_value: number
+          user_id: string
+        }
+        Insert: {
+          booking_id: string
+          coupon_code: string
+          created_at?: string
+          refund_value: number
+          user_id: string
+        }
+        Update: {
+          booking_id?: string
+          coupon_code?: string
+          created_at?: string
+          refund_value?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_refund_coupons_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_refund_coupons_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "user_refund_coupons_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
@@ -1280,160 +1814,190 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      profile_follow_counts: {
+        Row: {
+          followers_count: number | null
+          following_count: number | null
+          user_id: string | null
+        }
+        Insert: {
+          followers_count?: never
+          following_count?: never
+          user_id?: string | null
+        }
+        Update: {
+          followers_count?: never
+          following_count?: never
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
-      cancel_booking: {
-        Args: { p_booking_id: string }
-        Returns: {
-          booking_code: string
-          created_at: string
-          currency: string
-          deal_id: string
-          guest_email: string | null
-          guest_name: string | null
-          guest_phone: string | null
-          id: string
-          notes: string | null
-          quantity: number
-          selected_date: string | null
-          selected_time: string | null
-          status: string
-          total_amount: number
-          unit_price: number
-          updated_at: string
-          user_id: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "bookings"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      confirm_booking_payment: {
-        Args: { p_booking_id: string }
-        Returns: {
-          booking_code: string
-          created_at: string
-          currency: string
-          deal_id: string
-          guest_email: string | null
-          guest_name: string | null
-          guest_phone: string | null
-          id: string
-          notes: string | null
-          quantity: number
-          selected_date: string | null
-          selected_time: string | null
-          status: string
-          total_amount: number
-          unit_price: number
-          updated_at: string
-          user_id: string | null
-        }
-        SetofOptions: {
-          from: "*"
-          to: "bookings"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
-      validate_coupon: {
-        Args: { p_code: string; p_amount: number }
-        Returns: {
-          coupon_id: string | null
-          discount_amount: number
-          reason: string
-        }[]
-      }
       apply_coupon_to_booking: {
         Args: { p_booking_id: string; p_code: string }
         Returns: {
+          admin_notes: string | null
+          adult_count: number | null
+          board_basis: string | null
           booking_code: string
+          cancelled_by_admin_at: string | null
+          check_in_date: string | null
+          check_out_date: string | null
+          child_count: number | null
           coupon_code: string | null
           coupon_id: string | null
+          created_at: string
+          currency: string
+          deal_id: string
           discount_amount: number
+          gift_message: string | null
+          guest_email: string | null
+          guest_name: string | null
+          guest_phone: string | null
           id: string
-          quantity: number
-          status: string
-          total_amount: number
-          unit_price: number
-          user_id: string | null
-        }
-      }
-      extend_booking: {
-        Args: { p_booking_id: string }
-        Returns: {
-          id: string
-          booking_code: string
-          quantity: number
-          total_amount: number
-          unit_price: number
           insurance_fee: number
+          insurance_purchased: boolean
+          is_gift: boolean
+          nights: number | null
+          notes: string | null
+          quantity: number
+          refunded_at: string | null
+          room_type_id: string | null
+          selected_date: string | null
+          selected_time: string | null
           status: string
+          total_amount: number
+          tourism_tax_total: number
+          unit_price: number
+          updated_at: string
           user_id: string | null
         }
-      }
-      evaluate_loyalty_rewards: {
-        Args: { p_user_id: string }
-        Returns: string[]
-      }
-      build_event_room_key: {
-        Args: { p_deal_id: string; p_date: string | null; p_time: string | null }
-        Returns: string
-      }
-      user_can_access_event_room: {
-        Args: { p_room_key: string }
-        Returns: boolean
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       attendees_for_booking: {
         Args: { p_booking_code: string }
         Returns: {
-          user_id: string
-          public_slug: string | null
-          display_name: string | null
-          avatar_url: string | null
+          avatar_url: string
+          display_name: string
+          public_slug: string
           quantity: number
+          user_id: string
         }[]
-      }
-      spin_daily: {
-        Args: { p_user_id: string }
-        Returns: {
-          prize_kind: string
-          points: number | null
-          coupon_code: string | null
-          coupon_value: number | null
-          label: string
-        }[]
-      }
-      claim_city_bingo: {
-        Args: { p_user_id: string; p_city: string }
-        Returns: string | null
       }
       bingo_progress_for_user: {
         Args: { p_user_id: string }
         Returns: {
           city: string
-          districts: string[] | null
-          district_count: number
           claimed: boolean
-          coupon_code: string | null
+          coupon_code: string
+          district_count: number
+          districts: string[]
         }[]
       }
-      remove_coupon_from_booking: {
+      build_event_room_key: {
+        Args: { p_date: string; p_deal_id: string; p_time: string }
+        Returns: string
+      }
+      cancel_booking: {
         Args: { p_booking_id: string }
         Returns: {
+          admin_notes: string | null
+          adult_count: number | null
+          board_basis: string | null
           booking_code: string
+          cancelled_by_admin_at: string | null
+          check_in_date: string | null
+          check_out_date: string | null
+          child_count: number | null
           coupon_code: string | null
           coupon_id: string | null
+          created_at: string
+          currency: string
+          deal_id: string
           discount_amount: number
+          gift_message: string | null
+          guest_email: string | null
+          guest_name: string | null
+          guest_phone: string | null
           id: string
+          insurance_fee: number
+          insurance_purchased: boolean
+          is_gift: boolean
+          nights: number | null
+          notes: string | null
           quantity: number
+          refunded_at: string | null
+          room_type_id: string | null
+          selected_date: string | null
+          selected_time: string | null
           status: string
           total_amount: number
+          tourism_tax_total: number
           unit_price: number
+          updated_at: string
           user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      claim_city_bingo: {
+        Args: { p_city: string; p_user_id: string }
+        Returns: string
+      }
+      confirm_booking_payment: {
+        Args: { p_booking_id: string }
+        Returns: {
+          admin_notes: string | null
+          adult_count: number | null
+          board_basis: string | null
+          booking_code: string
+          cancelled_by_admin_at: string | null
+          check_in_date: string | null
+          check_out_date: string | null
+          child_count: number | null
+          coupon_code: string | null
+          coupon_id: string | null
+          created_at: string
+          currency: string
+          deal_id: string
+          discount_amount: number
+          gift_message: string | null
+          guest_email: string | null
+          guest_name: string | null
+          guest_phone: string | null
+          id: string
+          insurance_fee: number
+          insurance_purchased: boolean
+          is_gift: boolean
+          nights: number | null
+          notes: string | null
+          quantity: number
+          refunded_at: string | null
+          room_type_id: string | null
+          selected_date: string | null
+          selected_time: string | null
+          status: string
+          total_amount: number
+          tourism_tax_total: number
+          unit_price: number
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
         }
       }
       deal_trending_score: {
@@ -1443,6 +2007,56 @@ export type Database = {
           view_count_in: number
         }
         Returns: number
+      }
+      evaluate_loyalty_rewards: {
+        Args: { p_user_id: string }
+        Returns: string[]
+      }
+      extend_booking: {
+        Args: { p_booking_id: string }
+        Returns: {
+          admin_notes: string | null
+          adult_count: number | null
+          board_basis: string | null
+          booking_code: string
+          cancelled_by_admin_at: string | null
+          check_in_date: string | null
+          check_out_date: string | null
+          child_count: number | null
+          coupon_code: string | null
+          coupon_id: string | null
+          created_at: string
+          currency: string
+          deal_id: string
+          discount_amount: number
+          gift_message: string | null
+          guest_email: string | null
+          guest_name: string | null
+          guest_phone: string | null
+          id: string
+          insurance_fee: number
+          insurance_purchased: boolean
+          is_gift: boolean
+          nights: number | null
+          notes: string | null
+          quantity: number
+          refunded_at: string | null
+          room_type_id: string | null
+          selected_date: string | null
+          selected_time: string | null
+          status: string
+          total_amount: number
+          tourism_tax_total: number
+          unit_price: number
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       gen_referral_code: { Args: never; Returns: string }
       generate_booking_code: { Args: never; Returns: string }
@@ -1515,6 +2129,74 @@ export type Database = {
             }[]
           }
       refresh_deal_rating: { Args: { deal_uuid: string }; Returns: undefined }
+      remove_coupon_from_booking: {
+        Args: { p_booking_id: string }
+        Returns: {
+          admin_notes: string | null
+          adult_count: number | null
+          board_basis: string | null
+          booking_code: string
+          cancelled_by_admin_at: string | null
+          check_in_date: string | null
+          check_out_date: string | null
+          child_count: number | null
+          coupon_code: string | null
+          coupon_id: string | null
+          created_at: string
+          currency: string
+          deal_id: string
+          discount_amount: number
+          gift_message: string | null
+          guest_email: string | null
+          guest_name: string | null
+          guest_phone: string | null
+          id: string
+          insurance_fee: number
+          insurance_purchased: boolean
+          is_gift: boolean
+          nights: number | null
+          notes: string | null
+          quantity: number
+          refunded_at: string | null
+          room_type_id: string | null
+          selected_date: string | null
+          selected_time: string | null
+          status: string
+          total_amount: number
+          tourism_tax_total: number
+          unit_price: number
+          updated_at: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "bookings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      spin_daily: {
+        Args: { p_user_id: string }
+        Returns: {
+          coupon_code: string
+          coupon_value: number
+          label: string
+          points: number
+          prize_kind: string
+        }[]
+      }
+      user_can_access_event_room: {
+        Args: { p_room_key: string }
+        Returns: boolean
+      }
+      validate_coupon: {
+        Args: { p_amount: number; p_code: string }
+        Returns: {
+          coupon_id: string
+          discount_amount: number
+          reason: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

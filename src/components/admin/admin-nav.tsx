@@ -2,6 +2,7 @@ import Link from 'next/link';
 import {
   Activity,
   CalendarCheck,
+  Hotel,
   LayoutDashboard,
   ListTree,
   Mail,
@@ -16,6 +17,7 @@ import {
 const ITEMS = [
   { href: '/admin', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/admin/deals', label: 'Fırsatlar', Icon: Ticket },
+  { href: '/admin/oteller', label: 'Oteller & Tatil', Icon: Hotel },
   { href: '/admin/categories', label: 'Kategoriler', Icon: ListTree },
   { href: '/admin/bookings', label: 'Rezervasyonlar', Icon: CalendarCheck },
   { href: '/admin/coupons', label: 'Kuponlar', Icon: Tag },

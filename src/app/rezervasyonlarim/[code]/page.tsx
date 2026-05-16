@@ -8,6 +8,7 @@ import { CancelButton } from '@/components/booking/cancel-button';
 import { ETicket } from '@/components/booking/eticket';
 import { EventChat } from '@/components/booking/event-chat';
 import { ExtendButton } from '@/components/booking/extend-button';
+import { HotelBookingSummary } from '@/components/booking/hotel-booking-summary';
 import { PrintButton } from '@/components/booking/print-button';
 import { RefundCouponBanner } from '@/components/booking/refund-coupon-banner';
 import { getServerClient } from '@/lib/db/server';
@@ -16,6 +17,7 @@ import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { Container } from '@/components/ui/container';
 import { getBookingByCode } from '@/lib/db/queries/bookings';
+import { getHotelExtrasForBooking } from '@/lib/db/queries/hotel';
 import { requireUser } from '@/lib/security/auth';
 import {
   BOOKING_STATUS_BADGE,
@@ -52,6 +54,11 @@ export default async function RezervasyonDetailPage({
     ? [booking.deal.district, booking.deal.city].filter(Boolean).join(', ')
     : null;
   const showTicket = (status === 'confirmed' || status === 'used') && booking.deal;
+
+  const isHotelBooking = Boolean(booking.room_type_id);
+  const hotelExtras = isHotelBooking
+    ? await getHotelExtrasForBooking(booking.id, booking.room_type_id)
+    : null;
 
   // İptal edilmiş booking için iade kuponu lookup
   let refundCoupon: { code: string; amount: number } | null = null;
@@ -166,7 +173,31 @@ export default async function RezervasyonDetailPage({
           <RefundCouponBanner code={refundCoupon.code} amount={refundCoupon.amount} />
         ) : null}
 
-        {showTicket ? <AttendeesSection bookingCode={booking.booking_code} /> : null}
+        {isHotelBooking && hotelExtras ? (
+          <section className="mt-6">
+            <h2 className="mb-3 text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+              Konaklama detayı
+            </h2>
+            <HotelBookingSummary
+              booking={{
+                check_in_date: booking.check_in_date,
+                check_out_date: booking.check_out_date,
+                nights: booking.nights,
+                adult_count: booking.adult_count,
+                child_count: booking.child_count,
+                board_basis: booking.board_basis,
+                tourism_tax_total: Number(booking.tourism_tax_total ?? 0),
+                unit_price: Number(booking.unit_price),
+                total_amount: Number(booking.total_amount),
+              }}
+              room={hotelExtras.room}
+              guests={hotelExtras.guests}
+              variant="full"
+            />
+          </section>
+        ) : null}
+
+        {showTicket && !isHotelBooking ? <AttendeesSection bookingCode={booking.booking_code} /> : null}
 
         {showTicket && booking.deal ? (
           <EventChatGate

@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Image from 'next/image';
 import Link from 'next/link';
-import { CalendarDays, ChevronRight, MapPin, Ticket } from 'lucide-react';
+import { ArrowRight, BedDouble, CalendarDays, ChevronRight, MapPin, Moon, Ticket, Users } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Container } from '@/components/ui/container';
 import { EmptyState } from '@/components/feedback/empty-state';
@@ -97,7 +97,35 @@ export default async function RezervasyonlarimPage() {
                     {b.deal?.title ?? 'Silinmiş fırsat'}
                   </p>
                   <div className="text-muted-foreground mt-1 flex flex-wrap items-center gap-x-3 gap-y-0.5 text-xs">
-                    {b.selected_date ? (
+                    {b.check_in_date && b.check_out_date ? (
+                      <>
+                        <span className="inline-flex items-center gap-1">
+                          <CalendarDays className="size-3.5" aria-hidden="true" />
+                          {formatDate(b.check_in_date)}
+                          <ArrowRight className="size-3" aria-hidden="true" />
+                          {formatDate(b.check_out_date)}
+                        </span>
+                        {b.nights ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Moon className="size-3.5" aria-hidden="true" />
+                            {b.nights} gece
+                          </span>
+                        ) : null}
+                        {b.adult_count ? (
+                          <span className="inline-flex items-center gap-1">
+                            <Users className="size-3.5" aria-hidden="true" />
+                            {b.adult_count}
+                            {b.child_count ? `+${b.child_count}` : ''}
+                          </span>
+                        ) : null}
+                        {b.room_type_id ? (
+                          <span className="inline-flex items-center gap-1">
+                            <BedDouble className="size-3.5" aria-hidden="true" />
+                            Oda
+                          </span>
+                        ) : null}
+                      </>
+                    ) : b.selected_date ? (
                       <span className="inline-flex items-center gap-1">
                         <CalendarDays className="size-3.5" aria-hidden="true" />
                         {formatDate(b.selected_date)}
@@ -111,7 +139,8 @@ export default async function RezervasyonlarimPage() {
                       </span>
                     ) : null}
                     <span>
-                      {b.quantity} adet · {formatTRY(b.total_amount)}
+                      {b.check_in_date ? null : `${b.quantity} adet · `}
+                      {formatTRY(b.total_amount)}
                     </span>
                   </div>
                 </div>

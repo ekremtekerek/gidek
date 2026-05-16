@@ -37,29 +37,21 @@ export interface TravelDestination {
 export async function listTravelDestinations(limit = 8): Promise<TravelDestination[]> {
   const supabase = getPublicClient();
 
-  // Önce tatil kategorisindeki tüm deal_id'leri çek
-  const { data: dealCats } = await supabase
-    .from('deal_categories')
-    .select('deal_id, category:categories!inner(slug)')
-    .in('category.slug', TRAVEL_CATEGORY_SLUGS);
-
-  const travelDealIds = [
-    ...new Set((dealCats ?? []).map((r) => r.deal_id).filter(Boolean)),
-  ];
-  if (travelDealIds.length === 0) return [];
-
-  // Sonra bu deal'ları çek + district'e göre grupla
+  // Inline JOIN — deal_categories üzerinden travel kategorilerini filtrele.
+  // İki-aşamalı `.in('id', [1000+ UUID])` yaklaşımı PostgREST URL limitini
+  // aştığı için (~37KB query string) silent fail ediyordu.
   const now = new Date().toISOString();
   const { data: deals } = await supabase
     .from('deals')
     .select(
-      'id, city, district, cover_image, discounted_price, rating_avg, rating_count, valid_until, is_active, published_at',
+      'id, city, district, cover_image, discounted_price, rating_avg, rating_count, valid_until, is_active, published_at, deal_categories!inner(category:categories!inner(slug))',
     )
-    .in('id', travelDealIds)
+    .in('deal_categories.category.slug', TRAVEL_CATEGORY_SLUGS)
     .eq('is_active', true)
     .gt('valid_until', now)
     .not('published_at', 'is', null)
-    .order('discounted_price', { ascending: true });
+    .order('discounted_price', { ascending: true })
+    .limit(2000);
 
   // Her destinasyon için rating ağırlıklı ortalama + toplam yorum
   interface Accum {
@@ -134,22 +126,13 @@ export async function searchTravelDeals(
   const supabase = getPublicClient();
   const limit = Math.min(60, Math.max(1, params.limit ?? 36));
 
-  const { data: dealCats } = await supabase
-    .from('deal_categories')
-    .select('deal_id, category:categories!inner(slug)')
-    .in('category.slug', TRAVEL_CATEGORY_SLUGS);
-  const travelDealIds = [
-    ...new Set((dealCats ?? []).map((r) => r.deal_id).filter(Boolean)),
-  ];
-  if (travelDealIds.length === 0) return [];
-
   const now = new Date().toISOString();
   let query = supabase
     .from('deals')
     .select(
-      `*, merchant:merchants ( name, slug, city, district, lat, lng, working_hours )`,
+      `*, merchant:merchants ( name, slug, city, district, lat, lng, working_hours ), deal_categories!inner(category:categories!inner(slug))`,
     )
-    .in('id', travelDealIds)
+    .in('deal_categories.category.slug', TRAVEL_CATEGORY_SLUGS)
     .eq('is_active', true)
     .gt('valid_until', now)
     .not('published_at', 'is', null);
@@ -192,23 +175,17 @@ export async function searchTravelDeals(
  */
 export async function listTravelLocations(): Promise<string[]> {
   const supabase = getPublicClient();
-  const { data: dealCats } = await supabase
-    .from('deal_categories')
-    .select('deal_id, category:categories!inner(slug)')
-    .in('category.slug', TRAVEL_CATEGORY_SLUGS);
-  const travelDealIds = [
-    ...new Set((dealCats ?? []).map((r) => r.deal_id).filter(Boolean)),
-  ];
-  if (travelDealIds.length === 0) return [];
-
   const now = new Date().toISOString();
   const { data: deals } = await supabase
     .from('deals')
-    .select('city, district')
-    .in('id', travelDealIds)
+    .select(
+      'city, district, deal_categories!inner(category:categories!inner(slug))',
+    )
+    .in('deal_categories.category.slug', TRAVEL_CATEGORY_SLUGS)
     .eq('is_active', true)
     .gt('valid_until', now)
-    .not('published_at', 'is', null);
+    .not('published_at', 'is', null)
+    .limit(2000);
 
   const set = new Set<string>();
   for (const d of deals ?? []) {
@@ -270,24 +247,13 @@ export async function fetchPackageInventory(
  */
 export async function listTravelDeals(limit = 12): Promise<DealWithMerchant[]> {
   const supabase = getPublicClient();
-
-  const { data: dealCats } = await supabase
-    .from('deal_categories')
-    .select('deal_id, category:categories!inner(slug)')
-    .in('category.slug', TRAVEL_CATEGORY_SLUGS);
-
-  const travelDealIds = [
-    ...new Set((dealCats ?? []).map((r) => r.deal_id).filter(Boolean)),
-  ];
-  if (travelDealIds.length === 0) return [];
-
   const now = new Date().toISOString();
   const { data } = await supabase
     .from('deals')
     .select(
-      `*, merchant:merchants ( name, slug, city, district, lat, lng, working_hours )`,
+      `*, merchant:merchants ( name, slug, city, district, lat, lng, working_hours ), deal_categories!inner(category:categories!inner(slug))`,
     )
-    .in('id', travelDealIds)
+    .in('deal_categories.category.slug', TRAVEL_CATEGORY_SLUGS)
     .eq('is_active', true)
     .gt('valid_until', now)
     .not('published_at', 'is', null)
