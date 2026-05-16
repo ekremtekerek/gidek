@@ -127,7 +127,7 @@ function emptyRoom(): Room {
     view_type: '',
     base_price_per_night: 2000,
     board_basis: 'oda-kahvalti',
-    total_units: '',
+    total_units: '10',
     cover_image: '',
     sort_order: 0,
     is_active: true,
@@ -815,13 +815,20 @@ export function HotelForm({ merchants, initial, action, lockedMerchantId }: Prop
                     ))}
                   </select>
                 </Field>
-                <Field label="Toplam ünite">
+                <Field label="Toplam ünite (envanter)">
                   <Input
                     type="number"
                     min={1}
+                    max={999}
                     value={room.total_units}
                     onChange={(e) => updateRoom(idx, { total_units: e.target.value })}
+                    placeholder="örn. 10"
+                    required
+                    aria-describedby={`tu-help-${idx}`}
                   />
+                  <p id={`tu-help-${idx}`} className="text-muted-foreground mt-1 text-[10px]">
+                    Aynı tarihte bu odadan kaç tane satabileceğini belirler — overlap koruması bu sayıyı kullanır.
+                  </p>
                 </Field>
               </div>
 

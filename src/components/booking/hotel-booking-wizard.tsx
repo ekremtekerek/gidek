@@ -965,6 +965,10 @@ function Stepper({
       aria-valuenow={current}
       aria-label={`Adım ${current} / ${steps.length} — ${currentStep?.label ?? ''}`}
     >
+      {/* Screen reader live region — step değişince duyurulur */}
+      <span aria-live="polite" aria-atomic="true" className="sr-only">
+        Adım {current} / {steps.length} — {currentStep?.label}
+      </span>
       {/* Mobile: compact progress bar */}
       <div className="sm:hidden">
         <div className="flex items-center justify-between text-xs">

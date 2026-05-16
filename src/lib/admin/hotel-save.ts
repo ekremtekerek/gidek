@@ -87,7 +87,7 @@ const roomSchema = z.object({
   view_type: z.enum(VIEW_TYPES).optional().or(z.literal('').transform(() => undefined)),
   base_price_per_night: z.coerce.number().min(1, "Gece fiyatı 0'dan büyük olmalı"),
   board_basis: z.enum(BOARD_BASIS).default('oda-kahvalti'),
-  total_units: optionalInt,
+  total_units: z.coerce.number().int().min(1, 'Toplam ünite sayısı zorunlu (envanter koruması için)').max(999),
   cover_image: optionalShortText,
   sort_order: z.coerce.number().int().min(0).default(0),
   is_active: checkbox.default(true),

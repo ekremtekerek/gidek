@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Clock, Gift, MapPin, MessageSquare, Navigation, Tag } from 'lucide-react';
+import { ArrowLeft, Clock, Gift, MapPin, MessageSquare, Navigation, Pencil, Tag } from 'lucide-react';
 import { AddToCalendar } from '@/components/booking/add-to-calendar';
 import { AttendeesSection } from '@/components/booking/attendees-section';
 import { CancelButton } from '@/components/booking/cancel-button';
@@ -228,6 +228,19 @@ export default async function RezervasyonDetailPage({
                   <Navigation className="size-3.5" aria-hidden="true" />
                   Yol tarifi
                 </a>
+              </div>
+            ) : null}
+
+            {/* Misafir bilgilerini düzenle — sadece pending/confirmed */}
+            {(status === 'pending' || status === 'confirmed') ? (
+              <div className="gidek-no-print mt-4 flex justify-end">
+                <Link
+                  href={`/rezervasyonlarim/${booking.booking_code}/misafir-duzenle`}
+                  className={cn(buttonVariants({ variant: 'outline', size: 'sm' }), 'gap-1.5')}
+                >
+                  <Pencil className="size-3.5" aria-hidden="true" />
+                  Misafir bilgilerini düzenle
+                </Link>
               </div>
             ) : null}
           </section>

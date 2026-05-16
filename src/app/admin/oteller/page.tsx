@@ -21,15 +21,41 @@ interface SP {
   q?: string;
   status?: Status;
   sort?: Sort;
+  page?: string;
 }
+
+const PAGE_SIZE = 25;
 
 export default async function AdminHotelsPage({
   searchParams,
 }: {
   searchParams: Promise<SP>;
 }) {
-  const { q, status, sort } = await searchParams;
+  const { q, status, sort, page: pageStr } = await searchParams;
+  const page = Math.max(1, Number(pageStr) || 1);
+  const offset = (page - 1) * PAGE_SIZE;
   const supabase = getServiceClient();
+  const term = q && q.trim().length > 0 ? q.trim() : null;
+
+  // Toplam sayı — paginate için (head:true, count: 'exact')
+  let countQuery = supabase
+    .from('deals')
+    .select('id, deal_categories!inner(category:categories!inner(slug))', {
+      count: 'exact',
+      head: true,
+    })
+    .in('deal_categories.category.slug', TRAVEL_CATEGORY_SLUGS as unknown as string[]);
+  if (term) {
+    countQuery = countQuery.or(
+      `title.ilike.%${term}%,city.ilike.%${term}%,district.ilike.%${term}%`,
+    );
+  }
+  if (status === 'published') {
+    countQuery = countQuery.eq('is_active', true).not('published_at', 'is', null);
+  } else if (status === 'draft') {
+    countQuery = countQuery.or('is_active.eq.false,published_at.is.null');
+  }
+  const { count: total } = await countQuery;
 
   let query = supabase
     .from('deals')
@@ -42,15 +68,11 @@ export default async function AdminHotelsPage({
     )
     .in('deal_categories.category.slug', TRAVEL_CATEGORY_SLUGS as unknown as string[]);
 
-  // Filtre — search query
-  if (q && q.trim().length > 0) {
-    const term = q.trim();
+  if (term) {
     query = query.or(
       `title.ilike.%${term}%,city.ilike.%${term}%,district.ilike.%${term}%`,
     );
   }
-
-  // Filtre — status
   if (status === 'published') {
     query = query.eq('is_active', true).not('published_at', 'is', null);
   } else if (status === 'draft') {
@@ -72,10 +94,22 @@ export default async function AdminHotelsPage({
       query = query.order('created_at', { ascending: false });
   }
 
-  const { data: deals } = await query.limit(200);
+  const { data: deals } = await query.range(offset, offset + PAGE_SIZE - 1);
 
   type Row = NonNullable<typeof deals>[number];
   const rows = (deals ?? []) as Row[];
+  const totalCount = total ?? 0;
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  function pageHref(p: number): string {
+    const params = new URLSearchParams();
+    if (q) params.set('q', q);
+    if (status && status !== 'all') params.set('status', status);
+    if (sort && sort !== 'newest') params.set('sort', sort);
+    if (p > 1) params.set('page', String(p));
+    const qs = params.toString();
+    return qs ? `/admin/oteller?${qs}` : '/admin/oteller';
+  }
 
   return (
     <div className="flex flex-col gap-5">
@@ -89,9 +123,10 @@ export default async function AdminHotelsPage({
             Oteller &amp; Tatil
           </h1>
           <p className="text-muted-foreground mt-1 text-sm">
-            {rows.length} kayıt · sadece <code className="text-foreground">tatil-otelleri</code>,{' '}
+            {totalCount} kayıt · sayfa {page}/{totalPages} ·{' '}
+            <code className="text-foreground">tatil-otelleri</code>,{' '}
             <code className="text-foreground">sehir-otelleri</code>,{' '}
-            <code className="text-foreground">turlar</code> kategorisindeki deal&apos;lar
+            <code className="text-foreground">turlar</code>
           </p>
         </div>
         <Link
@@ -222,6 +257,35 @@ export default async function AdminHotelsPage({
           </div>
         ) : null}
       </div>
+
+      {/* Pagination */}
+      {totalPages > 1 ? (
+        <nav aria-label="Sayfalar" className="flex items-center justify-between gap-3 text-sm">
+          <Link
+            href={pageHref(Math.max(1, page - 1))}
+            aria-disabled={page <= 1}
+            className={cn(
+              buttonVariants({ variant: 'outline', size: 'sm' }),
+              page <= 1 ? 'pointer-events-none opacity-50' : '',
+            )}
+          >
+            ← Önceki
+          </Link>
+          <span className="text-muted-foreground">
+            Sayfa <strong className="text-foreground">{page}</strong> / {totalPages}
+          </span>
+          <Link
+            href={pageHref(Math.min(totalPages, page + 1))}
+            aria-disabled={page >= totalPages}
+            className={cn(
+              buttonVariants({ variant: 'outline', size: 'sm' }),
+              page >= totalPages ? 'pointer-events-none opacity-50' : '',
+            )}
+          >
+            Sonraki →
+          </Link>
+        </nav>
+      ) : null}
     </div>
   );
 }
