@@ -195,6 +195,8 @@ export function TravelPlanResult({
                       {deal ? (
                         <Link
                           href={`/f/${deal.slug}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
                           className="hover:bg-muted mt-2 inline-flex items-center gap-2 rounded-md border border-border bg-muted/30 p-2 transition-colors"
                         >
                           <Image

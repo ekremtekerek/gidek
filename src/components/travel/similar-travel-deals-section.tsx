@@ -50,6 +50,8 @@ export async function SimilarTravelDealsSection({ dealId }: { dealId: string }) 
             <li key={d.id}>
               <Link
                 href={`/f/${d.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group flex h-full flex-col overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-lg"
               >
                 <div className="relative aspect-square overflow-hidden">

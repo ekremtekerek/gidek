@@ -156,6 +156,8 @@ function MiniDealCard({
   return (
     <Link
       href={`/f/${deal.slug}`}
+      target="_blank"
+      rel="noopener noreferrer"
       className="group block focus-visible:outline-none"
       aria-label={deal.title}
     >

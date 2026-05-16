@@ -50,6 +50,8 @@ export function SwappedStepCard({ step, replaced }: Props) {
           {deal ? (
             <Link
               href={`/f/${deal.slug}`}
+              target="_blank"
+              rel="noopener noreferrer"
               className="hover:bg-muted/40 -mx-2 mt-1 flex gap-3 rounded-md p-2 transition-colors"
             >
               <div className="relative size-16 shrink-0 overflow-hidden rounded-md">

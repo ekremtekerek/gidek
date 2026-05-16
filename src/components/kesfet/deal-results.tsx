@@ -39,6 +39,8 @@ export function DealResults({ deals, userQuery }: Props) {
 
           <Link
             href={`/f/${d.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="group border-border bg-background hover:border-foreground/30 block overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
           >
             <div className="flex flex-col sm:flex-row">

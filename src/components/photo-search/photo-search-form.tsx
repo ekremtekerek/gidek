@@ -244,6 +244,8 @@ export function PhotoSearchForm() {
                 <li key={d.id}>
                   <Link
                     href={`/f/${d.slug}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className="border-border bg-background hover:border-foreground/30 flex gap-3 overflow-hidden rounded-lg border p-2 transition-colors"
                   >
                     <div className="bg-muted relative size-20 shrink-0 overflow-hidden rounded-md">

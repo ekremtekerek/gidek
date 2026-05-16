@@ -106,6 +106,8 @@ export function PackageResult({ pkg, inventory, destination, budget, days }: Pro
         {hotelDeal ? (
           <Link
             href={`/f/${hotelDeal.slug}`}
+            target="_blank"
+            rel="noopener noreferrer"
             className="group border-border bg-background flex flex-col gap-3 overflow-hidden rounded-2xl border shadow-md transition-all hover:-translate-y-0.5 hover:shadow-xl sm:flex-row"
           >
             <div className="relative aspect-[16/10] w-full overflow-hidden sm:aspect-square sm:w-64 sm:shrink-0">
@@ -254,6 +256,8 @@ function PackageList({
             <li key={`${item.dealId}-${i}`}>
               <Link
                 href={`/f/${deal.slug}`}
+                target="_blank"
+                rel="noopener noreferrer"
                 className="group border-border bg-background flex h-full gap-3 rounded-xl border p-3 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
               >
                 <div className="relative aspect-square size-20 shrink-0 overflow-hidden rounded-lg">
