@@ -1,13 +1,13 @@
 <div align="center">
 
-# gidek
+# gidek - https://gidek.vercel.app/
 
 ### Türkiye'nin AI destekli fırsat keşif & tatil rezervasyon platformu
 
 Doğal dille konuş. Gemini RAG ile fırsatlar + 1000+ otel arasından kişiselleştirilmiş öneri.
 **4 adım otel rezervasyon wizard'ı**, gamification, sosyal katman, iptal sigortası, KVKK uyumu.
 
-[Demo scripti](./DEMO.md) · [Mimari](./ARCHITECTURE.md) · gidek.net
+[Demo scripti](./DEMO.md) · [Mimari](./ARCHITECTURE.md) · [gidek](https://gidek.vercel.app/)
 
 </div>
 
