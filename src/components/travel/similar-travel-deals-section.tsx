@@ -25,10 +25,6 @@ export async function SimilarTravelDealsSection({ dealId }: { dealId: string }) 
   return (
     <section className="space-y-4">
       <header>
-        <p className="text-sky-700 dark:text-sky-300 inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase">
-          <Sparkles className="size-3.5" aria-hidden="true" />
-          AI farkımız · embedding similarity
-        </p>
         <h2 className="mt-1 text-xl font-bold tracking-tight sm:text-2xl">
           Bunu beğendiysen şunlar da hoşuna gider
         </h2>

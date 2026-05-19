@@ -58,12 +58,6 @@ export function TravelAIPrompt() {
 
   return (
     <div className="relative flex h-full flex-col gap-5">
-      {/* AI farkımız etiketi */}
-      <div className="inline-flex w-fit items-center gap-1.5 rounded-full border border-white/30 bg-white/15 px-3 py-1 text-[11px] font-semibold uppercase tracking-widest text-white backdrop-blur">
-        <Sparkles className="size-3.5" aria-hidden="true" />
-        AI farkımız
-      </div>
-
       {/* Başlık */}
       <div>
         <h1 className="text-3xl font-bold leading-[1.1] tracking-tight text-white sm:text-4xl md:text-5xl">

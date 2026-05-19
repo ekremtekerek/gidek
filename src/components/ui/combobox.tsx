@@ -144,11 +144,16 @@ export const Combobox = forwardRef<HTMLInputElement, Props>(function Combobox(
       )
     : Array.from(new Set(staticFiltered));
 
-  // Dışarı tıklama
+  // Dışarı tıklama — dropdown portal ile body'ye render edildiği için
+  // listRef'i de hariç tutmamız lazım, yoksa option'a tıklama close'u
+  // tetikler ve onClick hiç fire olmaz.
   useEffect(() => {
     if (!open) return;
     function onDown(e: MouseEvent) {
-      if (!rootRef.current?.contains(e.target as Node)) setOpen(false);
+      const target = e.target as Node;
+      if (rootRef.current?.contains(target)) return;
+      if (listRef.current?.contains(target)) return;
+      setOpen(false);
     }
     document.addEventListener('mousedown', onDown);
     return () => document.removeEventListener('mousedown', onDown);

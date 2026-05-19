@@ -35,10 +35,6 @@ export default function TatilFotoPage() {
         <span className="bg-gradient-to-br from-violet-500 via-fuchsia-500 to-rose-500 inline-flex size-14 items-center justify-center rounded-full shadow-lg">
           <Camera className="size-7 text-white" aria-hidden="true" />
         </span>
-        <p className="text-fuchsia-700 dark:text-fuchsia-300 mt-3 inline-flex items-center gap-1.5 text-xs font-bold tracking-widest uppercase">
-          <Sparkles className="size-3.5" aria-hidden="true" />
-          AI farkımız · rakiplerde yok
-        </p>
         <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
           Tatil fotosu yükle,{' '}
           <span className="bg-gradient-to-r from-violet-600 via-fuchsia-500 to-rose-500 bg-clip-text text-transparent">
