@@ -13,6 +13,16 @@ Doğal dille konuş. Gemini RAG ile fırsatlar + 1000+ otel arasından kişisell
 
 ---
 
+> ### ℹ️ Hackathon teslim notu
+>
+> Bu projenin hackathon teslimi, **19 Mayıs 2026** tarihli [`101617f`](https://github.com/ekremtekerek/gidek/commit/101617f) commit'idir. Değerlendirme bu commit ve öncesi baz alınarak yapılmalıdır.
+>
+> `101617f`'ten **sonraki** commit'ler (**20 Mayıs 2026** ve sonrası) deadline **sonrası** yapılan geliştirmelerdir; hackathon değerlendirme kapsamı **dışındadır** ve dikkate alınmaması gerekir.
+>
+> Geliştirmeye, şeffaflık adına commit tarihlerini gizlemeden açıkça devam ediyoruz — git geçmişi tüm zaman damgalarıyla görünürdür.
+
+---
+
 ## 🎯 30 saniyede gidek
 
 **Problem.** Klasik tatil siteleri (booking.com vb.) 50+ filtre + tıkla-kaydır döngüsü. Kullanıcı *"Bodrum'da temmuz başı çiftler için sessiz bir butik otel, balayı, bütçe 25k"* yazamıyor. İşletme tarafında %30 komisyon, sıfır kişiselleştirme.
