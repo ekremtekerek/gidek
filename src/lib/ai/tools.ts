@@ -84,14 +84,37 @@ export function buildChatTools(ctx: ChatToolContext = {}) {
           .describe('İsteğe bağlı şehir filtresi — kullanıcı bir şehir belirttiyse ekle.'),
       }),
       execute: async ({ query, maxResults, city }) => {
-        const deals = await searchDealsByQuery(query, {
-          maxResults: Math.max(minResults, maxResults),
-          filterCity: city,
+        const limit = Math.max(minResults, maxResults);
+        const near = {
           nearLat: ctx.nearLat ?? null,
           nearLng: ctx.nearLng ?? null,
+        };
+
+        let deals = await searchDealsByQuery(query, {
+          maxResults: limit,
+          filterCity: city,
+          ...near,
         });
+
+        // İstenen bölgede (semt/şehir) hiç fırsat yoksa: filtreyi kaldırıp
+        // tekrar ara. Kullanıcı konumu verildiyse match_deals zaten
+        // benzerlik+yakınlık hibrit sıralar → en yakın fırsatlar başa gelir.
+        // `fallbackUsed` bayrağı ile AI bunu "burada yok ama en yakını bu"
+        // diye dürüstçe sunar; sonuçların o bölgede olduğunu İDDİA ETMEZ.
+        let fallbackUsed = false;
+        if (city && deals.length === 0) {
+          fallbackUsed = true;
+          deals = await searchDealsByQuery(query, {
+            maxResults: limit,
+            filterCity: null,
+            ...near,
+          });
+        }
+
         return {
           count: deals.length,
+          requestedArea: city ?? null,
+          fallbackUsed,
           results: deals.map(shapeDeal),
         };
       },

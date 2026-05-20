@@ -7,7 +7,7 @@
 Doğal dille konuş. Gemini RAG ile fırsatlar + 1000+ otel arasından kişiselleştirilmiş öneri.
 **4 adım otel rezervasyon wizard'ı**, gamification, sosyal katman, iptal sigortası, KVKK uyumu.
 
-[Demo scripti](./DEMO.md) · [Mimari](./ARCHITECTURE.md) · [gidek](https://gidek.vercel.app/)
+[Demo scripti](./DEMO.md) · [Mimari](./ARCHITECTURE.md) · [Demo girişi](#-demo-hackathon) · [gidek](https://gidek.vercel.app/)
 
 </div>
 
@@ -448,12 +448,27 @@ Repo'daki zorunlu standartlar (detaylı: [CLAUDE.md](./CLAUDE.md)):
 
 ## 🎭 Demo (hackathon)
 
-Pitch için hidden route'lar:
+Canlı: **https://gidek.vercel.app/**
+
+### Demo hesapları
+
+Tüm hesapların şifresi: **`demo123!`** — `/demo/persona` sayfasından tek tıkla da girilebilir.
+
+| Persona | E-posta | Profil |
+|---|---|---|
+| 💑 Aslı | `demo-asli@gidek.demo` | Çift — romantik akşamlar, fırsat avcısı |
+| 👨‍👩‍👧 Mehmet | `demo-mehmet@gidek.demo` | Aile + çocuklu — aktivite & kahvaltı |
+| 🧍 Zeynep | `demo-zeynep@gidek.demo` | Solo — kahvaltı & güzellik |
+| 🏪 Mehtap | `demo-isletme@gidek.demo` | İşletme paneli (Boğaz Kahve Evi) |
+
+> Kendi hesabınla da kayıt olabilirsin — kayıt anında direkt giriş yapılır, e-posta onayı gerekmez.
+
+### Demo sayfaları (hidden route'lar)
 
 - **`/demo/persona`** — 4 zengin demo hesabıyla tek tıkla giriş (Aslı çift / Mehmet aile / Zeynep solo / Mehtap işletme)
 - **`/demo`** — klasik keyword search vs gidek AI ranker yan yana karşılaştırma
 
-Persona'ları aktif et: `npm run seed:personas` (idempotent). Şifre: `demo123!`.
+Persona'ları lokalde aktif et: `npm run seed:personas` (idempotent).
 
 **Otel akışı demo:**
 1. `/tatil` → "Bodrum 4 gece" chip
