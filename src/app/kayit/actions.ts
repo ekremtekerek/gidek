@@ -3,6 +3,7 @@
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { getServerClient } from '@/lib/db/server';
+import { getServiceClient } from '@/lib/db/service';
 import { signUpSchema } from '@/lib/security/validators';
 import { TOAST_KEYS, withToast } from '@/lib/utils/toast';
 
@@ -54,9 +55,29 @@ export async function signUpAction(
     };
   }
 
-  // If email confirmation is enabled, no session is returned yet.
+  // If the Supabase project has email confirmation enabled, signUp returns no
+  // session. For V1 we skip email verification entirely: confirm the user
+  // server-side (service role) and sign them in so signup === instant login.
   if (!data.session) {
-    return { ok: true, emailConfirmation: true };
+    if (data.user) {
+      try {
+        await getServiceClient().auth.admin.updateUserById(data.user.id, {
+          email_confirm: true,
+        });
+      } catch {
+        // Confirmation failed (e.g. obfuscated duplicate-email response).
+      }
+    }
+
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: parsed.data.email,
+      password: parsed.data.password,
+    });
+
+    // Could not auto-confirm/sign in — fall back to the email-check screen.
+    if (signInError) {
+      return { ok: true, emailConfirmation: true };
+    }
   }
 
   revalidatePath('/', 'layout');
