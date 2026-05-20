@@ -5,6 +5,10 @@ import { Loader2, Sparkles, User } from 'lucide-react';
 import { DealResults } from '@/components/kesfet/deal-results';
 import { DayPlanDisplay } from '@/components/kesfet/day-plan-display';
 import { SwappedStepCard } from '@/components/kesfet/swapped-step-card';
+import {
+  BookingQuoteCard,
+  type BookingQuoteCardData,
+} from '@/components/kesfet/booking-quote-card';
 import type { DealShape } from '@/lib/ai/tools';
 import { cn } from '@/lib/utils/cn';
 
@@ -26,7 +30,8 @@ export function ChatMessage({ message, userQuery }: Props) {
       (p) =>
         (p.type === 'text' && 'text' in p && typeof p.text === 'string' && p.text.trim().length > 0) ||
         p.type === 'tool-searchDeals' ||
-        p.type === 'tool-createDayPlan',
+        p.type === 'tool-createDayPlan' ||
+        p.type === 'tool-prepareBooking',
     );
 
   return (
@@ -114,6 +119,25 @@ export function ChatMessage({ message, userQuery }: Props) {
                 );
               }
               return <ToolThinking key={i} label="Gün planı kuruluyor…" />;
+            }
+
+            case 'tool-prepareBooking': {
+              if (part.state === 'output-available') {
+                const output = part.output as
+                  | ({ ok: true } & BookingQuoteCardData)
+                  | { ok: false };
+                // Başarısız (auth/otel/geçersiz) durumlarda kart yok —
+                // AI'nın metni sebebi açıklar.
+                if (output.ok) {
+                  return (
+                    <div key={i} className="w-full">
+                      <BookingQuoteCard quote={output} />
+                    </div>
+                  );
+                }
+                return null;
+              }
+              return <ToolThinking key={i} label="Rezervasyon hazırlanıyor…" />;
             }
 
             case 'tool-replaceDayPlanStep': {

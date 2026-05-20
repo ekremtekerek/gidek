@@ -2,6 +2,7 @@ import { tool } from 'ai';
 import { z } from 'zod';
 import { buildDayPlan, replaceDayPlanStep } from '@/lib/ai/plan';
 import { searchDealsByQuery } from '@/lib/ai/search-core';
+import { quoteBooking } from '@/lib/booking/agent-booking';
 import { generateSeasonAdvice } from '@/lib/ai/travel-season-advice';
 import { buildTravelPackage } from '@/lib/ai/travel-package';
 import { compareHotelsWithAI } from '@/lib/ai/travel-comparison';
@@ -47,6 +48,8 @@ export interface ChatToolContext {
   nearLng?: number | null;
   /** AI sonuç sayısını çok düşürmesin diye server-side taban. */
   minResults?: number;
+  /** Giriş yapan kullanıcının id'si — prepareBooking için. Anon'da null. */
+  userId?: string | null;
 }
 
 /**
@@ -117,6 +120,48 @@ export function buildChatTools(ctx: ChatToolContext = {}) {
           fallbackUsed,
           results: deals.map(shapeDeal),
         };
+      },
+    }),
+
+    prepareBooking: tool({
+      description:
+        'Kullanıcı bir fırsatı (otel/tatil HARİÇ — etkinlik, aktivite, yemek, kahvaltı, masaj, tiyatro, konser, kurs, hizmet) REZERVE etmek istediğinde çağır ("bunu rezerve et", "ilkini ayırt", "rezervasyon yapalım"). Fiyatı hesaplar ve kullanıcıya bir ONAY KARTI gösterir — rezervasyon HENÜZ OLUŞMAZ, kullanıcı karttaki butona basınca oluşur. dealId önceki searchDeals sonucundaki id alanından gelir. Tarih ZORUNLU — kullanıcı söylemediyse önce tarihi sor, sonra bu tool\'u çağır.',
+      inputSchema: z.object({
+        dealId: z
+          .string()
+          .describe("Rezerve edilecek fırsatın id'si (önceki searchDeals sonucundan)."),
+        quantity: z
+          .number()
+          .int()
+          .min(1)
+          .max(20)
+          .default(1)
+          .describe('Kişi/adet sayısı. Belirsizse 1 varsay.'),
+        date: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/)
+          .describe('Rezervasyon tarihi YYYY-AA-GG. Kullanıcıdan al; belirsizse ÖNCE sor.'),
+        time: z
+          .string()
+          .regex(/^\d{2}:\d{2}$/)
+          .optional()
+          .describe('Opsiyonel saat HH:MM — seans/etkinlik saati varsa.'),
+      }),
+      execute: async ({ dealId, quantity, date, time }) => {
+        // Rezervasyon giriş ister — anon kullanıcıyı tool seviyesinde durdur.
+        if (!ctx.userId) {
+          return {
+            ok: false as const,
+            reason: 'auth' as const,
+            message: 'Rezervasyon için giriş yapman gerekiyor.',
+          };
+        }
+        return quoteBooking({
+          dealId,
+          quantity,
+          selectedDate: date,
+          selectedTime: time ?? null,
+        });
       },
     }),
 

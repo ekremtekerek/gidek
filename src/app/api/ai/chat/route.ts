@@ -136,11 +136,13 @@ DB'de Bodrum = Muğla'nın district'i, Yalıkavak = Bodrum'un alt-koyu vs. — c
   const startedAt = Date.now();
   const modelMessages = await convertToModelMessages(messages);
 
-  // Tool'ları kullanıcı bağlamıyla bind et — searchDeals'a default lat/lng + min 3 sonuç.
+  // Tool'ları kullanıcı bağlamıyla bind et — searchDeals'a default lat/lng +
+  // min 3 sonuç, prepareBooking'e giriş yapan kullanıcının id'si.
   const tools = buildChatTools({
     nearLat: parsed.lat ?? null,
     nearLng: parsed.lng ?? null,
     minResults: 3,
+    userId: user?.id ?? null,
   });
 
   const result = streamText({
