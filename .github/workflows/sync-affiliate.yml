@@ -31,7 +31,9 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          # Node 22+: native global WebSocket — @supabase/supabase-js realtime
+          # client kurulumu Node 20'de "no native WebSocket" ile patlıyordu.
+          node-version: '22'
           cache: npm
 
       - run: npm ci
