@@ -10,6 +10,7 @@ import { DealQuickView, QuickViewButton } from '@/components/deal/deal-quick-vie
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
 import { isDealExpired } from '@/lib/utils/deal-status';
 import { BLUR_DATA_URL } from '@/lib/utils/blur';
+import { fbfResize, isFbfImage } from '@/lib/utils/image';
 import { formatTRY } from '@/lib/utils/format';
 import { cn } from '@/lib/utils/cn';
 
@@ -53,7 +54,7 @@ export function DealCard({
         aria-label={isExpired ? `${deal.title} (kaçtı)` : deal.title}
       >
         <Image
-          src={deal.cover_image}
+          src={fbfResize(deal.cover_image, '400x400')}
           alt={deal.title}
           fill
           sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
@@ -62,6 +63,8 @@ export function DealCard({
             isExpired ? 'grayscale' : null,
           )}
           priority={priority}
+          // CDN zaten 400x400 boyutlandırıyor → Next optimizer round-trip'ini atla.
+          unoptimized={isFbfImage(deal.cover_image)}
           placeholder="blur"
           blurDataURL={BLUR_DATA_URL}
         />

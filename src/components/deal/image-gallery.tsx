@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { ChevronLeft, ChevronRight, Maximize2, X } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { BLUR_DATA_URL } from '@/lib/utils/blur';
+import { fbfResize, isFbfImage } from '@/lib/utils/image';
 import { cn } from '@/lib/utils/cn';
 
 interface Props {
@@ -66,6 +67,7 @@ export function ImageGallery({ title, cover, images, discount = 0, isFeatured }:
           sizes="(min-width: 1024px) 60vw, 100vw"
           className="object-cover transition-opacity duration-300"
           priority={index === 0}
+          unoptimized={isFbfImage(active)}
           placeholder="blur"
           blurDataURL={BLUR_DATA_URL}
         />
@@ -164,11 +166,12 @@ export function ImageGallery({ title, cover, images, discount = 0, isFeatured }:
               )}
             >
               <Image
-                src={src}
+                src={fbfResize(src, '400x400')}
                 alt=""
                 fill
                 sizes="112px"
                 className="object-cover transition-transform group-hover:scale-105"
+                unoptimized={isFbfImage(src)}
                 placeholder="blur"
                 blurDataURL={BLUR_DATA_URL}
               />
@@ -205,6 +208,7 @@ export function ImageGallery({ title, cover, images, discount = 0, isFeatured }:
               sizes="100vw"
               className="object-contain"
               priority
+              unoptimized={isFbfImage(active)}
             />
             {hasMultiple ? (
               <>

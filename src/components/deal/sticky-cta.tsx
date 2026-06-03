@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Calendar } from 'lucide-react';
+import { ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils/cn';
 import { formatTRY } from '@/lib/utils/format';
+import { dealCtaHref } from '@/lib/utils/affiliate';
 
 interface Props {
   dealSlug: string;
@@ -34,7 +35,7 @@ export function StickyCta({
   originalPrice,
   discountedPrice,
   discountPercent,
-  ctaLabel = 'Rezervasyon Yap',
+  ctaLabel = 'Satın Al',
 }: Props) {
   const [show, setShow] = useState(false);
 
@@ -51,8 +52,8 @@ export function StickyCta({
 
   const discount = discountPercent ?? 0;
   const showDiscount = discount > 0 && Number(discountedPrice) < Number(originalPrice);
-  // Anon kullanıcı için /rezervasyon sayfası requireUser ile login'e yönlendirir.
-  const href = `/rezervasyon/${dealSlug}`;
+  // Affiliate köprü sayfası — kullanıcı seçenek seçip checkout'a yönlenir.
+  const href = dealCtaHref(dealSlug);
 
   return (
     <div
@@ -83,7 +84,7 @@ export function StickyCta({
             'shrink-0 gap-2',
           )}
         >
-          <Calendar className="size-4" aria-hidden="true" />
+          <ExternalLink className="size-4" aria-hidden="true" />
           {ctaLabel}
         </Link>
       </div>

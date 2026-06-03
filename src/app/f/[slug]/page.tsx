@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { Calendar, Clock, MapPin, Users } from 'lucide-react';
+import { Clock, ExternalLink, MapPin, Users } from 'lucide-react';
 import { FavoriteButton } from '@/components/favorites/favorite-button';
 import { ImageGallery } from '@/components/deal/image-gallery';
 import { LiveViewerCount } from '@/components/deal/live-viewer-count';
@@ -20,6 +20,8 @@ import { TravelDetailEnrichment } from '@/components/travel/travel-detail-enrich
 import { WeatherWidget } from '@/components/travel/weather-widget';
 import { WhatsAppButton } from '@/components/travel/whatsapp-button';
 import { SimilarDeals } from '@/components/deal/similar-deals';
+import { MerchantOtherDeals } from '@/components/deal/merchant-other-deals';
+import { RecentlyViewed } from '@/components/deal/recently-viewed';
 import { SimilarTravelDealsSection } from '@/components/travel/similar-travel-deals-section';
 import { SocialProof } from '@/components/deal/social-proof';
 import { StickyCta } from '@/components/deal/sticky-cta';
@@ -33,6 +35,7 @@ import { getHotelDataForDeal } from '@/lib/db/queries/hotel';
 import { cn } from '@/lib/utils/cn';
 import { AUDIENCE_LABEL, DEAL_TAG_LABEL } from '@/lib/utils/constants';
 import { formatDuration, formatTRY } from '@/lib/utils/format';
+import { dealCtaHref } from '@/lib/utils/affiliate';
 import { SITE } from '@/lib/utils/site-config';
 
 // ISR — sayfa 5 dakikada bir yeniden render edilir. Auth-bağımlı UI
@@ -93,6 +96,8 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
 
   const primaryCategory = deal.categories[0];
   const location = [deal.district, deal.city].filter(Boolean).join(', ');
+  // Detayda tam adres (merchant.address); kart yalnızca ilçe/şehir gösterir.
+  const fullAddress = deal.merchant?.address?.trim() || null;
   const duration = formatDuration(deal.duration_minutes);
   const discount = deal.discount_percent ?? 0;
   const showDiscount = discount > 0 && deal.discounted_price < deal.original_price;
@@ -331,6 +336,13 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                 ) : null}
               </div>
 
+              {fullAddress ? (
+                <p className="text-muted-foreground flex items-start gap-1.5 pt-2 text-sm">
+                  <MapPin className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <span>{fullAddress}</span>
+                </p>
+              ) : null}
+
               {deal.merchant?.lat !== null && deal.merchant?.lat !== undefined &&
               deal.merchant.lng !== null && deal.merchant.lng !== undefined ? (
                 <div className="pt-2">
@@ -338,7 +350,7 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
                     lat={Number(deal.merchant.lat)}
                     lng={Number(deal.merchant.lng)}
                     title={deal.merchant.name}
-                    address={location}
+                    address={fullAddress ?? location}
                   />
                 </div>
               ) : null}
@@ -361,7 +373,10 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
               />
             ) : null}
 
-            {isTravelDeal && !expired ? (
+            {/* Mock seyahat widget'ları (sahte fiyat takvimi, WhatsApp, fiyat
+                alarmı) yalnızca eski local deal'larda. Affiliate'te satın alma
+                firsatbufirsat'ta yapılır → seçenekler /git köprüsünde gösterilir. */}
+            {isTravelDeal && !expired && deal.source === 'local' ? (
               <>
                 {deal.merchant?.lat !== null &&
                 deal.merchant?.lat !== undefined &&
@@ -522,11 +537,11 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
 
               {expired ? null : (
                 <Link
-                  href={`/rezervasyon/${deal.slug}`}
+                  href={dealCtaHref(deal.slug)}
                   className={cn(buttonVariants({ variant: 'primary', size: 'lg' }), 'w-full gap-2')}
                 >
-                  <Calendar className="size-4" aria-hidden="true" />
-                  Rezervasyon Yap
+                  <ExternalLink className="size-4" aria-hidden="true" />
+                  Satın Al
                 </Link>
               )}
               {expired ? null : <FavoriteButton dealId={deal.id} />}
@@ -538,7 +553,7 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
               />
               {expired ? null : (
                 <p className="text-muted-foreground text-center text-xs">
-                  Mock akış — gerçek ödeme alınmaz, demo rezervasyon kaydı tutulur.
+                  Ödeme iş ortağımız firsatbufirsat.com&apos;da güvenle tamamlanır.
                 </p>
               )}
 
@@ -574,6 +589,18 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
               <SimilarDeals categorySlug={primaryCategory.slug} excludeDealId={deal.id} />
             </Suspense>
           ) : null}
+
+          {deal.merchant && deal.merchant_id ? (
+            <Suspense fallback={<SimilarDealsSkeleton />}>
+              <MerchantOtherDeals
+                merchantId={deal.merchant_id}
+                merchantName={deal.merchant.name}
+                excludeDealId={deal.id}
+              />
+            </Suspense>
+          ) : null}
+
+          <RecentlyViewed key={deal.slug} currentSlug={deal.slug} />
         </div>
       </Container>
 
@@ -587,7 +614,7 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
         originalPrice={deal.original_price}
         discountedPrice={deal.discounted_price}
         discountPercent={deal.discount_percent}
-        ctaLabel={isHotelDeal ? 'Tarihleri seç' : 'Rezervasyon Yap'}
+        ctaLabel="Satın Al"
       />
     </>
   );

@@ -10,6 +10,7 @@ import { buttonVariants } from '@/components/ui/button';
 import { isDealExpired } from '@/lib/utils/deal-status';
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
 import { formatTRY } from '@/lib/utils/format';
+import { dealCtaHref } from '@/lib/utils/affiliate';
 import { cn } from '@/lib/utils/cn';
 
 interface Props {
@@ -161,11 +162,11 @@ export function DealQuickView({ deal, onClose }: Props) {
             </Link>
             {expired ? null : (
               <Link
-                href={`/rezervasyon/${deal.slug}`}
+                href={dealCtaHref(deal.slug)}
                 onClick={onClose}
                 className={cn(buttonVariants({ variant: 'primary', size: 'md' }), 'gap-1.5')}
               >
-                Rezervasyon
+                Satın Al
                 <ArrowRight className="size-3.5" aria-hidden="true" />
               </Link>
             )}

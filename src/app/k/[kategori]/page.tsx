@@ -26,6 +26,7 @@ type Search = {
   min?: string;
   max?: string;
   sort?: string;
+  alt?: string;
 };
 
 export async function generateMetadata({
@@ -102,6 +103,7 @@ export default async function CategoryPage({
         : ctx.city;
   const tags = normalizeTags(sp.tag);
   const audience = normalizeAudience(sp.aud);
+  const externalTag = sp.alt?.trim() || undefined;
   const minPrice = parsePrice(sp.min);
   const maxPrice = parsePrice(sp.max);
   const sort = (VALID_SORTS as readonly string[]).includes(sp.sort ?? '')
@@ -112,6 +114,7 @@ export default async function CategoryPage({
     Boolean(city) ||
     tags.length > 0 ||
     audience.length > 0 ||
+    Boolean(externalTag) ||
     minPrice !== undefined ||
     maxPrice !== undefined;
 
@@ -119,6 +122,7 @@ export default async function CategoryPage({
     categorySlug: kategori,
     city,
     tags: tags.length > 0 ? tags : undefined,
+    externalTag,
     audience: audience.length > 0 ? audience : undefined,
     minPrice,
     maxPrice,
@@ -190,6 +194,17 @@ export default async function CategoryPage({
             ) : null}
           </p>
         </header>
+
+        {externalTag ? (
+          <div className="mb-4">
+            <span className="border-foreground bg-foreground text-background inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium">
+              {externalTag}
+              <Link href={`/k/${kategori}`} aria-label="Alt kategori filtresini kaldır">
+                ✕
+              </Link>
+            </span>
+          </div>
+        ) : null}
 
         <div className="mb-6">
           <CategoryFilters

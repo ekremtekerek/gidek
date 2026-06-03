@@ -12,6 +12,8 @@ const nextConfig: NextConfig = {
       { protocol: 'https', hostname: 'picsum.photos' },
       { protocol: 'https', hostname: 'images.unsplash.com' },
       { protocol: 'https', hostname: 'res.cloudinary.com' },
+      // Affiliate kaynağı — firsatbufirsat.com deal görselleri.
+      { protocol: 'https', hostname: 'cdn.firsatbufirsat.com' },
     ],
   },
   async redirects() {
@@ -21,6 +23,9 @@ const nextConfig: NextConfig = {
       // ?q=Cumartesi+akşam) are preserved by Next.js, and ChatContainer
       // picks them up to auto-send the first message.
       { source: '/kesfet', destination: '/', permanent: false },
+      // Affiliate pivotu: eski mock rezervasyon/ödeme akışı kaldırıldı. Eski
+      // linkler artık affiliate köprü sayfasına yönlenir (slug korunur).
+      { source: '/rezervasyon/:slug', destination: '/git/:slug', permanent: false },
     ];
   },
 };

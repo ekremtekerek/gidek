@@ -34,6 +34,55 @@ export type Database = {
   }
   public: {
     Tables: {
+      affiliate_clicks: {
+        Row: {
+          created_at: string
+          deal_id: string
+          id: string
+          referrer: string | null
+          sub_deal_external_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          deal_id: string
+          id?: string
+          referrer?: string | null
+          sub_deal_external_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          deal_id?: string
+          id?: string
+          referrer?: string | null
+          sub_deal_external_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "affiliate_clicks_deal_id_fkey"
+            columns: ["deal_id"]
+            isOneToOne: false
+            referencedRelation: "deals"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "affiliate_clicks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profile_follow_counts"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "affiliate_clicks_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ai_cache: {
         Row: {
           created_at: string
@@ -844,6 +893,7 @@ export type Database = {
       }
       deals: {
         Row: {
+          affiliate_options: Json | null
           audience: string[]
           available_times: Json | null
           capacity: number | null
@@ -857,6 +907,9 @@ export type Database = {
           district: string | null
           duration_minutes: number | null
           embedding: string | null
+          external_id: string | null
+          external_tags: string[]
+          external_url: string | null
           highlights: string[] | null
           id: string
           images: string[]
@@ -876,6 +929,7 @@ export type Database = {
           slug: string
           sold_count: number
           sort_priority: number
+          source: string
           subtitle: string | null
           tags: string[]
           terms: string | null
@@ -887,6 +941,7 @@ export type Database = {
           view_count: number
         }
         Insert: {
+          affiliate_options?: Json | null
           audience?: string[]
           available_times?: Json | null
           capacity?: number | null
@@ -900,6 +955,9 @@ export type Database = {
           district?: string | null
           duration_minutes?: number | null
           embedding?: string | null
+          external_id?: string | null
+          external_tags?: string[]
+          external_url?: string | null
           highlights?: string[] | null
           id?: string
           images?: string[]
@@ -919,6 +977,7 @@ export type Database = {
           slug: string
           sold_count?: number
           sort_priority?: number
+          source?: string
           subtitle?: string | null
           tags?: string[]
           terms?: string | null
@@ -930,6 +989,7 @@ export type Database = {
           view_count?: number
         }
         Update: {
+          affiliate_options?: Json | null
           audience?: string[]
           available_times?: Json | null
           capacity?: number | null
@@ -943,6 +1003,9 @@ export type Database = {
           district?: string | null
           duration_minutes?: number | null
           embedding?: string | null
+          external_id?: string | null
+          external_tags?: string[]
+          external_url?: string | null
           highlights?: string[] | null
           id?: string
           images?: string[]
@@ -962,6 +1025,7 @@ export type Database = {
           slug?: string
           sold_count?: number
           sort_priority?: number
+          source?: string
           subtitle?: string | null
           tags?: string[]
           terms?: string | null
@@ -1116,6 +1180,7 @@ export type Database = {
           description: string | null
           district: string | null
           email: string | null
+          external_id: string | null
           id: string
           is_active: boolean
           is_verified: boolean
@@ -1127,6 +1192,7 @@ export type Database = {
           rating_avg: number | null
           rating_count: number
           slug: string
+          source: string
           updated_at: string
           website: string | null
           working_hours: Json | null
@@ -1138,6 +1204,7 @@ export type Database = {
           description?: string | null
           district?: string | null
           email?: string | null
+          external_id?: string | null
           id?: string
           is_active?: boolean
           is_verified?: boolean
@@ -1149,6 +1216,7 @@ export type Database = {
           rating_avg?: number | null
           rating_count?: number
           slug: string
+          source?: string
           updated_at?: string
           website?: string | null
           working_hours?: Json | null
@@ -1160,6 +1228,7 @@ export type Database = {
           description?: string | null
           district?: string | null
           email?: string | null
+          external_id?: string | null
           id?: string
           is_active?: boolean
           is_verified?: boolean
@@ -1171,6 +1240,7 @@ export type Database = {
           rating_avg?: number | null
           rating_count?: number
           slug?: string
+          source?: string
           updated_at?: string
           website?: string | null
           working_hours?: Json | null

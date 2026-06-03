@@ -25,6 +25,8 @@
     "seed:personas": "tsx --env-file=.env.local scripts/seed-demo-personas.ts",
     "seed:badges": "tsx --env-file=.env.local scripts/backfill-badges.ts",
     "ai:backfill": "tsx --env-file=.env.local scripts/backfill-embeddings.ts",
+    "sync:affiliate": "tsx --env-file=.env.local scripts/sync-affiliate.ts",
+    "sync:reviews": "tsx --env-file=.env.local scripts/sync-reviews.ts",
     "admin:create": "tsx --env-file=.env.local scripts/create-admin.ts",
     "images:fix": "tsx --env-file=.env.local scripts/fix-broken-images.ts"
   },

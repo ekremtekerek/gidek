@@ -1,4 +1,5 @@
 import 'server-only';
+import { unstable_cache } from 'next/cache';
 import { getPublicClient } from '@/lib/db/public';
 import type { Bounds } from '@/lib/utils/geo';
 import type { Database } from '@/types/supabase';
@@ -15,6 +16,7 @@ export type DealWithMerchant = DealRow & {
     | (Pick<MerchantRow, 'name' | 'slug' | 'city' | 'district'> & {
         lat: number | null;
         lng: number | null;
+        address?: string | null;
         working_hours?: MerchantRow['working_hours'];
       })
     | null;
@@ -26,7 +28,7 @@ export type DealDetailed = DealWithMerchant & {
 
 const DEAL_SELECT = `
   *,
-  merchant:merchants ( name, slug, city, district, lat, lng, working_hours )
+  merchant:merchants ( name, slug, city, district, address, lat, lng, working_hours )
 `;
 
 export type DealSort = 'newest' | 'price-asc' | 'price-desc' | 'popular' | 'trending';
@@ -48,6 +50,8 @@ export interface ListDealsParams {
   city?: string;
   /** Filter by tags — every tag must be present on the deal (AND). */
   tags?: string[];
+  /** Alt kategori filtresi — affiliate `external_tags` içinde bu değer olmalı. */
+  externalTag?: string;
   /**
    * Filter by audience — kullanıcı en az birini seçtiyse, deal'ın audience
    * dizisinin verilen liste ile kesişimi varsa eşleşir (overlaps).
@@ -76,6 +80,7 @@ export async function listDeals({
   categorySlug,
   city,
   tags,
+  externalTag,
   audience,
   minPrice,
   maxPrice,
@@ -87,29 +92,14 @@ export async function listDeals({
 }: ListDealsParams = {}): Promise<DealWithMerchant[]> {
   const supabase = getPublicClient();
 
-  let dealIdsByCategory: string[] | undefined;
-  if (categorySlug) {
-    const { data: cat, error: catErr } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('slug', categorySlug)
-      .eq('is_active', true)
-      .maybeSingle();
+  // Kategori filtresi: inline `!inner` JOIN (deal_categories → categories.slug).
+  // Eski iki-aşamalı `.in('id', [yüzlerce UUID])` yaklaşımı PostgREST URL
+  // limitini aşıp 414 "URI too long" veriyordu (ör. tiyatro 194 deal).
+  const selectStr = categorySlug
+    ? `${DEAL_SELECT}, deal_categories!inner ( category:categories!inner ( slug ) )`
+    : DEAL_SELECT;
 
-    if (catErr) throw catErr;
-    if (!cat) return [];
-
-    const { data: joins, error: joinErr } = await supabase
-      .from('deal_categories')
-      .select('deal_id')
-      .eq('category_id', cat.id);
-
-    if (joinErr) throw joinErr;
-    dealIdsByCategory = (joins ?? []).map((j) => j.deal_id);
-    if (dealIdsByCategory.length === 0) return [];
-  }
-
-  let query = supabase.from('deals').select(DEAL_SELECT).range(offset, offset + limit - 1);
+  let query = supabase.from('deals').select(selectStr).range(offset, offset + limit - 1);
 
   // Sorting — chained .order() calls compose into a multi-column sort.
   // `id` tiebreaker her zaman en sonda: ties durumunda Postgres'in nondeterministic
@@ -140,9 +130,10 @@ export async function listDeals({
   }
   query = query.order('id', { ascending: true });
 
-  if (dealIdsByCategory) query = query.in('id', dealIdsByCategory);
+  if (categorySlug) query = query.eq('deal_categories.category.slug', categorySlug);
   if (city) query = query.eq('city', city);
   if (tags && tags.length > 0) query = query.contains('tags', tags);
+  if (externalTag) query = query.contains('external_tags', [externalTag]);
   if (audience && audience.length > 0) query = query.overlaps('audience', audience);
   if (minPrice !== undefined) query = query.gte('discounted_price', minPrice);
   if (maxPrice !== undefined) query = query.lte('discounted_price', maxPrice);
@@ -156,25 +147,14 @@ export async function listDeals({
       .lte('published_at', nowIso)
       .gt('valid_until', nowIso);
   } else if (status === 'expired') {
-    // PostgREST .or() içine ISO timestamp koymak kırılgan (`:` ayraçla
-    // karışıyor). İki ayrı sorgu yapıp ID seti üzerinden filtre uyguluyoruz.
-    const [byTime, byActive] = await Promise.all([
-      supabase
-        .from('deals')
-        .select('id')
-        .lte('published_at', nowIso)
-        .lte('valid_until', nowIso),
-      supabase
-        .from('deals')
-        .select('id')
-        .lte('published_at', nowIso)
-        .eq('is_active', false),
-    ]);
-    const expiredIds = new Set<string>();
-    for (const r of byTime.data ?? []) expiredIds.add(r.id);
-    for (const r of byActive.data ?? []) expiredIds.add(r.id);
-    if (expiredIds.size === 0) return [];
-    query = query.in('id', Array.from(expiredIds));
+    // Süresi dolmuş VEYA deaktive edilmiş (ama bir kez yayınlanmış). Filtre
+    // tamamen deals kolonları üzerinde → tek sorgu. ISO timestamp'in `:`/`.`
+    // karakterleri PostgREST .or() ayracıyla karışmasın diye değer çift tırnak
+    // içinde verilir. (Eski iki-sorgu + `.in('id', [...])` affiliate ölçeğinde
+    // 414 "URI too long" veriyordu.)
+    query = query
+      .lte('published_at', nowIso)
+      .or(`valid_until.lte."${nowIso}",is_active.eq.false`);
   } else {
     // 'all' — yayınlanmış her şey
     query = query.lte('published_at', nowIso);
@@ -237,6 +217,127 @@ export async function getDealBySlug(slug: string): Promise<DealDetailed | null> 
   return { ...rest, categories };
 }
 
+/**
+ * Aynı işletmenin diğer aktif fırsatları (detay sayfası "İşletmenin Diğer
+ * Fırsatları" bloğu). Mevcut deal hariç.
+ */
+export async function getDealsByMerchant(
+  merchantId: string,
+  excludeDealId: string,
+  limit = 4,
+): Promise<DealWithMerchant[]> {
+  const supabase = getPublicClient();
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('deals')
+    .select(DEAL_SELECT)
+    .eq('merchant_id', merchantId)
+    .neq('id', excludeDealId)
+    .eq('is_active', true)
+    .lte('published_at', nowIso)
+    .gt('valid_until', nowIso)
+    .order('sort_priority', { ascending: false })
+    .order('published_at', { ascending: false })
+    .limit(limit);
+  if (error) throw error;
+  return (data ?? []) as unknown as DealWithMerchant[];
+}
+
+/**
+ * Slug listesine göre aktif fırsatlar — "İncelediğiniz Fırsatlar" (recently
+ * viewed) client component'i kısa bir slug listesi gönderir. Sıra korunur.
+ */
+export async function getDealsBySlugs(slugs: string[]): Promise<DealWithMerchant[]> {
+  if (slugs.length === 0) return [];
+  const supabase = getPublicClient();
+  const nowIso = new Date().toISOString();
+  const { data, error } = await supabase
+    .from('deals')
+    .select(DEAL_SELECT)
+    .in('slug', slugs.slice(0, 20))
+    .eq('is_active', true)
+    .lte('published_at', nowIso)
+    .gt('valid_until', nowIso);
+  if (error) throw error;
+  const rows = (data ?? []) as unknown as DealWithMerchant[];
+  // İstenen slug sırasını koru.
+  const order = new Map(slugs.map((s, i) => [s, i]));
+  return rows.sort((a, b) => (order.get(a.slug) ?? 0) - (order.get(b.slug) ?? 0));
+}
+
+// Alt kategori menüsünden çıkarılacak gürültü/jenerik tag'ler.
+const SUBTAG_STOPLIST = new Set([
+  'çok satan istanbul', 'indirim kartı', 'indirim hediye çeki', 'hediye çeki',
+  'tatil', 'otel', 'konaklama', 'aktivite', 'yemek', 'içecek dahil', 'güzellik',
+]);
+
+export interface CategoryMenuItem {
+  slug: string;
+  name: string;
+  subtags: string[];
+}
+
+/**
+ * Tüm ana kategoriler + her birinin en sık `external_tags` değerleri (alt
+ * kategoriler) — header mega-menüsünü besler. Tek sorgu, JS'te grupla; ana
+ * kategori adı + jenerik gürültü hariç. unstable_cache ile saatlik cache
+ * (her sayfada header render olduğu için sorguyu paylaşır).
+ */
+export const getCategoryMenu = unstable_cache(
+  async (subtagLimit = 8): Promise<CategoryMenuItem[]> => {
+    const supabase = getPublicClient();
+    const nowIso = new Date().toISOString();
+    const { data, error } = await supabase
+      .from('deals')
+      .select('external_tags, deal_categories!inner ( category:categories!inner ( slug, name, sort_order ) )')
+      .eq('is_active', true)
+      .lte('published_at', nowIso)
+      .gt('valid_until', nowIso)
+      .limit(3000);
+    if (error) throw error;
+
+    type Row = {
+      external_tags: string[] | null;
+      deal_categories: { category: { slug: string; name: string; sort_order: number } | null }[] | null;
+    };
+    const norm = (s: string) => s.trim().toLowerCase();
+    const cats = new Map<string, { name: string; sort: number; freq: Map<string, number> }>();
+
+    for (const row of (data ?? []) as Row[]) {
+      for (const dc of row.deal_categories ?? []) {
+        const c = dc.category;
+        if (!c) continue;
+        let entry = cats.get(c.slug);
+        if (!entry) {
+          entry = { name: c.name, sort: c.sort_order ?? 0, freq: new Map() };
+          cats.set(c.slug, entry);
+        }
+        const stopName = norm(c.name);
+        for (const raw of row.external_tags ?? []) {
+          const t = raw.trim();
+          const key = norm(t);
+          if (!t || t.length < 3 || t.length > 28 || SUBTAG_STOPLIST.has(key) || key === stopName) continue;
+          entry.freq.set(t, (entry.freq.get(t) ?? 0) + 1);
+        }
+      }
+    }
+
+    return [...cats.entries()]
+      .sort((a, b) => a[1].sort - b[1].sort)
+      .map(([slug, e]) => ({
+        slug,
+        name: e.name,
+        subtags: [...e.freq.entries()]
+          .filter(([, n]) => n >= 2)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, subtagLimit)
+          .map(([tag]) => tag),
+      }));
+  },
+  ['category-menu'],
+  { revalidate: 3600, tags: ['category-menu'] },
+);
+
 export async function listPublishedDealSlugs(): Promise<string[]> {
   const supabase = getPublicClient();
   // Sitemap için bir kez yayınlanmış (published_at <= now) her deal'ın
@@ -270,37 +371,16 @@ export async function getDealsInBounds(
   const supabase = getPublicClient();
   const limit = options.limit ?? 60;
 
-  // Category filter: same pattern as listDeals — resolve dealIds via the
-  // deal_categories junction first, then constrain the main query.
-  let dealIdsByCategory: string[] | undefined;
-  if (options.categorySlug) {
-    const { data: cat, error: catErr } = await supabase
-      .from('categories')
-      .select('id')
-      .eq('slug', options.categorySlug)
-      .eq('is_active', true)
-      .maybeSingle();
-    if (catErr) throw catErr;
-    if (!cat) return [];
-
-    const { data: joins, error: joinErr } = await supabase
-      .from('deal_categories')
-      .select('deal_id')
-      .eq('category_id', cat.id);
-    if (joinErr) throw joinErr;
-    dealIdsByCategory = (joins ?? []).map((j) => j.deal_id);
-    if (dealIdsByCategory.length === 0) return [];
-  }
+  // Kategori filtresi: inline `!inner` JOIN — listDeals ile aynı. Eski iki
+  // aşamalı `.in('id', [...])` PostgREST URL limitini aşıyordu (414).
+  const selectStr = options.categorySlug
+    ? `*, merchant:merchants!inner ( name, slug, city, district, lat, lng ), deal_categories!inner ( category:categories!inner ( slug ) )`
+    : `*, merchant:merchants!inner ( name, slug, city, district, lat, lng )`;
 
   const nowIso = new Date().toISOString();
   let query = supabase
     .from('deals')
-    .select(
-      `
-      *,
-      merchant:merchants!inner ( name, slug, city, district, lat, lng )
-    `,
-    )
+    .select(selectStr)
     .filter('merchant.lat', 'gte', bounds.sw.lat)
     .filter('merchant.lat', 'lte', bounds.ne.lat)
     .filter('merchant.lng', 'gte', bounds.sw.lng)
@@ -313,7 +393,7 @@ export async function getDealsInBounds(
     .order('published_at', { ascending: false })
     .limit(limit);
 
-  if (dealIdsByCategory) query = query.in('id', dealIdsByCategory);
+  if (options.categorySlug) query = query.eq('deal_categories.category.slug', options.categorySlug);
 
   const { data, error } = await query;
   if (error) throw error;

@@ -2,12 +2,14 @@ import Link from 'next/link';
 import { Flame, Users } from 'lucide-react';
 import { ContextLogo } from '@/components/layout/context-logo';
 import { ContextToggleButton } from '@/components/layout/context-toggle-button';
+import { CategoryMegaMenu } from '@/components/layout/category-mega-menu';
 import { Container } from '@/components/ui/container';
 import { HeaderSearchSwitch } from '@/components/layout/header-search-switch';
 import { MobileMenu } from '@/components/layout/mobile-menu';
 import { NotificationBell } from '@/components/layout/notification-bell';
 import { UserMenu } from '@/components/layout/user-menu';
 import { getServerClient } from '@/lib/db/server';
+import { getCategoryMenu } from '@/lib/db/queries/deals';
 import { listTravelLocations } from '@/lib/db/queries/travel';
 import { getCurrentUser } from '@/lib/security/auth';
 import { getUserContext } from '@/lib/security/user-context-server';
@@ -20,10 +22,11 @@ import { getUserContext } from '@/lib/security/user-context-server';
  * için yeterli görsel sağlıyor.
  */
 export async function Header() {
-  const [user, ctx, travelLocations] = await Promise.all([
+  const [user, ctx, travelLocations, categoryMenu] = await Promise.all([
     getCurrentUser(),
     getUserContext(),
     listTravelLocations(),
+    getCategoryMenu(),
   ]);
 
   let avatarUrl: string | null = null;
@@ -73,6 +76,8 @@ export async function Header() {
           <MobileMenu user={user} avatarUrl={avatarUrl} ctx={ctx} />
         </div>
       </Container>
+
+      <CategoryMegaMenu menu={categoryMenu} />
     </header>
   );
 }
