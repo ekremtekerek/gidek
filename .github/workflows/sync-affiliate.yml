@@ -1,0 +1,61 @@
+name: Affiliate Sync
+
+# firsatbufirsat kataloğunu + yorumları prod Supabase'e periyodik çeker.
+# Sync ağır (~7 dk: tarama + geocode + embedding + AI açıklama yeniden-yazımı),
+# Vercel/Edge fonksiyon süre limitlerini aşar — bu yüzden GitHub runner'da çalışır.
+#
+# GEREKLİ SECRETS (Settings → Secrets and variables → Actions → New secret):
+#   NEXT_PUBLIC_SUPABASE_URL        prod Supabase URL
+#   NEXT_PUBLIC_SUPABASE_ANON_KEY   prod anon key
+#   SUPABASE_SERVICE_ROLE_KEY       prod service_role key (RLS bypass — sync yazma)
+#   GEMINI_API_KEY                  embedding + açıklama yeniden-yazımı
+#   NEXT_PUBLIC_MAPBOX_TOKEN        merchant geocode (yoksa şehir centroid'ine düşer)
+
+on:
+  schedule:
+    # Her gün 02:00 UTC (05:00 TR) — düşük trafik saati.
+    - cron: '0 2 * * *'
+  workflow_dispatch: {} # Actions sekmesinden manuel "Run workflow".
+
+# Aynı anda iki sync çalışmasın (upsert çakışması / çift maliyet).
+concurrency:
+  group: affiliate-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+
+      - run: npm ci
+
+      - name: Prepare env
+        # Script'ler `tsx --env-file=.env.local` ile çalışır; secrets'tan üret.
+        # Model id'leri gizli değil — kod varsayılanıyla aynı sabit değerler.
+        run: |
+          cat > .env.local <<EOF
+          NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY=${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }}
+          NEXT_PUBLIC_MAPBOX_TOKEN=${{ secrets.NEXT_PUBLIC_MAPBOX_TOKEN }}
+          AI_MODEL=gemini-2.5-flash
+          AI_EMBEDDING_MODEL=gemini-embedding-001
+          EOF
+
+      - name: Sync deals (affiliate)
+        run: npm run sync:affiliate
+
+      - name: Sync reviews
+        run: npm run sync:reviews
+
+      - name: Cleanup env
+        if: always()
+        run: rm -f .env.local
