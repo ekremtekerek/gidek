@@ -4,8 +4,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function DealLoading() {
   return (
     <Container className="py-8 sm:py-10">
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1.4fr_1fr]">
-        <div className="flex flex-col gap-4">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="flex min-w-0 flex-col gap-4">
           <Skeleton className="aspect-[16/10] w-full rounded-xl" />
           <div className="grid grid-cols-2 gap-3">
             <Skeleton className="aspect-[4/3] rounded-lg" />

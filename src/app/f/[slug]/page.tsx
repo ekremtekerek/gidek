@@ -244,9 +244,12 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
           </ol>
         </nav>
 
-        <div className="grid gap-8 lg:grid-cols-[1.4fr_1fr]">
+        {/* Sağ (satın alma) kolonu sabit 360px; sol kolon minmax(0,1fr) ile
+            shrink-güvenli — büyük görsel grid track'i şişirip satın alma
+            kısmını daraltmasın (fr track'lerinin örtük min-width:auto sorunu). */}
+        <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_360px]">
           {/* Left: image + content */}
-          <div className="flex flex-col gap-6">
+          <div className="flex min-w-0 flex-col gap-6">
             <ImageGallery
               title={deal.title}
               cover={deal.cover_image}
