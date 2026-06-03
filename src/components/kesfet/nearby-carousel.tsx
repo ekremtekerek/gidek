@@ -156,8 +156,6 @@ function MiniDealCard({
   return (
     <Link
       href={`/f/${deal.slug}`}
-      target="_blank"
-      rel="noopener noreferrer"
       className="group block focus-visible:outline-none"
       aria-label={deal.title}
     >
@@ -196,9 +194,7 @@ function MiniDealCard({
               <span className="line-clamp-1">{location}</span>
             </p>
           ) : null}
-          <p className="mt-0.5 text-xs font-bold sm:text-sm">
-            {formatTRY(deal.discounted_price)}
-          </p>
+          <p className="mt-0.5 text-xs font-bold sm:text-sm">{formatTRY(deal.discounted_price)}</p>
         </div>
       </div>
     </Link>

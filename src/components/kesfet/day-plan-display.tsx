@@ -33,7 +33,7 @@ export function DayPlanDisplay({ plan }: Props) {
               <span className="text-xl" aria-hidden="true">
                 {s.emoji}
               </span>
-              <span className="text-foreground/80 text-xs font-mono">{s.time}</span>
+              <span className="text-foreground/80 font-mono text-xs">{s.time}</span>
             </div>
 
             <div className="min-w-0 flex-1">
@@ -44,8 +44,6 @@ export function DayPlanDisplay({ plan }: Props) {
               {s.deal ? (
                 <Link
                   href={`/f/${s.deal.slug}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
                   className="hover:bg-muted/40 -mx-2 mt-1 flex gap-3 rounded-md p-2 transition-colors"
                 >
                   <div className="relative size-16 shrink-0 overflow-hidden rounded-md">

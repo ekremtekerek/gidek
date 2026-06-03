@@ -24,7 +24,7 @@ interface Props {
 export function SwappedStepCard({ step, replaced }: Props) {
   if (!replaced || !step) {
     return (
-      <div className="border-amber-500/30 bg-amber-500/10 rounded-xl border p-3 text-sm">
+      <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
         Bu adıma uygun yeni bir aday bulamadım. Daha farklı bir kriter dener misin?
       </div>
     );
@@ -40,8 +40,10 @@ export function SwappedStepCard({ step, replaced }: Props) {
       </div>
       <div className="flex gap-3 p-3 sm:gap-4 sm:p-4">
         <div className="flex w-12 shrink-0 flex-col items-center gap-0.5 pt-0.5 sm:w-16">
-          <span className="text-xl" aria-hidden="true">{step.emoji}</span>
-          <span className="text-foreground/80 text-xs font-mono">{step.time}</span>
+          <span className="text-xl" aria-hidden="true">
+            {step.emoji}
+          </span>
+          <span className="text-foreground/80 font-mono text-xs">{step.time}</span>
         </div>
         <div className="min-w-0 flex-1">
           <p className="text-muted-foreground text-xs font-semibold tracking-wide uppercase">
@@ -50,8 +52,6 @@ export function SwappedStepCard({ step, replaced }: Props) {
           {deal ? (
             <Link
               href={`/f/${deal.slug}`}
-              target="_blank"
-              rel="noopener noreferrer"
               className="hover:bg-muted/40 -mx-2 mt-1 flex gap-3 rounded-md p-2 transition-colors"
             >
               <div className="relative size-16 shrink-0 overflow-hidden rounded-md">
@@ -72,9 +72,7 @@ export function SwappedStepCard({ step, replaced }: Props) {
               </div>
             </Link>
           ) : (
-            <p className="text-muted-foreground mt-1 text-xs">
-              Bu adıma uygun aday bulunamadı.
-            </p>
+            <p className="text-muted-foreground mt-1 text-xs">Bu adıma uygun aday bulunamadı.</p>
           )}
         </div>
       </div>

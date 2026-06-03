@@ -33,14 +33,12 @@ export function DealResults({ deals, userQuery }: Props) {
         <li key={d.id} className="relative">
           {/* WhyRecommended Link DIŞINDA — popover overflow:hidden tarafından kesilmesin,
               ve butona tıklama Link navigasyonunu tetiklemesin. */}
-          <div className="absolute right-3 top-3 z-10">
+          <div className="absolute top-3 right-3 z-10">
             <WhyRecommended dealId={d.id} userQuery={userQuery} />
           </div>
 
           <Link
             href={`/f/${d.slug}`}
-            target="_blank"
-            rel="noopener noreferrer"
             className="group border-border bg-background hover:border-foreground/30 block overflow-hidden rounded-2xl border shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg"
           >
             <div className="flex flex-col sm:flex-row">
@@ -95,7 +93,7 @@ export function DealResults({ deals, userQuery }: Props) {
                   <p className="text-muted-foreground line-clamp-1 text-sm">{d.subtitle}</p>
                 ) : null}
 
-                {(d.district || d.city) ? (
+                {d.district || d.city ? (
                   <p className="text-muted-foreground inline-flex items-center gap-1 text-xs">
                     <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
                     <span>{[d.district, d.city].filter(Boolean).join(', ')}</span>
