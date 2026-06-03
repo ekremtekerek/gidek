@@ -43,7 +43,7 @@ export function CategoryMegaMenu({ menu }: Props) {
                           <ChevronRight className="size-3.5" aria-hidden="true" />
                         </Link>
                       </div>
-                      <ul className="grid grid-cols-2 gap-x-6 gap-y-1 sm:grid-cols-3 lg:grid-cols-4">
+                      <ul className="grid max-h-[70vh] grid-cols-2 gap-x-6 gap-y-1 overflow-y-auto sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
                         {cat.subtags.map((tag) => (
                           <li key={tag}>
                             <Link

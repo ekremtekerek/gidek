@@ -1,6 +1,7 @@
 import 'server-only';
 import { unstable_cache } from 'next/cache';
 import { getPublicClient } from '@/lib/db/public';
+import { CATEGORY_SUBCATEGORIES } from '@/lib/utils/constants';
 import type { Bounds } from '@/lib/utils/geo';
 import type { Database } from '@/types/supabase';
 
@@ -265,31 +266,27 @@ export async function getDealsBySlugs(slugs: string[]): Promise<DealWithMerchant
   return rows.sort((a, b) => (order.get(a.slug) ?? 0) - (order.get(b.slug) ?? 0));
 }
 
-// Alt kategori menüsünden çıkarılacak gürültü/jenerik tag'ler.
-const SUBTAG_STOPLIST = new Set([
-  'çok satan istanbul', 'indirim kartı', 'indirim hediye çeki', 'hediye çeki',
-  'tatil', 'otel', 'konaklama', 'aktivite', 'yemek', 'içecek dahil', 'güzellik',
-]);
-
 export interface CategoryMenuItem {
   slug: string;
   name: string;
-  subtags: string[];
+  /** Alt kategoriler — `external_tags` değerleri (CATEGORY_SUBCATEGORIES). */
+  subtags: readonly string[];
 }
 
 /**
- * Tüm ana kategoriler + her birinin en sık `external_tags` değerleri (alt
- * kategoriler) — header mega-menüsünü besler. Tek sorgu, JS'te grupla; ana
- * kategori adı + jenerik gürültü hariç. unstable_cache ile saatlik cache
- * (her sayfada header render olduğu için sorguyu paylaşır).
+ * Header mega-menüsü: aktif fırsatı olan ana kategoriler (sıralı) + her birinin
+ * küratörlü alt kategorileri (`CATEGORY_SUBCATEGORIES`). Kategori listesi
+ * DB'den gelir (boş kategori menüde görünmez); alt kategoriler sabit haritadan
+ * — değerler `deals.external_tags` ile birebir eşleşir, link `?alt=<tag>`.
+ * unstable_cache ile saatlik cache (her sayfada header render olur).
  */
 export const getCategoryMenu = unstable_cache(
-  async (subtagLimit = 8): Promise<CategoryMenuItem[]> => {
+  async (): Promise<CategoryMenuItem[]> => {
     const supabase = getPublicClient();
     const nowIso = new Date().toISOString();
     const { data, error } = await supabase
       .from('deals')
-      .select('external_tags, deal_categories!inner ( category:categories!inner ( slug, name, sort_order ) )')
+      .select('deal_categories!inner ( category:categories!inner ( slug, name, sort_order ) )')
       .eq('is_active', true)
       .lte('published_at', nowIso)
       .gt('valid_until', nowIso)
@@ -297,28 +294,13 @@ export const getCategoryMenu = unstable_cache(
     if (error) throw error;
 
     type Row = {
-      external_tags: string[] | null;
       deal_categories: { category: { slug: string; name: string; sort_order: number } | null }[] | null;
     };
-    const norm = (s: string) => s.trim().toLowerCase();
-    const cats = new Map<string, { name: string; sort: number; freq: Map<string, number> }>();
-
+    const cats = new Map<string, { name: string; sort: number }>();
     for (const row of (data ?? []) as Row[]) {
       for (const dc of row.deal_categories ?? []) {
         const c = dc.category;
-        if (!c) continue;
-        let entry = cats.get(c.slug);
-        if (!entry) {
-          entry = { name: c.name, sort: c.sort_order ?? 0, freq: new Map() };
-          cats.set(c.slug, entry);
-        }
-        const stopName = norm(c.name);
-        for (const raw of row.external_tags ?? []) {
-          const t = raw.trim();
-          const key = norm(t);
-          if (!t || t.length < 3 || t.length > 28 || SUBTAG_STOPLIST.has(key) || key === stopName) continue;
-          entry.freq.set(t, (entry.freq.get(t) ?? 0) + 1);
-        }
+        if (c && !cats.has(c.slug)) cats.set(c.slug, { name: c.name, sort: c.sort_order ?? 0 });
       }
     }
 
@@ -327,11 +309,7 @@ export const getCategoryMenu = unstable_cache(
       .map(([slug, e]) => ({
         slug,
         name: e.name,
-        subtags: [...e.freq.entries()]
-          .filter(([, n]) => n >= 2)
-          .sort((a, b) => b[1] - a[1])
-          .slice(0, subtagLimit)
-          .map(([tag]) => tag),
+        subtags: CATEGORY_SUBCATEGORIES[slug] ?? [],
       }));
   },
   ['category-menu'],

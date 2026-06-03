@@ -45,8 +45,10 @@ export function EndingSoon({ deals }: Props) {
         <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
           {deals.slice(0, 8).map((deal) => (
             <li key={deal.id} className="relative">
-              <DealCard deal={deal} />
-              <span className="absolute top-3 right-3 inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-md">
+              <DealCard deal={deal} showFeaturedBadge={false} />
+              {/* Kalan gün rozeti solda; indirim rozeti (DealCard) sağda — üst
+                  üste binmesin diye sol üst köşeye alındı. */}
+              <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white shadow-md">
                 <Clock className="size-2.5" aria-hidden="true" />
                 {daysLeft(deal.valid_until)}
               </span>

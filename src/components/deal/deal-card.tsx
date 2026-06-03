@@ -25,6 +25,11 @@ interface DealCardProps {
   expired?: boolean;
   /** Hızlı bak butonu — true ise hover'da görünür, varsayılan true. */
   quickView?: boolean;
+  /**
+   * Sol üstteki "Öne çıkan" rozetini göster. Varsayılan true. Vitrin gibi
+   * sol üste kendi rozetini (ör. kalan gün) koyan yerlerde false geçilir.
+   */
+  showFeaturedBadge?: boolean;
 }
 
 export function DealCard({
@@ -33,6 +38,7 @@ export function DealCard({
   priority = false,
   expired,
   quickView = true,
+  showFeaturedBadge = true,
 }: DealCardProps) {
   const [qvOpen, setQvOpen] = useState(false);
   const discount = deal.discount_percent ?? 0;
@@ -73,7 +79,7 @@ export function DealCard({
             <Badge variant="outline" size="sm" className="bg-background/95 backdrop-blur">
               Bu fırsat kaçtı
             </Badge>
-          ) : deal.is_featured ? (
+          ) : showFeaturedBadge && deal.is_featured ? (
             <Badge variant="accent" size="sm">
               Öne çıkan
             </Badge>
