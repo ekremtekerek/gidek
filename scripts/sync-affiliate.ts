@@ -9,15 +9,22 @@
  *   npm run sync:affiliate -- --browse-only     # sadece browse
  *   npm run sync:affiliate -- --events-only     # sadece etkinlikler
  *   npm run sync:affiliate -- --no-embed        # embedding hesaplama (sonra `npm run ai:backfill`)
+ *   npm run sync:affiliate -- --no-rewrite      # açıklamaları AI ile özgünleştirme (ham metni yaz)
  *   npm run sync:affiliate -- --purge-local     # mock (source='local') deal'ları sil → tam pivot
  *
  * service_role anahtarı kullanır → RLS bypass.
  */
 import { createClient } from '@supabase/supabase-js';
-import { browseAll, browseAllByCity, eventsAll, type EventDeal } from '../src/lib/affiliate/firsatbufirsat';
+import {
+  browseAll,
+  browseAllByCity,
+  eventsAll,
+  type EventDeal,
+} from '../src/lib/affiliate/firsatbufirsat';
 import { mapBrowseDeal, mapEventDeal, type MappedDeal } from '../src/lib/affiliate/mapping';
 import { geocodeAddress, hasGeocoder } from '../src/lib/affiliate/geocode';
 import { dealEmbeddingText, embed, toPgVector } from '../src/lib/ai/embeddings';
+import { rewriteDealDescription } from '../src/lib/ai/rewrite-deal-description';
 import { MAIN_CATEGORIES } from '../src/lib/utils/constants';
 import { CITY_CENTROIDS, type LatLng } from '../src/lib/utils/geo';
 import type { Database } from '../src/types/supabase';
@@ -46,6 +53,7 @@ const browseOnly = hasFlag('--browse-only');
 const eventsOnly = hasFlag('--events-only');
 const noEmbed = hasFlag('--no-embed');
 const noGeocode = hasFlag('--no-geocode');
+const noRewrite = hasFlag('--no-rewrite');
 const purgeLocal = hasFlag('--purge-local');
 
 function chunk<T>(arr: T[], size: number): T[][] {
@@ -248,7 +256,9 @@ async function upsertMerchants(
 async function embedAll(deals: MappedDeal[]): Promise<Map<string, string | null>> {
   const out = new Map<string, string | null>();
   if (noEmbed || !process.env.GEMINI_API_KEY) {
-    console.log('  embeddings: atlandı (--no-embed veya GEMINI_API_KEY yok → `npm run ai:backfill`)');
+    console.log(
+      '  embeddings: atlandı (--no-embed veya GEMINI_API_KEY yok → `npm run ai:backfill`)',
+    );
     for (const d of deals) out.set(d.external_id, null);
     return out;
   }
@@ -282,7 +292,9 @@ async function embedAll(deals: MappedDeal[]): Promise<Map<string, string | null>
         fail++;
         out.set(d.external_id, null);
         if (fail <= 5) {
-          console.error(`  embed fail [${d.slug}]: ${err instanceof Error ? err.message : String(err)}`);
+          console.error(
+            `  embed fail [${d.slug}]: ${err instanceof Error ? err.message : String(err)}`,
+          );
         }
       }
       if ((ok + fail) % 200 === 0) console.log(`  embeddings: ${ok + fail}/${deals.length}…`);
@@ -294,6 +306,94 @@ async function embedAll(deals: MappedDeal[]): Promise<Map<string, string | null>
 }
 
 // ----------------------------------------------------------------------------
+// Açıklama yeniden yazımı (SEO — duplike içerik riskini azaltır)
+// ----------------------------------------------------------------------------
+type DescInfo = { description: string; ai: boolean };
+
+/**
+ * Ham (tedarikçiden birebir) açıklamaları AI ile özgünleştirir. Idempotent:
+ * DB'de description_ai=true olan deal'ların açıklaması KORUNUR — her senkronda
+ * tekrar AI çağrısı yapılmaz ve ham metinle ezilmez. Yalnızca henüz
+ * özgünleştirilmemiş (yeni veya başarısız) açıklamalar yeniden yazılır.
+ * --no-rewrite veya GEMINI_API_KEY yoksa: mevcut özgün metinler korunur, yeniler
+ * ham bırakılır (bayrak false → sonraki çalıştırmada yeniden denenir).
+ */
+async function rewriteDescriptions(deals: MappedDeal[]): Promise<Map<string, DescInfo>> {
+  const out = new Map<string, DescInfo>();
+
+  const { data, error } = await supabase
+    .from('deals')
+    .select('external_id, description, description_ai')
+    .eq('source', SOURCE);
+  if (error) throw error;
+  const existing = new Map<string, DescInfo>();
+  for (const r of data ?? []) {
+    if (r.external_id)
+      existing.set(r.external_id, { description: r.description, ai: r.description_ai });
+  }
+
+  // Zaten özgünleştirilmiş olanları her durumda koru (ham metinle ezme).
+  for (const d of deals) {
+    const ex = existing.get(d.external_id);
+    if (ex?.ai) out.set(d.external_id, { description: ex.description, ai: true });
+  }
+
+  if (noRewrite || !process.env.GEMINI_API_KEY) {
+    console.log(`  rewrite: atlandı (${noRewrite ? '--no-rewrite' : 'GEMINI_API_KEY yok'})`);
+    for (const d of deals) {
+      if (!out.has(d.external_id))
+        out.set(d.external_id, { description: d.description, ai: false });
+    }
+    return out;
+  }
+
+  const todo = deals.filter((d) => !existing.get(d.external_id)?.ai);
+  console.log(
+    `  rewrite: ${todo.length} açıklama yeniden yazılacak (${deals.length - todo.length} zaten özgün)`,
+  );
+
+  const catName = (slug: string) => MAIN_CATEGORIES.find((c) => c.slug === slug)?.name ?? slug;
+  const CONCURRENCY = 5;
+  let next = 0;
+  let ok = 0;
+  let kept = 0;
+  async function worker() {
+    while (true) {
+      const i = next++;
+      if (i >= todo.length) return;
+      const d = todo[i];
+      try {
+        const rewritten = await rewriteDealDescription({
+          title: d.title,
+          description: d.description,
+          category: catName(d.categorySlug),
+          city: d.city,
+          district: d.district,
+          highlights: d.highlights,
+        });
+        // Metin gerçekten değiştiyse "ai" işaretle; aksi halde ham say (retry).
+        const changed = rewritten.trim().length >= 40 && rewritten.trim() !== d.description.trim();
+        out.set(d.external_id, { description: changed ? rewritten : d.description, ai: changed });
+        if (changed) ok++;
+        else kept++;
+      } catch (err) {
+        kept++;
+        out.set(d.external_id, { description: d.description, ai: false });
+        if (kept <= 5) {
+          console.error(
+            `  rewrite fail [${d.slug}]: ${err instanceof Error ? err.message : String(err)}`,
+          );
+        }
+      }
+      if ((ok + kept) % 100 === 0) console.log(`  rewrite: ${ok + kept}/${todo.length}…`);
+    }
+  }
+  await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  console.log(`  rewrite: ok=${ok} (özgünleştirildi), atlanan/ham=${kept}`);
+  return out;
+}
+
+// ----------------------------------------------------------------------------
 // Deal upsert + kategori junction
 // ----------------------------------------------------------------------------
 async function upsertDeals(
@@ -301,6 +401,7 @@ async function upsertDeals(
   merchantIds: Map<string, string>,
   catIds: Map<string, string>,
   embeddings: Map<string, string | null>,
+  descriptions: Map<string, DescInfo>,
   coordsMap: Map<string, LatLng>,
 ): Promise<string[]> {
   const nowIso = new Date().toISOString();
@@ -310,6 +411,7 @@ async function upsertDeals(
       if (!merchantId) return null;
       // Deal koordinatı = merchant'ın çözülmüş (geocode'lu) konumu.
       const c = coordsMap.get(d.merchant.external_id);
+      const desc = descriptions.get(d.external_id);
       return {
         source: SOURCE,
         external_id: d.external_id,
@@ -317,7 +419,8 @@ async function upsertDeals(
         merchant_id: merchantId,
         title: d.title,
         subtitle: d.subtitle,
-        description: d.description,
+        description: desc?.description ?? d.description,
+        description_ai: desc?.ai ?? false,
         highlights: d.highlights,
         terms: d.terms,
         cover_image: d.cover_image,
@@ -401,13 +504,18 @@ async function deactivateStale(seenExternalIds: string[]) {
     .eq('is_active', true);
   if (error) throw error;
   const seen = new Set(seenExternalIds);
-  const staleIds = (existing ?? []).filter((r) => r.external_id && !seen.has(r.external_id)).map((r) => r.id);
+  const staleIds = (existing ?? [])
+    .filter((r) => r.external_id && !seen.has(r.external_id))
+    .map((r) => r.id);
   if (staleIds.length === 0) {
     console.log('  stale: 0');
     return;
   }
   for (const part of chunk(staleIds, 500)) {
-    const { error: upErr } = await supabase.from('deals').update({ is_active: false }).in('id', part);
+    const { error: upErr } = await supabase
+      .from('deals')
+      .update({ is_active: false })
+      .in('id', part);
     if (upErr) throw upErr;
   }
   console.log(`  stale: ${staleIds.length} pasifleştirildi`);
@@ -436,6 +544,7 @@ async function main() {
     browseOnly,
     eventsOnly,
     noEmbed,
+    noRewrite,
     purgeLocal,
   });
 
@@ -449,7 +558,8 @@ async function main() {
 
   const { idMap: merchantIds, coordsMap } = await upsertMerchants(deals);
   const embeddings = await embedAll(deals);
-  const seen = await upsertDeals(deals, merchantIds, catIds, embeddings, coordsMap);
+  const descriptions = await rewriteDescriptions(deals);
+  const seen = await upsertDeals(deals, merchantIds, catIds, embeddings, descriptions, coordsMap);
   await deactivateStale(seen);
   await purgeLocalDeals();
 
