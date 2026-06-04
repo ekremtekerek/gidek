@@ -39,6 +39,7 @@ export const metadata: Metadata = {
   },
   twitter: { card: 'summary_large_image' },
   robots: { index: true, follow: true },
+  verification: { google: '4TOTnHPaVdnPVwDPDjD_hoYuM3roOzizBxwsZUYjNFU' },
 };
 
 export const viewport: Viewport = {
