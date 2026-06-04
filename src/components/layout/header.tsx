@@ -53,7 +53,7 @@ export async function Header() {
           <ContextToggleButton variant="desktop" />
           <Link
             href="/trend"
-            className="hidden h-9 items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-3 text-xs font-semibold text-rose-700 transition-all hover:bg-rose-500/15 hover:border-rose-500/60 dark:text-rose-300 md:inline-flex"
+            className="hidden h-9 items-center gap-1.5 rounded-full border border-rose-500/40 bg-rose-500/10 px-3 text-xs font-semibold text-rose-700 transition-all hover:border-rose-500/60 hover:bg-rose-500/15 md:inline-flex dark:text-rose-300"
             aria-label="Bu haftanın trendleri"
           >
             <Flame className="size-3.5 animate-pulse" aria-hidden="true" />
@@ -61,7 +61,7 @@ export async function Header() {
           </Link>
           <Link
             href="/u"
-            className="hidden h-9 items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 transition-all hover:border-emerald-500/60 hover:bg-emerald-500/15 dark:text-emerald-300 md:inline-flex"
+            className="hidden h-9 items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 transition-all hover:border-emerald-500/60 hover:bg-emerald-500/15 md:inline-flex dark:text-emerald-300"
             aria-label="Topluluk seçkileri"
           >
             <Users className="size-3.5" aria-hidden="true" />
@@ -73,7 +73,7 @@ export async function Header() {
             </div>
           ) : null}
           <UserMenu user={user} avatarUrl={avatarUrl} />
-          <MobileMenu user={user} avatarUrl={avatarUrl} ctx={ctx} />
+          <MobileMenu user={user} avatarUrl={avatarUrl} ctx={ctx} categories={categoryMenu} />
         </div>
       </Container>
 

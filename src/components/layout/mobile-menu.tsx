@@ -7,6 +7,7 @@ import type { User as SupabaseUser } from '@supabase/supabase-js';
 import {
   Bookmark,
   Camera,
+  ChevronDown,
   Flame,
   Heart,
   LogOut,
@@ -22,6 +23,7 @@ import { signOutAction } from '@/app/profil/actions';
 import { buttonVariants } from '@/components/ui/button';
 import { CityChip } from '@/components/layout/context-chips';
 import { HeaderSearch } from '@/components/layout/header-search';
+import type { CategoryMenuItem } from '@/lib/db/queries/deals';
 import type { UserContext } from '@/lib/security/user-context';
 import { cn } from '@/lib/utils/cn';
 import { SITE } from '@/lib/utils/site-config';
@@ -30,14 +32,17 @@ interface Props {
   user: SupabaseUser | null;
   avatarUrl?: string | null;
   ctx: UserContext;
+  /** Header'daki mega-menü ile aynı kategori listesi — mobilde akordeon. */
+  categories?: CategoryMenuItem[];
 }
 
 // User and avatar are passed in from the server-rendered Header so the menu
 // reflects the latest cookie-bound auth state immediately after login/logout
 // (the previous useUser() hook lagged because Supabase's browser
 // onAuthStateChange doesn't fire when a server action mutates the cookie).
-export function MobileMenu({ user, avatarUrl, ctx }: Props) {
+export function MobileMenu({ user, avatarUrl, ctx, categories = [] }: Props) {
   const [open, setOpen] = useState(false);
+  const [openCat, setOpenCat] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -115,6 +120,64 @@ export function MobileMenu({ user, avatarUrl, ctx }: Props) {
               Şehir seçimin arama, harita ve AI önerilerine yansır.
             </p>
           </div>
+
+          {categories.length > 0 ? (
+            <div>
+              <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
+                Kategoriler
+              </p>
+              <ul className="border-border divide-border divide-y overflow-hidden rounded-lg border">
+                {categories.map((cat) => {
+                  const expanded = openCat === cat.slug;
+                  return (
+                    <li key={cat.slug}>
+                      <div className="flex items-stretch">
+                        <Link
+                          href={`/k/${cat.slug}`}
+                          onClick={close}
+                          className="hover:bg-muted flex-1 px-3 py-2.5 text-sm font-medium"
+                        >
+                          {cat.name}
+                        </Link>
+                        {cat.subtags.length > 0 ? (
+                          <button
+                            type="button"
+                            aria-label={`${cat.name} alt kategorileri`}
+                            aria-expanded={expanded}
+                            onClick={() => setOpenCat((s) => (s === cat.slug ? null : cat.slug))}
+                            className="border-border hover:bg-muted flex w-11 shrink-0 items-center justify-center border-l"
+                          >
+                            <ChevronDown
+                              className={cn(
+                                'size-4 transition-transform',
+                                expanded && 'rotate-180',
+                              )}
+                              aria-hidden="true"
+                            />
+                          </button>
+                        ) : null}
+                      </div>
+                      {expanded && cat.subtags.length > 0 ? (
+                        <ul className="bg-muted/30 flex flex-wrap gap-1.5 px-3 py-2.5">
+                          {cat.subtags.map((tag) => (
+                            <li key={tag}>
+                              <Link
+                                href={`/k/${cat.slug}?alt=${encodeURIComponent(tag)}`}
+                                onClick={close}
+                                className="border-border bg-background hover:border-foreground/40 inline-flex rounded-full border px-2.5 py-1 text-xs capitalize"
+                              >
+                                {tag}
+                              </Link>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          ) : null}
 
           <div>
             <p className="text-muted-foreground mb-2 text-xs font-semibold tracking-wide uppercase">
@@ -219,11 +282,7 @@ export function MobileMenu({ user, avatarUrl, ctx }: Props) {
                 <span className="bg-muted text-muted-foreground inline-flex size-6 shrink-0 items-center justify-center overflow-hidden rounded-full">
                   {avatarUrl ? (
                     /* eslint-disable-next-line @next/next/no-img-element */
-                    <img
-                      src={avatarUrl}
-                      alt={displayName}
-                      className="size-full object-cover"
-                    />
+                    <img src={avatarUrl} alt={displayName} className="size-full object-cover" />
                   ) : (
                     <User className="size-3.5" aria-hidden="true" />
                   )}
@@ -234,10 +293,7 @@ export function MobileMenu({ user, avatarUrl, ctx }: Props) {
                 <button
                   type="submit"
                   onClick={close}
-                  className={cn(
-                    buttonVariants({ variant: 'ghost' }),
-                    'w-full justify-start gap-2',
-                  )}
+                  className={cn(buttonVariants({ variant: 'ghost' }), 'w-full justify-start gap-2')}
                 >
                   <LogOut className="size-4" aria-hidden="true" />
                   Çıkış yap

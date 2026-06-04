@@ -25,5 +25,8 @@ export async function HomeMapSection() {
     },
   });
 
-  return <MapExperience initialDeals={initialDeals} initialCenter={center} />;
+  // key={ctx.city}: şehir değişince setCityAction revalidate eder, bu server
+  // component yeni merkez+deal'larla yeniden render olur ve key değiştiği için
+  // MapExperience remount olur → harita anında yeni şehre geçer (reload gerekmez).
+  return <MapExperience key={ctx.city} initialDeals={initialDeals} initialCenter={center} />;
 }
