@@ -6,7 +6,6 @@ export const SITE = {
     'Ne yapmak istediğini söyle, gidek senin için en uygun fırsatları bulsun. Tiyatro, kahvaltı, tatil, masaj ve daha fazlası.',
   url: process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
   locale: 'tr_TR',
-  defaultOgImage: '/og-default.png',
   social: {
     instagram: 'https://instagram.com/gideknet',
     x: 'https://x.com/gideknet',

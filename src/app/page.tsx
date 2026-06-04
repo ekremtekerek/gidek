@@ -25,13 +25,12 @@ export const metadata: Metadata = {
     url: SITE.url,
     siteName: SITE.name,
     locale: SITE.locale,
-    images: [{ url: SITE.defaultOgImage }],
+    // og:image dosya konvansiyonundan gelir (app/opengraph-image.tsx).
   },
   twitter: {
     card: 'summary_large_image',
     title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
-    images: [SITE.defaultOgImage],
   },
   keywords: [
     'fırsat',
