@@ -18,10 +18,12 @@ function applyTheme(theme: Theme) {
 }
 
 function readStored(): Theme {
-  if (typeof window === 'undefined') return 'auto';
+  // Marka varsayılanı aydınlık — kayıtlı seçim yoksa 'light'. No-flash script
+  // (layout.tsx) ile aynı mantık; aksi halde toggle yanlış seçeneği işaretler.
+  if (typeof window === 'undefined') return 'light';
   const v = window.localStorage.getItem(STORAGE_KEY);
   if (v === 'light' || v === 'dark' || v === 'auto') return v;
-  return 'auto';
+  return 'light';
 }
 
 /**
@@ -31,7 +33,7 @@ function readStored(): Theme {
  * Auto modu sistem tema değişikliklerini izler (matchMedia).
  */
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>('auto');
+  const [theme, setTheme] = useState<Theme>('light');
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {

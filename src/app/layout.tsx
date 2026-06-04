@@ -44,10 +44,9 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
-  ],
+  // Marka varsayılanı aydınlık olduğu için mobil adres çubuğu / status bar
+  // rengini de beyaz tutuyoruz (PWA standalone ve tarayıcı sekmesinde tutarlı).
+  themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
 };
@@ -86,16 +85,25 @@ const websiteJsonLd = {
 
 /**
  * No-flash tema scripti — paint öncesi çalışır, localStorage'ten seçimi
- * okuyup <html>'e .light / .dark sınıfı ekler. Yoksa hiç class eklemez ve
- * @media prefers-color-scheme devreye girer (auto mode).
+ * okuyup <html>'e .light / .dark sınıfı ekler.
+ *
+ * Marka varsayılanı AYDINLIK: kayıtlı seçim yoksa (yeni ziyaretçi — özellikle
+ * sistemi karanlık olan mobil) .light eklenir; site sistem teması dark olsa
+ * bile beyaz açılır (webdeki masaüstü görünümüyle aynı). Sadece kullanıcı
+ * toggle ile 'dark' ya da 'auto' seçerse farklı davranır:
+ *   'dark' → .dark, 'auto' → hiç class (prefers-color-scheme devreye girer).
  */
 const themeBootstrapScript = `
 try {
   var v = localStorage.getItem('gidek-theme');
-  if (v === 'light' || v === 'dark') {
-    document.documentElement.classList.add(v);
+  if (v === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else if (v !== 'auto') {
+    document.documentElement.classList.add('light');
   }
-} catch (e) {}
+} catch (e) {
+  document.documentElement.classList.add('light');
+}
 `;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
