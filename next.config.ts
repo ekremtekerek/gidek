@@ -7,6 +7,11 @@ const withBundleAnalyzer = bundleAnalyzer({
 });
 
 const nextConfig: NextConfig = {
+  // Barrel import'ları (özellikle lucide-react ikonları) tree-shake et → daha
+  // küçük client JS. Yapı/davranış değişmez, yalnızca import çözümleme.
+  experimental: {
+    optimizePackageImports: ['lucide-react', 'embla-carousel-react', 'date-fns'],
+  },
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'picsum.photos' },

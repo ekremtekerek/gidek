@@ -2,6 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 import { useHomeStage } from '@/components/home/home-stage-context';
 import type { DealWithCoords } from '@/lib/db/queries/deals';
@@ -37,26 +38,17 @@ export function MapExperience({ initialDeals, initialCenter }: Props) {
   const lastBoundsRef = useRef<Bounds | null>(null);
   const debounceRef = useRef<number | null>(null);
 
-  // Mapbox (~200KB JS + karo) ağır — harita viewport'a girene kadar mount etme.
-  // Desktop'ta harita hero'da görünür → hemen yüklenir; mobilde chat full-height
-  // olduğu için kıvrımın altında, kullanıcı kaydırınca yüklenir (LCP/TBT kazancı).
-  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  // Mapbox ağır (~605KB karo + mapbox-gl JS). Desktop'ta (lg+) harita chat'in
+  // yanında, hero'nun parçası → otomatik yükle. Mobilde chat full-height ve
+  // harita kıvrımın hemen altında; otomatik yüklersek LCP/TBT'yi vuruyor →
+  // kullanıcı "Haritayı göster"e dokununca yükle.
   const [mapVisible, setMapVisible] = useState(false);
   useEffect(() => {
-    const el = mapContainerRef.current;
-    if (!el || mapVisible) return;
-    const io = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((e) => e.isIntersecting)) {
-          setMapVisible(true);
-          io.disconnect();
-        }
-      },
-      { rootMargin: '300px' },
-    );
-    io.observe(el);
-    return () => io.disconnect();
-  }, [mapVisible]);
+    if (typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setMapVisible(true);
+    }
+  }, []);
 
   const stage = useHomeStage();
   const aiSuggestedDeals = stage?.aiSuggestedDeals ?? null;
@@ -190,7 +182,7 @@ export function MapExperience({ initialDeals, initialCenter }: Props) {
         hasLocation={userLocation !== null}
       />
 
-      <div ref={mapContainerRef} className="relative min-h-0 flex-1">
+      <div className="relative min-h-0 flex-1">
         {mapVisible ? (
           <MapView
             deals={mergedDeals}
@@ -203,9 +195,18 @@ export function MapExperience({ initialDeals, initialCenter }: Props) {
             fitToIds={fitToIds}
           />
         ) : (
-          <div className="bg-muted/40 text-muted-foreground flex h-full items-center justify-center text-sm">
-            Harita hazırlanıyor…
-          </div>
+          <button
+            type="button"
+            onClick={() => setMapVisible(true)}
+            className="from-muted/40 to-muted/10 text-muted-foreground hover:text-foreground flex h-full w-full flex-col items-center justify-center gap-3 bg-gradient-to-b transition-colors"
+            aria-label="Haritayı göster"
+          >
+            <span className="bg-background border-border inline-flex size-14 items-center justify-center rounded-full border shadow-sm">
+              <MapPin className="size-6" aria-hidden="true" />
+            </span>
+            <span className="text-foreground text-sm font-semibold">Haritayı göster</span>
+            <span className="text-xs">Yakındaki fırsatları haritada keşfet</span>
+          </button>
         )}
       </div>
     </div>
