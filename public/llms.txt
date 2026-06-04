@@ -10,6 +10,7 @@ Kullanıcı doğal dilde ne yapmak istediğini yazar; gidek Gemini tabanlı sohb
 - [Tüm fırsatlar](https://gidek.net/firsatlar): kategoriler ve filtrelerle keşif
 - [Keşfet](https://gidek.net/kesfet): AI sohbet asistanı tam ekran
 - [Harita](https://gidek.net/harita): konuma göre interaktif fırsat keşfi
+- [SSS](https://gidek.net/sss): sıkça sorulan sorular — nasıl çalışır, AI, ödeme, üyelik (FAQPage)
 
 ## Kategoriler
 

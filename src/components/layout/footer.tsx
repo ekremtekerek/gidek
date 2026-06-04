@@ -84,6 +84,14 @@ export function Footer() {
                 Favorilerim
               </Link>
             </li>
+            <li>
+              <Link
+                href="/sss"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
+                Sıkça Sorulan Sorular
+              </Link>
+            </li>
           </ul>
           <h2 className="text-foreground mt-6 mb-3 text-sm font-semibold">Yasal</h2>
           <ul className="space-y-2 text-sm">
