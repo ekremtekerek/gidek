@@ -1,4 +1,5 @@
 import 'server-only';
+import { unstable_cache } from 'next/cache';
 import { getPublicClient } from '@/lib/db/public';
 
 /**
@@ -14,7 +15,7 @@ export interface PlatformStats {
   ratingAvg: number | null;
 }
 
-export async function getPlatformStats(): Promise<PlatformStats> {
+async function fetchPlatformStats(): Promise<PlatformStats> {
   const supabase = getPublicClient();
   const nowIso = new Date().toISOString();
 
@@ -25,19 +26,14 @@ export async function getPlatformStats(): Promise<PlatformStats> {
       .eq('is_active', true)
       .lte('published_at', nowIso)
       .gt('valid_until', nowIso),
-    supabase
-      .from('merchants')
-      .select('id', { count: 'exact', head: true })
-      .eq('is_active', true),
+    supabase.from('merchants').select('id', { count: 'exact', head: true }).eq('is_active', true),
     supabase
       .from('deals')
       .select('city')
       .eq('is_active', true)
       .lte('published_at', nowIso)
       .gt('valid_until', nowIso),
-    supabase
-      .from('reviews')
-      .select('rating', { count: 'exact' }),
+    supabase.from('reviews').select('rating', { count: 'exact' }),
   ]);
 
   const uniqueCities = new Set((citiesData.data ?? []).map((d) => d.city));
@@ -57,15 +53,17 @@ export async function getPlatformStats(): Promise<PlatformStats> {
   };
 }
 
+/** Sosyal kanıt sayıları — 10 dk cache (sık değişmez, her anasayfa yükünde DB'ye gitmesin). */
+export const getPlatformStats = unstable_cache(fetchPlatformStats, ['platform-stats'], {
+  revalidate: 600,
+  tags: ['deals'],
+});
+
 /**
  * Yakında biten fırsatlar — `valid_until` önümüzdeki N gün içinde olan,
  * aktif fırsatlar. Aciliyet hissi yaratan "acele et" vitrini için.
  */
-export async function listEndingSoonDeals(args: {
-  city?: string;
-  withinDays?: number;
-  limit?: number;
-}) {
+async function fetchEndingSoonDeals(args: { city?: string; withinDays?: number; limit?: number }) {
   const { city, withinDays = 14, limit = 8 } = args;
   const supabase = getPublicClient();
   const nowIso = new Date().toISOString();
@@ -86,3 +84,9 @@ export async function listEndingSoonDeals(args: {
   if (error) return [];
   return data ?? [];
 }
+
+/** Anasayfa "yakında biten" vitrini — şehir+param başına 5 dk cache (TTFB). */
+export const listEndingSoonDeals = unstable_cache(fetchEndingSoonDeals, ['ending-soon'], {
+  revalidate: 300,
+  tags: ['deals'],
+});

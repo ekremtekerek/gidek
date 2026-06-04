@@ -77,7 +77,7 @@ export interface ListDealsParams {
 // Geriye uyum: server tarafından da kullanılabilsin diye re-export.
 export { isDealExpired } from '@/lib/utils/deal-status';
 
-export async function listDeals({
+async function fetchDeals({
   categorySlug,
   city,
   tags,
@@ -100,7 +100,10 @@ export async function listDeals({
     ? `${DEAL_SELECT}, deal_categories!inner ( category:categories!inner ( slug ) )`
     : DEAL_SELECT;
 
-  let query = supabase.from('deals').select(selectStr).range(offset, offset + limit - 1);
+  let query = supabase
+    .from('deals')
+    .select(selectStr)
+    .range(offset, offset + limit - 1);
 
   // Sorting — chained .order() calls compose into a multi-column sort.
   // `id` tiebreaker her zaman en sonda: ties durumunda Postgres'in nondeterministic
@@ -143,19 +146,14 @@ export async function listDeals({
   // Yaşam döngüsü filtresi — tüm public listings için varsayılan 'active'.
   const nowIso = new Date().toISOString();
   if (status === 'active') {
-    query = query
-      .eq('is_active', true)
-      .lte('published_at', nowIso)
-      .gt('valid_until', nowIso);
+    query = query.eq('is_active', true).lte('published_at', nowIso).gt('valid_until', nowIso);
   } else if (status === 'expired') {
     // Süresi dolmuş VEYA deaktive edilmiş (ama bir kez yayınlanmış). Filtre
     // tamamen deals kolonları üzerinde → tek sorgu. ISO timestamp'in `:`/`.`
     // karakterleri PostgREST .or() ayracıyla karışmasın diye değer çift tırnak
     // içinde verilir. (Eski iki-sorgu + `.in('id', [...])` affiliate ölçeğinde
     // 414 "URI too long" veriyordu.)
-    query = query
-      .lte('published_at', nowIso)
-      .or(`valid_until.lte."${nowIso}",is_active.eq.false`);
+    query = query.lte('published_at', nowIso).or(`valid_until.lte."${nowIso}",is_active.eq.false`);
   } else {
     // 'all' — yayınlanmış her şey
     query = query.lte('published_at', nowIso);
@@ -173,6 +171,16 @@ export async function listDeals({
   }
   return rows;
 }
+
+/**
+ * Aynı liste sorgusu (anasayfa, kategori) tekrar tekrar DB'ye gitmesin — param
+ * kombinasyonu başına 5 dk cache. TTFB düşer; affiliate sync sonrası en geç
+ * 5 dk'da tazelenir. (unstable_cache args'ı serialize edip anahtar üretir.)
+ */
+export const listDeals = unstable_cache(fetchDeals, ['list-deals'], {
+  revalidate: 300,
+  tags: ['deals'],
+});
 
 /**
  * SQL public.deal_trending_score ile birebir aynı formül — DB tarafından
@@ -294,7 +302,9 @@ export const getCategoryMenu = unstable_cache(
     if (error) throw error;
 
     type Row = {
-      deal_categories: { category: { slug: string; name: string; sort_order: number } | null }[] | null;
+      deal_categories:
+        | { category: { slug: string; name: string; sort_order: number } | null }[]
+        | null;
     };
     const cats = new Map<string, { name: string; sort: number }>();
     for (const row of (data ?? []) as Row[]) {
@@ -342,7 +352,7 @@ export type DealWithCoords = DealWithMerchant & {
     | null;
 };
 
-export async function getDealsInBounds(
+async function fetchDealsInBounds(
   bounds: Bounds,
   options: { categorySlug?: string; limit?: number } = {},
 ): Promise<DealWithCoords[]> {
@@ -377,3 +387,13 @@ export async function getDealsInBounds(
   if (error) throw error;
   return (data ?? []) as unknown as DealWithCoords[];
 }
+
+/**
+ * Harita bbox sorgusu — anasayfa hero haritası her yüklemede çağırır. Bbox
+ * başına 2 dk cache: homepage TTFB düşer, harita panning'de kısa süreli stale
+ * kabul edilebilir (fırsatlar dakikalık değişmez).
+ */
+export const getDealsInBounds = unstable_cache(fetchDealsInBounds, ['deals-in-bounds'], {
+  revalidate: 120,
+  tags: ['deals'],
+});
