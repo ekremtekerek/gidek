@@ -14,9 +14,11 @@ export function isFbfImage(url: string | null | undefined): boolean {
 
 /**
  * firsatbufirsat CDN URL'inin boyut segmentini (`/400x400/`, `/1200x1200/`)
- * istenen boyuta çevirir. CDN değilse URL'i aynen döndürür.
+ * VEYA ham (`/raw/`) yolunu istenen boyuta çevirir. `/raw/` tam boyut master'dır
+ * (ör. 1200x897) — kartlarda devasa; 400x400 varyantı ~%80 küçük. CDN değilse
+ * URL'i aynen döndürür.
  */
 export function fbfResize(url: string, size: '400x400' | '1200x1200'): string {
   if (!isFbfImage(url)) return url;
-  return url.replace(/\/\d+x\d+\//, `/${size}/`);
+  return url.replace(/\/(?:\d+x\d+|raw)\//, `/${size}/`);
 }

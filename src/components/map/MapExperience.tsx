@@ -37,6 +37,27 @@ export function MapExperience({ initialDeals, initialCenter }: Props) {
   const lastBoundsRef = useRef<Bounds | null>(null);
   const debounceRef = useRef<number | null>(null);
 
+  // Mapbox (~200KB JS + karo) ağır — harita viewport'a girene kadar mount etme.
+  // Desktop'ta harita hero'da görünür → hemen yüklenir; mobilde chat full-height
+  // olduğu için kıvrımın altında, kullanıcı kaydırınca yüklenir (LCP/TBT kazancı).
+  const mapContainerRef = useRef<HTMLDivElement | null>(null);
+  const [mapVisible, setMapVisible] = useState(false);
+  useEffect(() => {
+    const el = mapContainerRef.current;
+    if (!el || mapVisible) return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) {
+          setMapVisible(true);
+          io.disconnect();
+        }
+      },
+      { rootMargin: '300px' },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [mapVisible]);
+
   const stage = useHomeStage();
   const aiSuggestedDeals = stage?.aiSuggestedDeals ?? null;
 
@@ -66,35 +87,29 @@ export function MapExperience({ initialDeals, initialCenter }: Props) {
     return aiSuggestedDeals.filter((d) => d.lat !== null && d.lng !== null).map((d) => d.id);
   }, [aiSuggestedDeals]);
 
-  const fetchBounds = useCallback(
-    async (b: Bounds, categorySlug: string | null) => {
-      try {
-        const params = new URLSearchParams({
-          swLat: String(b.sw.lat),
-          swLng: String(b.sw.lng),
-          neLat: String(b.ne.lat),
-          neLng: String(b.ne.lng),
-        });
-        if (categorySlug) params.set('category', categorySlug);
-        const res = await fetch(`/api/deals/in-bounds?${params}`, { cache: 'no-store' });
-        if (!res.ok) throw new Error('fetch failed');
-        const json = (await res.json()) as { deals: DealWithCoords[] };
-        setDeals(json.deals ?? []);
-      } catch {
-        toast.error('Harita verileri yüklenemedi.');
-      }
-    },
-    [],
-  );
+  const fetchBounds = useCallback(async (b: Bounds, categorySlug: string | null) => {
+    try {
+      const params = new URLSearchParams({
+        swLat: String(b.sw.lat),
+        swLng: String(b.sw.lng),
+        neLat: String(b.ne.lat),
+        neLng: String(b.ne.lng),
+      });
+      if (categorySlug) params.set('category', categorySlug);
+      const res = await fetch(`/api/deals/in-bounds?${params}`, { cache: 'no-store' });
+      if (!res.ok) throw new Error('fetch failed');
+      const json = (await res.json()) as { deals: DealWithCoords[] };
+      setDeals(json.deals ?? []);
+    } catch {
+      toast.error('Harita verileri yüklenemedi.');
+    }
+  }, []);
 
   const handleBoundsChange = useCallback(
     (b: Bounds) => {
       lastBoundsRef.current = b;
       if (debounceRef.current) window.clearTimeout(debounceRef.current);
-      debounceRef.current = window.setTimeout(
-        () => fetchBounds(b, filterState.categorySlug),
-        400,
-      );
+      debounceRef.current = window.setTimeout(() => fetchBounds(b, filterState.categorySlug), 400);
     },
     [fetchBounds, filterState.categorySlug],
   );
@@ -175,17 +190,23 @@ export function MapExperience({ initialDeals, initialCenter }: Props) {
         hasLocation={userLocation !== null}
       />
 
-      <div className="relative min-h-0 flex-1">
-        <MapView
-          deals={mergedDeals}
-          selectedDeal={selectedDeal}
-          onSelectDeal={setSelectedDeal}
-          onBoundsChange={handleBoundsChange}
-          userLocation={userLocation}
-          initialCenter={initialCenter}
-          aiHighlightIds={aiHighlightIds}
-          fitToIds={fitToIds}
-        />
+      <div ref={mapContainerRef} className="relative min-h-0 flex-1">
+        {mapVisible ? (
+          <MapView
+            deals={mergedDeals}
+            selectedDeal={selectedDeal}
+            onSelectDeal={setSelectedDeal}
+            onBoundsChange={handleBoundsChange}
+            userLocation={userLocation}
+            initialCenter={initialCenter}
+            aiHighlightIds={aiHighlightIds}
+            fitToIds={fitToIds}
+          />
+        ) : (
+          <div className="bg-muted/40 text-muted-foreground flex h-full items-center justify-center text-sm">
+            Harita hazırlanıyor…
+          </div>
+        )}
       </div>
     </div>
   );
