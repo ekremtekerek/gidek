@@ -4,7 +4,9 @@ export const SITE = {
   tagline: 'AI ile sana özel fırsatlar',
   description:
     'Ne yapmak istediğini söyle, gidek senin için en uygun fırsatları bulsun. Tiyatro, kahvaltı, tatil, masaj ve daha fazlası.',
-  url: process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000',
+  // Sondaki '/' kırpılır — `${SITE.url}/k/...` çift slash üretmesin (env'e
+  // 'https://gidek.net/' girilse bile sitemap/canonical temiz kalsın).
+  url: (process.env.NEXT_PUBLIC_SITE_URL ?? 'http://localhost:3000').replace(/\/+$/, ''),
   locale: 'tr_TR',
   social: {
     instagram: 'https://instagram.com/gideknet',
