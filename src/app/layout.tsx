@@ -1,6 +1,7 @@
 import { Suspense } from 'react';
 import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Toaster } from 'sonner';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { Footer } from '@/components/layout/footer';
@@ -150,6 +151,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </Suspense>
         <JsonLd data={orgJsonLd} />
         <JsonLd data={websiteJsonLd} />
+        <SpeedInsights />
       </body>
     </html>
   );
