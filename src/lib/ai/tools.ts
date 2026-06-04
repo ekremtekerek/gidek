@@ -6,10 +6,7 @@ import { quoteBooking } from '@/lib/booking/agent-booking';
 import { generateSeasonAdvice } from '@/lib/ai/travel-season-advice';
 import { buildTravelPackage } from '@/lib/ai/travel-package';
 import { compareHotelsWithAI } from '@/lib/ai/travel-comparison';
-import {
-  enrichSimilarDeals,
-  fetchSimilarTravelDeals,
-} from '@/lib/ai/similar-travel-deals';
+import { enrichSimilarDeals, fetchSimilarTravelDeals } from '@/lib/ai/similar-travel-deals';
 import { fetchPackageInventory } from '@/lib/db/queries/travel';
 import { getServiceClient } from '@/lib/db/service';
 import type { DealWithMerchant } from '@/lib/db/queries/deals';
@@ -316,12 +313,7 @@ export function buildChatTools(ctx: ChatToolContext = {}) {
         'Bir destinasyon için TAM tatil paketi kurar — otel + yemek + aktivite + ekstra. Bütçe + yolcu profilini optimize eder. Kullanıcı "tatil paketi kur", "her şey dahil planla" derse çağır.',
       inputSchema: z.object({
         destination: z.string().min(2).max(60),
-        budget: z
-          .number()
-          .int()
-          .min(3000)
-          .max(500000)
-          .describe('Toplam bütçe TL.'),
+        budget: z.number().int().min(3000).max(500000).describe('Toplam bütçe TL.'),
         adults: z.number().int().min(1).max(8).default(2),
         kids: z.number().int().min(0).max(6).default(0),
         days: z.number().int().min(1).max(14).default(4),
@@ -372,16 +364,14 @@ export function buildChatTools(ctx: ChatToolContext = {}) {
           .array(z.string())
           .min(2)
           .max(3)
-          .describe('Karşılaştırılacak deal ID\'leri (önceki searchDeals sonucundan).'),
+          .describe("Karşılaştırılacak deal ID'leri (önceki searchDeals sonucundan)."),
       }),
       execute: async ({ dealIds }) => {
         try {
           const supabase = getServiceClient();
           const { data } = await supabase
             .from('deals')
-            .select(
-              `*, merchant:merchants ( name, slug, city, district, lat, lng, working_hours )`,
-            )
+            .select(`*, merchant:merchants ( name, slug, city, district, lat, lng, working_hours )`)
             .in('id', dealIds);
 
           const deals = (data ?? []) as unknown as DealWithMerchant[];
@@ -454,10 +444,7 @@ export function buildChatTools(ctx: ChatToolContext = {}) {
           .enum(['couple', 'family', 'solo', 'group'])
           .optional()
           .describe('Kim ile? Profilden veya konuşmadan çıkarıp ver.'),
-        city: z
-          .string()
-          .optional()
-          .describe('Hangi şehir. Belirsizse İstanbul varsayılır.'),
+        city: z.string().optional().describe('Hangi şehir. Belirsizse İstanbul varsayılır.'),
         budgetTotal: z
           .number()
           .int()
@@ -566,7 +553,7 @@ export function buildChatTools(ctx: ChatToolContext = {}) {
             merchantName: (() => {
               const m = deal.merchant as { name: string } | { name: string }[] | null;
               if (!m) return null;
-              return Array.isArray(m) ? m[0]?.name ?? null : m.name;
+              return Array.isArray(m) ? (m[0]?.name ?? null) : m.name;
             })(),
             currency: deal.currency,
             packagePrice: totalPrice,
@@ -585,9 +572,8 @@ export function buildChatTools(ctx: ChatToolContext = {}) {
                 totalRooms: meta.total_rooms,
                 distanceToBeachM: meta.distance_to_beach_m,
                 distanceToCenterM: meta.distance_to_center_m,
-                distanceToAirportKm: meta.distance_to_airport_km !== null
-                  ? Number(meta.distance_to_airport_km)
-                  : null,
+                distanceToAirportKm:
+                  meta.distance_to_airport_km !== null ? Number(meta.distance_to_airport_km) : null,
                 tourismTaxPerNight: Number(meta.tourism_tax_per_night),
                 petFriendly: meta.pet_friendly,
                 smokingAllowed: meta.smoking_allowed,
@@ -620,9 +606,9 @@ export function buildChatTools(ctx: ChatToolContext = {}) {
               '2) Oda tipi seç (kapasite + manzara + pansiyon)',
               '3) Misafirlerin kimlik bilgilerini gir (TC kimlik / pasaport)',
               '4) İptal politikası onayı + KVKK',
-              '5) Ödeme (kart bilgileri — şu an mock)',
+              '5) Ödeme (kart bilgileri ile güvenli ödeme)',
             ],
-            note: 'V1 mock ödeme — gerçek tahsilat yok. Üretimde iyzico/PayTR entegrasyonu olacak.',
+            note: 'Ödeme, güvenli ödeme altyapısı üzerinden tamamlanır.',
           },
           reservationUrl: `/rezervasyon/${deal.slug}`,
         };

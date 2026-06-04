@@ -15,8 +15,7 @@ export const metadata: Metadata = {
   alternates: { canonical: '/tatil/paket' },
   openGraph: {
     title: 'gidek — AI Tatil Paketi Tasarla',
-    description:
-      'Tatilin tüm parçalarını AI ile tek pakette topla — rakiplerde yok.',
+    description: 'Tatilin tüm parçalarını AI ile tek pakette topla — rakiplerde yok.',
     url: `${SITE.url}/tatil/paket`,
   },
 };
@@ -43,7 +42,12 @@ export default async function TatilPaketPage({ searchParams }: PageProps) {
   const adults = sp.adults ? Math.max(1, Math.min(8, Number(sp.adults))) : 2;
   const kids = sp.kids ? Math.max(0, Math.min(6, Number(sp.kids))) : 0;
   const days = sp.days ? Math.max(1, Math.min(14, Number(sp.days))) : 4;
-  const themes = sp.themes ? sp.themes.split(',').map((t) => t.trim()).filter(Boolean) : [];
+  const themes = sp.themes
+    ? sp.themes
+        .split(',')
+        .map((t) => t.trim())
+        .filter(Boolean)
+    : [];
 
   const hasInputs = dest && budget;
 
@@ -59,7 +63,7 @@ export default async function TatilPaketPage({ searchParams }: PageProps) {
         </Link>
 
         <header className="mt-4 mb-8 text-center">
-          <span className="bg-gradient-to-br from-emerald-500 to-teal-500 inline-flex size-14 items-center justify-center rounded-full shadow-lg">
+          <span className="inline-flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 shadow-lg">
             <Banknote className="size-7 text-white" aria-hidden="true" />
           </span>
           <h1 className="mt-2 text-3xl font-bold tracking-tight sm:text-4xl">
@@ -69,8 +73,8 @@ export default async function TatilPaketPage({ searchParams }: PageProps) {
             </span>
           </h1>
           <p className="text-muted-foreground mx-auto mt-3 max-w-xl text-sm leading-relaxed sm:text-base">
-            Otel + yemek + aktivite + spa — hepsini tek pakette topla.
-            Rakipler sadece &ldquo;otel+uçak&rdquo; veriyor; biz <strong>tam tatil deneyimi</strong>
+            Otel + yemek + aktivite + spa — hepsini tek pakette topla. Rakipler sadece
+            &ldquo;otel+uçak&rdquo; veriyor; biz <strong>tam tatil deneyimi</strong>
             tasarlıyoruz.
           </p>
         </header>
@@ -93,7 +97,7 @@ export default async function TatilPaketPage({ searchParams }: PageProps) {
           <FeatureCard
             icon={<Sparkles className="size-5" />}
             title="Gerçek fırsatlar"
-            text="Mock değil — gidek envanterinden gerçek deal'lar"
+            text="gidek envanterinden gerçek fırsatlar"
           />
         </section>
       </Container>
@@ -113,7 +117,7 @@ export default async function TatilPaketPage({ searchParams }: PageProps) {
           <ArrowLeft className="size-4" aria-hidden="true" />
           Yeniden seç
         </Link>
-        <div className="mt-6 rounded-xl border border-dashed border-border bg-muted/30 p-10 text-center">
+        <div className="border-border bg-muted/30 mt-6 rounded-xl border border-dashed p-10 text-center">
           <p className="font-semibold">{dest} için henüz envanter yok</p>
           <p className="text-muted-foreground mt-1 text-xs">
             Bodrum, Antalya, Kapadokya, Çeşme genelde zengin.
@@ -155,34 +159,34 @@ export default async function TatilPaketPage({ searchParams }: PageProps) {
           <ArrowLeft className="size-4" aria-hidden="true" />
           Yeniden seç
         </Link>
-        <div className="border-amber-500/30 bg-amber-50 dark:bg-amber-950/30 mt-6 rounded-xl border p-6">
-          <p className="text-amber-900 dark:text-amber-100 inline-flex items-center gap-2 text-base font-bold">
+        <div className="mt-6 rounded-xl border border-amber-500/30 bg-amber-50 p-6 dark:bg-amber-950/30">
+          <p className="inline-flex items-center gap-2 text-base font-bold text-amber-900 dark:text-amber-100">
             <Sparkles className="size-5" aria-hidden="true" />
             AI paket oluşturulamadı
           </p>
-          <p className="text-amber-900/80 dark:text-amber-100/80 mt-2 text-sm leading-relaxed">
+          <p className="mt-2 text-sm leading-relaxed text-amber-900/80 dark:text-amber-100/80">
             Gemini bu kombinasyonda paket üretemedi. Tekrar dene veya parametre değiştir.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
               href={`/tatil/paket?dest=${encodeURIComponent(dest!)}&budget=${budget}&adults=${adults}&days=${days}${kids ? `&kids=${kids}` : ''}${themes.length ? `&themes=${themes.join(',')}` : ''}`}
-              className="bg-amber-600 hover:bg-amber-700 inline-flex h-10 items-center gap-1.5 rounded-md px-4 text-sm font-bold text-white transition-colors"
+              className="inline-flex h-10 items-center gap-1.5 rounded-md bg-amber-600 px-4 text-sm font-bold text-white transition-colors hover:bg-amber-700"
             >
               Tekrar dene
             </Link>
             <Link
               href="/tatil/paket"
-              className="border-amber-600/40 hover:bg-amber-100 dark:hover:bg-amber-900/40 inline-flex h-10 items-center gap-1.5 rounded-md border px-4 text-sm font-semibold transition-colors"
+              className="inline-flex h-10 items-center gap-1.5 rounded-md border border-amber-600/40 px-4 text-sm font-semibold transition-colors hover:bg-amber-100 dark:hover:bg-amber-900/40"
             >
               Yeni parametreler
             </Link>
           </div>
           {aiError ? (
             <details className="mt-3">
-              <summary className="text-amber-900/60 dark:text-amber-100/60 cursor-pointer text-[11px]">
+              <summary className="cursor-pointer text-[11px] text-amber-900/60 dark:text-amber-100/60">
                 Teknik detay
               </summary>
-              <pre className="text-amber-900/70 dark:text-amber-100/70 mt-1 overflow-auto whitespace-pre-wrap text-[10px]">
+              <pre className="mt-1 overflow-auto text-[10px] whitespace-pre-wrap text-amber-900/70 dark:text-amber-100/70">
                 {aiError}
               </pre>
             </details>
@@ -225,7 +229,7 @@ function FeatureCard({
 }) {
   return (
     <div className="border-border bg-background flex flex-col gap-2 rounded-xl border p-4 shadow-sm">
-      <span className="bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 inline-flex size-9 items-center justify-center rounded-full">
+      <span className="inline-flex size-9 items-center justify-center rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300">
         {icon}
       </span>
       <p className="text-sm font-bold">{title}</p>

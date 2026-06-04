@@ -130,15 +130,15 @@ function makeGuest(
   return {
     guest_type: type,
     guest_index: idx,
-    first_name: isLead ? lead?.first_name ?? '' : '',
-    last_name: isLead ? lead?.last_name ?? '' : '',
+    first_name: isLead ? (lead?.first_name ?? '') : '',
+    last_name: isLead ? (lead?.last_name ?? '') : '',
     nationality: 'TR',
     national_id: '',
     passport_no: '',
     birth_date: '',
     gender: '',
-    phone: isLead ? lead?.phone ?? '' : '',
-    email: isLead ? lead?.email ?? '' : '',
+    phone: isLead ? (lead?.phone ?? '') : '',
+    email: isLead ? (lead?.email ?? '') : '',
     is_lead: isLead,
     room_index: 0,
   };
@@ -171,7 +171,7 @@ function resyncGuests(
 }
 
 const BOARD_LABELS: Record<string, string> = {
-  'oda': 'Sadece oda',
+  oda: 'Sadece oda',
   'oda-kahvalti': 'Oda + Kahvaltı',
   'yarim-pansiyon': 'Yarım Pansiyon',
   'tam-pansiyon': 'Tam Pansiyon',
@@ -247,18 +247,16 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
   const defaultRoomId =
     initialRoomId && rooms.some((r) => r.id === initialRoomId)
       ? initialRoomId
-      : rooms[0]?.id ?? '';
+      : (rooms[0]?.id ?? '');
   const [roomId, setRoomId] = useState<string>(defaultRoomId);
-  const [guests, setGuests] = useState<Guest[]>(() =>
-    resyncGuests([], adults, kids, initialLead),
-  );
+  const [guests, setGuests] = useState<Guest[]>(() => resyncGuests([], adults, kids, initialLead));
   const [specialRequests, setSpecialRequests] = useState('');
   const [acceptPolicies, setAcceptPolicies] = useState(false);
 
   // Availability: tarihler değişince odaların müsaitlik durumu fetch edilir.
-  const [availability, setAvailability] = useState<Map<string, { available: number; total: number }>>(
-    new Map(),
-  );
+  const [availability, setAvailability] = useState<
+    Map<string, { available: number; total: number }>
+  >(new Map());
   const [availLoading, setAvailLoading] = useState(false);
 
   // localStorage'a kaydedilmiş yarım kalan rezervasyon — mount'ta okunur,
@@ -367,21 +365,26 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
     // setState'i microtask'a defer ediyoruz; effect body'sinde direkt setState
     // çağrısı React 19 strict mode'da uyarı veriyor.
     void Promise.resolve().then(() => setAvailLoading(true));
-    fetch(
-      `/api/hotel/availability?deal=${deal.id}&checkin=${checkIn}&checkout=${checkOut}`,
-      { signal: ctrl.signal },
-    )
+    fetch(`/api/hotel/availability?deal=${deal.id}&checkin=${checkIn}&checkout=${checkOut}`, {
+      signal: ctrl.signal,
+    })
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { rooms?: { id: string; total_units: number | null; available: number | null }[] } | null) => {
-        if (!data?.rooms) return;
-        const map = new Map<string, { available: number; total: number }>();
-        for (const r of data.rooms) {
-          if (r.total_units !== null && r.available !== null) {
-            map.set(r.id, { available: r.available, total: r.total_units });
+      .then(
+        (
+          data: {
+            rooms?: { id: string; total_units: number | null; available: number | null }[];
+          } | null,
+        ) => {
+          if (!data?.rooms) return;
+          const map = new Map<string, { available: number; total: number }>();
+          for (const r of data.rooms) {
+            if (r.total_units !== null && r.available !== null) {
+              map.set(r.id, { available: r.available, total: r.total_units });
+            }
           }
-        }
-        setAvailability(map);
-      })
+          setAvailability(map);
+        },
+      )
       .catch(() => {
         // sessiz fail — UI fallback olarak availability rozetini gizler
       })
@@ -398,11 +401,7 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
 
   // Validation per step
   const step1Valid =
-    checkIn &&
-    checkOut &&
-    nights >= 1 &&
-    new Date(checkIn) >= new Date(todayISO()) &&
-    adults >= 1;
+    checkIn && checkOut && nights >= 1 && new Date(checkIn) >= new Date(todayISO()) && adults >= 1;
 
   const step2Valid =
     Boolean(selectedRoom) &&
@@ -411,7 +410,8 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
 
   function guestErrors(g: Guest): string[] {
     const errs: string[] = [];
-    const label = g.guest_type === 'adult' ? `Yetişkin ${g.guest_index + 1}` : `Çocuk ${g.guest_index + 1}`;
+    const label =
+      g.guest_type === 'adult' ? `Yetişkin ${g.guest_index + 1}` : `Çocuk ${g.guest_index + 1}`;
     if (g.first_name.trim().length < 2) errs.push(`${label}: ad eksik`);
     if (g.last_name.trim().length < 2) errs.push(`${label}: soyad eksik`);
     if (!g.birth_date) errs.push(`${label}: doğum tarihi eksik`);
@@ -428,10 +428,7 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
     }
     return errs;
   }
-  const allStep3Errors = useMemo(
-    () => guests.flatMap((g) => guestErrors(g)),
-    [guests],
-  );
+  const allStep3Errors = useMemo(() => guests.flatMap((g) => guestErrors(g)), [guests]);
   const step3Valid = allStep3Errors.length === 0;
 
   const canSubmit = step1Valid && step2Valid && step3Valid && acceptPolicies && !pending;
@@ -440,28 +437,45 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
 
   return (
     <div className="flex flex-col gap-6">
-      <Stepper current={step} steps={[
-        { n: 1, label: 'Tarih & Kişi' },
-        { n: 2, label: 'Oda' },
-        { n: 3, label: 'Misafir' },
-        { n: 4, label: 'Özet' },
-      ]} />
+      <Stepper
+        current={step}
+        steps={[
+          { n: 1, label: 'Tarih & Kişi' },
+          { n: 2, label: 'Oda' },
+          { n: 3, label: 'Misafir' },
+          { n: 4, label: 'Özet' },
+        ]}
+      />
 
       {savedDraft ? (
-        <div role="region" aria-label="Yarım kalan rezervasyon" className="border-sky-500/40 bg-sky-500/10 flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center">
+        <div
+          role="region"
+          aria-label="Yarım kalan rezervasyon"
+          className="flex flex-col gap-3 rounded-lg border border-sky-500/40 bg-sky-500/10 p-4 sm:flex-row sm:items-center"
+        >
           <div className="min-w-0 flex-1">
             <p className="text-sm font-semibold">Yarım kalan rezervasyonun var</p>
             <p className="text-muted-foreground mt-0.5 text-xs">
-              {new Date(savedDraft.savedAt).toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })} ·
-              {' '}{savedDraft.adults} yetişkin{savedDraft.kids > 0 ? ` + ${savedDraft.kids} çocuk` : ''} ·
-              Adım {savedDraft.step}/4
+              {new Date(savedDraft.savedAt).toLocaleString('tr-TR', {
+                day: '2-digit',
+                month: 'short',
+                hour: '2-digit',
+                minute: '2-digit',
+              })}{' '}
+              · {savedDraft.adults} yetişkin
+              {savedDraft.kids > 0 ? ` + ${savedDraft.kids} çocuk` : ''} · Adım {savedDraft.step}/4
             </p>
           </div>
           <div className="flex gap-2">
             <Button type="button" variant="outline" size="sm" onClick={discardDraft}>
               Sıfırla
             </Button>
-            <Button type="button" variant="primary" size="sm" onClick={() => applyDraft(savedDraft)}>
+            <Button
+              type="button"
+              variant="primary"
+              size="sm"
+              onClick={() => applyDraft(savedDraft)}
+            >
               Devam et
             </Button>
           </div>
@@ -469,16 +483,15 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
       ) : null}
 
       {state?.error ? (
-        <div role="alert" className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
+        <div
+          role="alert"
+          className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
+        >
           {state.error}
         </div>
       ) : null}
 
-      <form
-        action={formAction}
-        onSubmit={() => discardDraft()}
-        className="flex flex-col gap-6"
-      >
+      <form action={formAction} onSubmit={() => discardDraft()} className="flex flex-col gap-6">
         {/* Tüm step'lerin hidden state'i — son submit'te gönderilir.
             check_in/out_date DateField içinde hidden input olarak üretiliyor. */}
         <input type="hidden" name="deal_id" value={deal.id} />
@@ -487,9 +500,7 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
         <input type="hidden" name="child_count" value={kids} />
         <input type="hidden" name="guests_json" value={JSON.stringify(guests)} />
         <input type="hidden" name="special_requests" value={specialRequests} />
-        {acceptPolicies ? (
-          <input type="hidden" name="accept_policies" value="on" />
-        ) : null}
+        {acceptPolicies ? <input type="hidden" name="accept_policies" value="on" /> : null}
 
         {/* ============================== STEP 1 ============================== */}
         {step === 1 ? (
@@ -545,19 +556,21 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
 
             {/* Anlık özet — tarih+kişi seçildikçe en düşük tahmini fiyat */}
             {nights > 0 && minPricePerNight > 0 ? (
-              <div className="border-sky-500/30 bg-sky-500/5 flex items-center justify-between rounded-lg border p-3">
+              <div className="flex items-center justify-between rounded-lg border border-sky-500/30 bg-sky-500/5 p-3">
                 <div>
                   <p className="text-xs font-semibold text-sky-700 dark:text-sky-300">
                     Tahmini en düşük tutar
                   </p>
                   <p className="text-muted-foreground mt-0.5 text-[11px]">
-                    {nights} gece × {adults} yetişkin{kids > 0 ? ` + ${kids} çocuk` : ''} ·
-                    en uygun odadan
+                    {nights} gece × {adults} yetişkin{kids > 0 ? ` + ${kids} çocuk` : ''} · en uygun
+                    odadan
                   </p>
                 </div>
                 <p className="text-foreground text-lg font-bold tracking-tight">
                   {formatTRY(previewMinTotal)}
-                  <span className="text-muted-foreground ms-1 text-[11px] font-normal">&apos;dan</span>
+                  <span className="text-muted-foreground ms-1 text-[11px] font-normal">
+                    &apos;dan
+                  </span>
                 </p>
               </div>
             ) : null}
@@ -570,13 +583,7 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
                 min={1}
                 max={12}
               />
-              <Counter
-                label="Çocuk (0-12)"
-                value={kids}
-                onChange={setKidCount}
-                min={0}
-                max={8}
-              />
+              <Counter label="Çocuk (0-12)" value={kids} onChange={setKidCount} min={0} max={8} />
             </div>
 
             <NavRow
@@ -696,7 +703,7 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
                           </span>
                         </div>
                         {!fits ? (
-                          <p className="text-amber-700 dark:text-amber-300 mt-1 text-[11px]">
+                          <p className="mt-1 text-[11px] text-amber-700 dark:text-amber-300">
                             Bu oda {r.capacity_adults} yetişkin + {r.capacity_children} çocuk alır
                           </p>
                         ) : null}
@@ -734,8 +741,8 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
             <header>
               <h2 className="text-lg font-semibold tracking-tight">Misafir bilgileri</h2>
               <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
-                Konaklama yasası gereği, yetişkin Türk vatandaşları için TC kimlik no,
-                yabancılar için pasaport no zorunludur. Bilgiler KVKK kapsamında işlenir.
+                Konaklama yasası gereği, yetişkin Türk vatandaşları için TC kimlik no, yabancılar
+                için pasaport no zorunludur. Bilgiler KVKK kapsamında işlenir.
               </p>
             </header>
 
@@ -764,7 +771,10 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
             </div>
 
             {!step3Valid && allStep3Errors.length > 0 ? (
-              <div role="alert" className="border-amber-500/40 bg-amber-500/10 rounded-lg border p-3">
+              <div
+                role="alert"
+                className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3"
+              >
                 <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">
                   Devam etmek için {allStep3Errors.length} alan eksik
                 </p>
@@ -805,9 +815,6 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
           <section className="border-border bg-background flex flex-col gap-5 rounded-xl border p-5 sm:p-6">
             <header>
               <h2 className="text-lg font-semibold tracking-tight">Rezervasyon özeti</h2>
-              <p className="text-muted-foreground text-xs">
-                Mock akış — gerçek ödeme alınmaz.
-              </p>
             </header>
 
             <dl className="border-border bg-muted/30 grid grid-cols-2 gap-2 rounded-lg border p-4 text-sm">
@@ -833,9 +840,15 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
             </dl>
 
             <div className="border-border flex flex-col gap-2 rounded-lg border p-4">
-              <Row label={`Oda (${nights} gece × ${formatTRY(selectedRoom?.base_price_per_night ?? 0)})`} value={formatTRY(roomSubtotal)} />
+              <Row
+                label={`Oda (${nights} gece × ${formatTRY(selectedRoom?.base_price_per_night ?? 0)})`}
+                value={formatTRY(roomSubtotal)}
+              />
               {tourismTaxTotal > 0 ? (
-                <Row label={`Konaklama vergisi (${adults} kişi × ${nights} gece)`} value={formatTRY(tourismTaxTotal)} />
+                <Row
+                  label={`Konaklama vergisi (${adults} kişi × ${nights} gece)`}
+                  value={formatTRY(tourismTaxTotal)}
+                />
               ) : null}
               <div className="border-border mt-1 flex items-baseline justify-between border-t pt-2">
                 <span className="text-sm font-medium">Toplam</span>
@@ -843,29 +856,34 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
               </div>
             </div>
 
-            {(meta?.cancellation_policy || meta?.child_policy) ? (
+            {meta?.cancellation_policy || meta?.child_policy ? (
               <details className="border-border rounded-lg border p-3 text-xs">
                 <summary className="cursor-pointer font-medium">Politikalar</summary>
-                <div className="mt-2 flex flex-col gap-2 text-muted-foreground leading-relaxed">
+                <div className="text-muted-foreground mt-2 flex flex-col gap-2 leading-relaxed">
                   {meta?.cancellation_policy ? (
-                    <p><strong className="text-foreground">İptal:</strong> {meta.cancellation_policy}</p>
+                    <p>
+                      <strong className="text-foreground">İptal:</strong> {meta.cancellation_policy}
+                    </p>
                   ) : null}
                   {meta?.child_policy ? (
-                    <p><strong className="text-foreground">Çocuk:</strong> {meta.child_policy}</p>
+                    <p>
+                      <strong className="text-foreground">Çocuk:</strong> {meta.child_policy}
+                    </p>
                   ) : null}
                   {meta?.pet_policy ? (
-                    <p><strong className="text-foreground">Evcil hayvan:</strong> {meta.pet_policy}</p>
+                    <p>
+                      <strong className="text-foreground">Evcil hayvan:</strong> {meta.pet_policy}
+                    </p>
                   ) : null}
                 </div>
               </details>
             ) : null}
 
-            <div className="border-amber-500/30 bg-amber-500/5 rounded-lg border p-3 text-[11px] leading-relaxed text-muted-foreground">
+            <div className="text-muted-foreground rounded-lg border border-amber-500/30 bg-amber-500/5 p-3 text-[11px] leading-relaxed">
               <p>
-                <strong className="text-foreground">KVKK bilgilendirmesi:</strong>{' '}
-                Konaklama Tesisleri Yönetmeliği gereği konaklayan her yetişkin
-                misafirin kimlik bilgileri otel tarafından kayıt altına alınır
-                ve yetkili mercilere bildirilir. Veriler{' '}
+                <strong className="text-foreground">KVKK bilgilendirmesi:</strong> Konaklama
+                Tesisleri Yönetmeliği gereği konaklayan her yetişkin misafirin kimlik bilgileri otel
+                tarafından kayıt altına alınır ve yetkili mercilere bildirilir. Veriler{' '}
                 <a
                   href="/yasal/kvkk"
                   target="_blank"
@@ -886,8 +904,7 @@ export function HotelBookingWizard({ deal, rooms, meta, initialRoomId, initialLe
                 className="accent-foreground mt-0.5 size-4"
               />
               <span>
-                İptal koşulları, çocuk politikası ve KVKK aydınlatma metnini okudum,
-                kabul ediyorum.
+                İptal koşulları, çocuk politikası ve KVKK aydınlatma metnini okudum, kabul ediyorum.
               </span>
             </label>
             {err?.accept_policies ? (
@@ -931,7 +948,7 @@ function HelpHint({ text }: { text: string }) {
       aria-label={text}
       tabIndex={0}
       role="button"
-      className="text-muted-foreground hover:text-foreground inline-flex size-4 cursor-help items-center justify-center rounded-full bg-muted text-[10px] font-bold leading-none"
+      className="text-muted-foreground hover:text-foreground bg-muted inline-flex size-4 cursor-help items-center justify-center rounded-full text-[10px] leading-none font-bold"
     >
       ?
     </span>
@@ -947,13 +964,7 @@ const PROGRESS_WIDTH_CLASS: Record<number, string> = {
   4: 'w-full',
 };
 
-function Stepper({
-  current,
-  steps,
-}: {
-  current: number;
-  steps: { n: number; label: string }[];
-}) {
+function Stepper({ current, steps }: { current: number; steps: { n: number; label: string }[] }) {
   const currentStep = steps.find((s) => s.n === current);
   const pct = PROGRESS_WIDTH_CLASS[current] ?? 'w-0';
 
@@ -1002,11 +1013,19 @@ function Stepper({
               >
                 {done ? <Check className="size-3.5" aria-hidden="true" /> : s.n}
               </span>
-              <span className={cn(active ? 'text-foreground font-semibold' : 'text-muted-foreground', 'whitespace-nowrap')}>
+              <span
+                className={cn(
+                  active ? 'text-foreground font-semibold' : 'text-muted-foreground',
+                  'whitespace-nowrap',
+                )}
+              >
                 {s.label}
               </span>
               {i < steps.length - 1 ? (
-                <ChevronRight className="text-muted-foreground mx-1 size-3.5 shrink-0" aria-hidden="true" />
+                <ChevronRight
+                  className="text-muted-foreground mx-1 size-3.5 shrink-0"
+                  aria-hidden="true"
+                />
               ) : null}
             </li>
           );
@@ -1091,9 +1110,7 @@ function GuestCard({
   // Year limits to filter "child" vs "adult"
   const today = new Date().toISOString().slice(0, 10);
   const minBirth = isAdult ? '1920-01-01' : `${new Date().getFullYear() - 12}-01-01`;
-  const maxBirth = isAdult
-    ? `${new Date().getFullYear() - 13}-12-31`
-    : today;
+  const maxBirth = isAdult ? `${new Date().getFullYear() - 13}-12-31` : today;
 
   // Memoized derived hint
   const idHint = useMemo(() => {
@@ -1103,16 +1120,18 @@ function GuestCard({
   }, [isAdult, g.nationality]);
 
   return (
-    <div className={cn(
-      'rounded-xl border p-4',
-      isLead ? 'border-foreground bg-foreground/5' : 'border-border bg-muted/10',
-    )}>
+    <div
+      className={cn(
+        'rounded-xl border p-4',
+        isLead ? 'border-foreground bg-foreground/5' : 'border-border bg-muted/10',
+      )}
+    >
       <div className="mb-3 flex items-center justify-between">
         <p className="inline-flex items-center gap-2 text-sm font-semibold">
           <UserIcon className="size-4" aria-hidden="true" />
           {isAdult ? `Yetişkin ${guestNum}` : `Çocuk ${guestNum}`}
           {isLead ? (
-            <span className="bg-foreground text-background rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+            <span className="bg-foreground text-background rounded-full px-2 py-0.5 text-[10px] font-bold tracking-wider uppercase">
               Rezervasyon sahibi
             </span>
           ) : null}
@@ -1212,9 +1231,7 @@ function GuestCard({
                 required
               />
               {g.national_id.length === 11 && !isValidTCKimlik(g.national_id) ? (
-                <p className="text-xs text-rose-600 mt-1">
-                  Geçersiz TC kimlik no — kontrol et
-                </p>
+                <p className="mt-1 text-xs text-rose-600">Geçersiz TC kimlik no — kontrol et</p>
               ) : null}
             </div>
           ) : (
@@ -1226,7 +1243,9 @@ function GuestCard({
               <Input
                 id={`pp-${idx}`}
                 value={g.passport_no}
-                onChange={(e) => onChange({ passport_no: e.target.value.toUpperCase().slice(0, 20) })}
+                onChange={(e) =>
+                  onChange({ passport_no: e.target.value.toUpperCase().slice(0, 20) })
+                }
                 placeholder="P12345678"
                 required
               />

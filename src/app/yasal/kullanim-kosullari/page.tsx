@@ -20,9 +20,9 @@ export default function KullanimKosullariPage() {
       <h2>1. Hizmet Tanımı</h2>
       <p>
         {SITE.name}, kullanıcılarına farklı kategorilerde (tiyatro, kahvaltı, masaj, tatil otelleri,
-        vb.) işletme ortaklarının sunduğu fırsatları listeler ve yapay zeka destekli öneri
-        motoruyla kullanıcının ihtiyacına en uygun seçenekleri ortaya çıkarır. Rezervasyon işlemi
-        son haliyle ilgili işletme tarafından gerçekleştirilir; {SITE.name} aracı konumundadır.
+        vb.) işletme ortaklarının sunduğu fırsatları listeler ve yapay zeka destekli öneri motoruyla
+        kullanıcının ihtiyacına en uygun seçenekleri ortaya çıkarır. Rezervasyon işlemi son haliyle
+        ilgili işletme tarafından gerçekleştirilir; {SITE.name} aracı konumundadır.
       </p>
 
       <h2>2. Üyelik ve Hesap Sorumluluğu</h2>
@@ -57,8 +57,9 @@ export default function KullanimKosullariPage() {
         hakların saklıdır.
       </p>
       <p>
-        Mevcut sürüm <strong>mock rezervasyon</strong> akışı sunar — gerçek ödeme alınmaz ve
-        rezervasyonun ilgili işletmeye iletilmez. Üretime alındığında bu bölüm güncellenecektir.
+        Satın alma ve ödeme işlemleri iş ortağımız firsatbufirsat.com üzerinde, onların güvenli
+        altyapısıyla tamamlanır. {SITE.name} fırsatları keşfettirip ilgili sayfaya yönlendiren aracı
+        konumundadır; tahsilat, fatura ve teslimattan ilgili iş ortağı ve işletme sorumludur.
       </p>
 
       <h2>6. Fikri Mülkiyet</h2>
@@ -77,9 +78,9 @@ export default function KullanimKosullariPage() {
 
       <h2>8. Koşullarda Değişiklik</h2>
       <p>
-        {SITE.name}, bu koşulları zaman zaman güncelleyebilir. Önemli değişiklikleri kayıtlı
-        e-posta adresine veya site üzerinden bildirir. Değişiklik sonrası hizmeti kullanmaya devam
-        etmen, güncel koşulları kabul ettiğin anlamına gelir.
+        {SITE.name}, bu koşulları zaman zaman güncelleyebilir. Önemli değişiklikleri kayıtlı e-posta
+        adresine veya site üzerinden bildirir. Değişiklik sonrası hizmeti kullanmaya devam etmen,
+        güncel koşulları kabul ettiğin anlamına gelir.
       </p>
 
       <h2>9. Geçerli Hukuk ve Uyuşmazlık Çözümü</h2>

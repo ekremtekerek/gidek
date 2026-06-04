@@ -50,17 +50,13 @@ export default async function PaymentPage({ params }: { params: Promise<Params> 
       <div className="mb-8 flex flex-col gap-2 text-center">
         <p className="text-muted-foreground inline-flex items-center justify-center gap-1.5 text-xs font-semibold tracking-wide uppercase">
           <Lock className="size-3.5" aria-hidden="true" />
-          Güvenli ödeme — mock akış
+          Güvenli ödeme
         </p>
-        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
-          Ödemeyi tamamla
-        </h1>
+        <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Ödemeyi tamamla</h1>
         <p className="text-muted-foreground text-sm">
           Rezervasyon kodun{' '}
-          <span className="text-foreground font-mono font-semibold">
-            {booking.booking_code}
-          </span>{' '}
-          — onay için ödemeyi tamamla.
+          <span className="text-foreground font-mono font-semibold">{booking.booking_code}</span> —
+          onay için ödemeyi tamamla.
         </p>
       </div>
 
@@ -84,7 +80,7 @@ export default async function PaymentPage({ params }: { params: Promise<Params> 
                 />
               </div>
               <div className="min-w-0 flex-1">
-                <h2 className="line-clamp-2 text-sm font-semibold leading-tight">
+                <h2 className="line-clamp-2 text-sm leading-tight font-semibold">
                   {booking.deal.title}
                 </h2>
                 {booking.deal.merchant?.name ? (
@@ -173,9 +169,11 @@ export default async function PaymentPage({ params }: { params: Promise<Params> 
           })()}
 
           <p className="text-muted-foreground inline-flex items-start gap-1.5 text-[11px]">
-            <ShieldCheck className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-            Bu sürüm <strong className="text-foreground">mock</strong> ödemedir.
-            Kart bilgilerin saklanmaz, gerçek tutar tahsil edilmez.
+            <ShieldCheck
+              className="size-3.5 shrink-0 text-emerald-600 dark:text-emerald-400"
+              aria-hidden="true"
+            />
+            Ödeme bilgilerin 256-bit SSL ile güvenli şekilde işlenir; kart bilgilerin saklanmaz.
           </p>
         </aside>
       </div>

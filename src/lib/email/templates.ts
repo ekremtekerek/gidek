@@ -44,8 +44,6 @@ ${link}
 
 İyi eğlenceler!
 gidek ekibi
-
-(Bu mesaj demo akışın bir parçasıdır; gerçek ödeme tahsil edilmemiştir.)
 `;
 
   // Minimal inline-styled HTML — çoğu mail istemcisi external CSS desteklemez.
@@ -73,7 +71,6 @@ gidek ekibi
           <a href="${link}" style="display:inline-block;background:#0a0a0a;color:#fafafa;padding:10px 18px;border-radius:8px;text-decoration:none;font-size:14px;font-weight:500;">E-bileti görüntüle</a>
         </td></tr>
         <tr><td style="padding:0 28px 24px;color:#71717a;font-size:12px;line-height:1.6;">
-          Bu mesaj demo akışın bir parçasıdır; gerçek ödeme tahsil edilmemiştir.<br>
           gidek ekibi
         </td></tr>
       </table>

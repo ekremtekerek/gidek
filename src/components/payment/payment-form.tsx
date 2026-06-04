@@ -27,17 +27,20 @@ export function PaymentForm({ bookingCode, total }: Props) {
   const err = state?.fieldErrors;
 
   return (
-    <form action={formAction} className="border-border bg-background flex flex-col gap-5 rounded-xl border p-5 shadow-sm sm:p-6">
+    <form
+      action={formAction}
+      className="border-border bg-background flex flex-col gap-5 rounded-xl border p-5 shadow-sm sm:p-6"
+    >
       <input type="hidden" name="bookingCode" value={bookingCode} />
 
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold inline-flex items-center gap-2">
+        <h2 className="inline-flex items-center gap-2 text-base font-semibold">
           <CreditCard className="size-4" aria-hidden="true" />
           Kart bilgileri
         </h2>
         <span className="text-muted-foreground inline-flex items-center gap-1 text-[11px]">
           <Lock className="size-3" aria-hidden="true" />
-          256-bit SSL (mock)
+          256-bit SSL
         </span>
       </div>
 
@@ -117,7 +120,10 @@ export function PaymentForm({ bookingCode, total }: Props) {
       </div>
 
       {state?.error ? (
-        <p role="alert" className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300">
+        <p
+          role="alert"
+          className="rounded-md bg-rose-50 px-3 py-2 text-sm text-rose-700 dark:bg-rose-950/30 dark:text-rose-300"
+        >
           {state.error}
         </p>
       ) : null}
@@ -137,9 +143,7 @@ export function PaymentForm({ bookingCode, total }: Props) {
       </Button>
 
       <p className="text-muted-foreground text-center text-[11px]">
-        Bu ekran mock akıştır. Test kartı:{' '}
-        <code className="bg-muted rounded px-1 py-0.5">4242 4242 4242 4242</code> · herhangi bir
-        AA/YY · 3 haneli CVV.
+        Kart bilgilerin 256-bit SSL ile şifrelenir ve saklanmaz.
       </p>
     </form>
   );

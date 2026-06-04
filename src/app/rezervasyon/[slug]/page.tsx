@@ -26,10 +26,7 @@ async function loadHotelData(dealId: string): Promise<{
 }> {
   const supabase = getServiceClient();
   const [{ data: cats }, { data: rooms }, { data: meta }] = await Promise.all([
-    supabase
-      .from('deal_categories')
-      .select('category:categories(slug)')
-      .eq('deal_id', dealId),
+    supabase.from('deal_categories').select('category:categories(slug)').eq('deal_id', dealId),
     supabase
       .from('deal_room_types')
       .select(
@@ -209,8 +206,8 @@ export default async function RezervasyonPage({
             </h1>
             <p className="text-muted-foreground mt-1 text-sm">
               {useHotelWizard
-                ? 'Tarihleri ve misafirleri seç, adım adım tamamla. Mock akış — gerçek ödeme alınmaz.'
-                : 'Bilgilerini doğrula ve rezervasyonu tamamla. Mock akış — gerçek ödeme alınmaz.'}
+                ? 'Tarihleri ve misafirleri seç, adım adım tamamla.'
+                : 'Bilgilerini doğrula ve rezervasyonu tamamla.'}
             </p>
           </header>
 

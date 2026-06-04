@@ -102,9 +102,7 @@ export function BookingQuoteCard({ quote }: { quote: BookingQuoteCardData }) {
         <input type="hidden" name="dealId" value={quote.dealId} />
         <input type="hidden" name="quantity" value={quote.quantity} />
         <input type="hidden" name="date" value={quote.selectedDate} />
-        {quote.selectedTime ? (
-          <input type="hidden" name="time" value={quote.selectedTime} />
-        ) : null}
+        {quote.selectedTime ? <input type="hidden" name="time" value={quote.selectedTime} /> : null}
         <Button type="submit" variant="primary" size="lg" full disabled={pending}>
           {pending ? (
             <>
@@ -116,7 +114,7 @@ export function BookingQuoteCard({ quote }: { quote: BookingQuoteCardData }) {
           )}
         </Button>
         <p className="text-muted-foreground/70 text-center text-[11px]">
-          Onaylayınca ödeme adımına yönlendirilirsin. Mock ödeme — gerçek tahsilat yok.
+          Onaylayınca ödeme adımına yönlendirilirsin.
         </p>
       </form>
     </div>

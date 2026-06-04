@@ -26,7 +26,7 @@ export default async function DavetPage() {
     <Container className="py-12 sm:py-16">
       <div className="mx-auto flex max-w-2xl flex-col gap-8">
         <header className="text-center">
-          <span className="bg-amber-500/15 text-amber-600 dark:text-amber-400 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold tracking-wide uppercase">
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3 py-1 text-xs font-semibold tracking-wide text-amber-600 uppercase dark:text-amber-400">
             <Gift className="size-3.5" aria-hidden="true" />
             Davet & kazan
           </span>
@@ -51,16 +51,15 @@ export default async function DavetPage() {
             <span className="text-muted-foreground text-sm">arkadaş katıldı</span>
           </div>
           <p className="text-muted-foreground mt-3 text-sm">
-            Hak edilen kupon karşılığı: {summary.claimCount * REWARD_TL} TL · V1&apos;de kupon
-            uygulaması mock — gerçek ödeme entegrasyonuyla aktif olur.
+            Hak edilen kupon karşılığı: {summary.claimCount * REWARD_TL} TL
           </p>
         </section>
 
         <section className="flex items-start gap-3 text-sm">
           <Sparkles className="text-foreground/70 mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <p className="text-muted-foreground">
-            Kuralları kısaca: Davet kodu sahibi yalnızca yeni hesaplara verilebilir. Aynı
-            kullanıcı yalnızca bir kez davet kullanabilir.{' '}
+            Kuralları kısaca: Davet kodu sahibi yalnızca yeni hesaplara verilebilir. Aynı kullanıcı
+            yalnızca bir kez davet kullanabilir.{' '}
             <Link
               href="/yasal/kullanim-kosullari"
               className="hover:text-foreground underline-offset-2 hover:underline"

@@ -1,7 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { ArrowLeft, Clock, Gift, MapPin, MessageSquare, Navigation, Pencil, Tag } from 'lucide-react';
+import {
+  ArrowLeft,
+  Clock,
+  Gift,
+  MapPin,
+  MessageSquare,
+  Navigation,
+  Pencil,
+  Tag,
+} from 'lucide-react';
 import { AddToCalendar } from '@/components/booking/add-to-calendar';
 import { AttendeesSection } from '@/components/booking/attendees-section';
 import { CancelButton } from '@/components/booking/cancel-button';
@@ -39,11 +48,7 @@ export const dynamic = 'force-dynamic';
 
 type Params = { code: string };
 
-export default async function RezervasyonDetailPage({
-  params,
-}: {
-  params: Promise<Params>;
-}) {
+export default async function RezervasyonDetailPage({ params }: { params: Promise<Params> }) {
   const { code } = await params;
   const user = await requireUser();
 
@@ -114,19 +119,17 @@ export default async function RezervasyonDetailPage({
         </header>
 
         {booking.is_gift ? (
-          <div className="border-rose-500/30 bg-rose-500/5 mb-6 flex items-start gap-3 rounded-xl border p-4">
+          <div className="mb-6 flex items-start gap-3 rounded-xl border border-rose-500/30 bg-rose-500/5 p-4">
             <Gift className="size-5 shrink-0 text-rose-600 dark:text-rose-400" aria-hidden="true" />
             <div className="min-w-0 flex-1">
-              <p className="text-foreground text-sm font-medium">
-                Bu bir hediye rezervasyon
-              </p>
+              <p className="text-foreground text-sm font-medium">Bu bir hediye rezervasyon</p>
               <p className="text-muted-foreground mt-0.5 text-xs">
                 Alıcı: {booking.guest_name ?? '—'}
                 {booking.guest_phone ? ` · ${booking.guest_phone}` : ''}
                 {booking.guest_email ? ` · ${booking.guest_email}` : ''}
               </p>
               {booking.gift_message ? (
-                <p className="text-foreground/90 mt-2 rounded-md border border-rose-500/20 bg-background/60 p-2.5 text-xs italic leading-relaxed">
+                <p className="text-foreground/90 bg-background/60 mt-2 rounded-md border border-rose-500/20 p-2.5 text-xs leading-relaxed italic">
                   &ldquo;{booking.gift_message}&rdquo;
                 </p>
               ) : null}
@@ -145,7 +148,7 @@ export default async function RezervasyonDetailPage({
         ) : null}
 
         {status === 'pending' ? (
-          <div className="border-amber-500/30 bg-amber-500/10 mb-6 flex flex-col gap-3 rounded-xl border p-5 sm:flex-row sm:items-center">
+          <div className="mb-6 flex flex-col gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-5 sm:flex-row sm:items-center">
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium">Bu rezervasyon ödeme bekliyor</p>
               <p className="text-muted-foreground mt-0.5 text-xs">
@@ -181,7 +184,7 @@ export default async function RezervasyonDetailPage({
 
         {isHotelBooking && hotelExtras ? (
           <section className="mt-6">
-            <h2 className="mb-3 text-sm font-semibold tracking-wide uppercase text-muted-foreground">
+            <h2 className="text-muted-foreground mb-3 text-sm font-semibold tracking-wide uppercase">
               Konaklama detayı
             </h2>
             <HotelBookingSummary
@@ -208,7 +211,7 @@ export default async function RezervasyonDetailPage({
             booking.deal?.merchant?.lng !== undefined ? (
               <div className="gidek-no-print border-border bg-muted/30 mt-4 flex items-center justify-between gap-3 rounded-lg border p-4">
                 <div className="min-w-0">
-                  <p className="text-sm font-semibold inline-flex items-center gap-1.5">
+                  <p className="inline-flex items-center gap-1.5 text-sm font-semibold">
                     <MapPin className="size-4" aria-hidden="true" />
                     {booking.deal.merchant.name}
                   </p>
@@ -232,7 +235,7 @@ export default async function RezervasyonDetailPage({
             ) : null}
 
             {/* Misafir bilgilerini düzenle — sadece pending/confirmed */}
-            {(status === 'pending' || status === 'confirmed') ? (
+            {status === 'pending' || status === 'confirmed' ? (
               <div className="gidek-no-print mt-4 flex justify-end">
                 <Link
                   href={`/rezervasyonlarim/${booking.booking_code}/misafir-duzenle`}
@@ -246,7 +249,9 @@ export default async function RezervasyonDetailPage({
           </section>
         ) : null}
 
-        {showTicket && !isHotelBooking ? <AttendeesSection bookingCode={booking.booking_code} /> : null}
+        {showTicket && !isHotelBooking ? (
+          <AttendeesSection bookingCode={booking.booking_code} />
+        ) : null}
 
         {showTicket && booking.deal ? (
           <EventChatGate
@@ -308,7 +313,8 @@ export default async function RezervasyonDetailPage({
           {!isCancellable(status) && status !== 'pending' ? (
             <div className="border-border bg-muted/40 flex items-start gap-3 rounded-lg border p-4">
               <p className="text-muted-foreground text-sm">
-                Bu rezervasyon <strong className="text-foreground">{BOOKING_STATUS_LABEL[status]}</strong>{' '}
+                Bu rezervasyon{' '}
+                <strong className="text-foreground">{BOOKING_STATUS_LABEL[status]}</strong>{' '}
                 durumunda — iptal edilemez.
               </p>
             </div>
@@ -325,8 +331,7 @@ export default async function RezervasyonDetailPage({
         </div>
 
         <p className="text-muted-foreground gidek-no-print mt-6 text-center text-xs">
-          <strong className="text-foreground">Mock rezervasyon.</strong> Gerçek ödeme alınmaz; bu
-          kod yalnızca demo akış içindir.
+          Bu kodu işletmede göstererek fırsatından yararlanabilirsin.
         </p>
       </div>
     </Container>
@@ -375,8 +380,18 @@ async function EventChatGate({
     body: string;
     created_at: string;
     sender:
-      | { id: string; display_name: string | null; public_slug: string | null; avatar_url: string | null }
-      | { id: string; display_name: string | null; public_slug: string | null; avatar_url: string | null }[]
+      | {
+          id: string;
+          display_name: string | null;
+          public_slug: string | null;
+          avatar_url: string | null;
+        }
+      | {
+          id: string;
+          display_name: string | null;
+          public_slug: string | null;
+          avatar_url: string | null;
+        }[]
       | null;
   };
   const initial = ((rawMessages ?? []) as unknown as Raw[])

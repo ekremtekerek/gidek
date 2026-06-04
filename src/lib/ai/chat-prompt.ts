@@ -100,7 +100,7 @@ Kullanıcı bir otele odaklandığında (searchDeals sonuçlarından birini seç
 3. **Oda seçenekleri**: her oda için kısa "X kişilik, Y board, Z TL/gece". Mantıklı tavsiye et ("ailen için Aile Suit ideal", "romantik bir kaçamak için Honeymoon Suit").
 4. **Toplam tutar tahmini**: "Senin 4 gece × Standart Oda → 12.000 TL paket fiyatı + konaklama vergisi" — basit hesap yap.
 5. **Politikalar**: kullanıcı sormadıysa kısa özet ("14 gün öncesi ücretsiz iptal, 3-6 yaş çocuk %50"), sorduğunda detay.
-6. **Ödeme & taksit**: paymentOptions.installments'tan örnek ver ("Tek çekim, 3-6-9 taksit. 9 taksit ile aylık ~1.330 TL"). Mock not düş.
+6. **Ödeme & taksit**: paymentOptions.installments'tan örnek ver ("Tek çekim, 3-6-9 taksit. 9 taksit ile aylık ~1.330 TL").
 7. **Sıradaki adım**: "Hazırsan **tarihleri seç** linkine tıklayıp wizard'da 4 adımda tamamla" — reservationUrl'yi söyle.
 
 ÖNEMLİ: getHotelDetail çağırdıktan SONRA hep bir AÇILIŞ + BLOK BLOK ANLATIM + SONUNDA SORUSU olsun. Cevap 4-6 paragraf olabilir; rep gibi sıcak ama bilgili konuş.
@@ -122,11 +122,17 @@ export function buildTimeContextLine(now: Date = new Date()): string {
   const tomorrow = days[(now.getDay() + 1) % 7];
   const hour = now.getHours();
   const partOfDay =
-    hour < 6 ? 'gece' :
-    hour < 11 ? 'sabah' :
-    hour < 15 ? 'öğle' :
-    hour < 18 ? 'öğleden sonra' :
-    hour < 22 ? 'akşam' : 'gece';
+    hour < 6
+      ? 'gece'
+      : hour < 11
+        ? 'sabah'
+        : hour < 15
+          ? 'öğle'
+          : hour < 18
+            ? 'öğleden sonra'
+            : hour < 22
+              ? 'akşam'
+              : 'gece';
   const dateStr = now.toLocaleDateString('tr-TR', { day: 'numeric', month: 'long' });
   return `BUGÜN: ${today}, ${dateStr}, saat dilimi ${partOfDay} (${hour.toString().padStart(2, '0')}:00). Yarın: ${tomorrow}. Hafta sonu = Cumartesi & Pazar.`;
 }

@@ -134,9 +134,7 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
             onClick={() => setIsGift(true)}
             className={cn(
               'border-border flex items-center gap-2 rounded-lg border p-3 text-left text-sm transition-colors',
-              isGift
-                ? 'border-rose-500 bg-rose-500/5'
-                : 'hover:border-foreground/40 bg-background',
+              isGift ? 'border-rose-500 bg-rose-500/5' : 'hover:border-foreground/40 bg-background',
             )}
             aria-pressed={isGift}
           >
@@ -152,11 +150,11 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
       </div>
 
       {isGift ? (
-        <div className="border-rose-500/30 bg-rose-500/5 flex flex-col gap-4 rounded-lg border p-4">
+        <div className="flex flex-col gap-4 rounded-lg border border-rose-500/30 bg-rose-500/5 p-4">
           <p className="text-foreground/90 text-xs leading-relaxed">
             <Gift className="me-1 inline-block size-3.5 text-rose-600" aria-hidden="true" />
-            Hediye alıcısının bilgilerini gir; ödemeyi sen yaparsın, e-bilet
-            alıcıya gider. Mesajını da iletiriz.
+            Hediye alıcısının bilgilerini gir; ödemeyi sen yaparsın, e-bilet alıcıya gider. Mesajını
+            da iletiriz.
           </p>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1.5">
@@ -226,9 +224,7 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
       <label
         className={cn(
           'group relative flex cursor-pointer items-start gap-3 rounded-xl border p-4 transition-colors',
-          insurance
-            ? 'border-emerald-500/40 bg-emerald-500/5'
-            : 'border-border hover:bg-muted/40',
+          insurance ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-border hover:bg-muted/40',
         )}
       >
         <input
@@ -248,8 +244,7 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
           </p>
           <p className="text-muted-foreground mt-1 text-xs leading-relaxed">
             Sigortalı rezervasyonlarda iptal halinde{' '}
-            <strong className="text-foreground">tam tutar</strong> iade kuponu —
-            sigortasız %50.
+            <strong className="text-foreground">tam tutar</strong> iade kuponu — sigortasız %50.
           </p>
         </div>
       </label>
@@ -262,7 +257,7 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
               <span className="tabular-nums">{formatTRY(subtotal)}</span>
             </div>
             <div className="flex items-center justify-between text-sm">
-              <span className="text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-1">
+              <span className="inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300">
                 <ShieldCheck className="size-3.5" aria-hidden="true" />
                 İptal sigortası
               </span>
@@ -293,7 +288,7 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
       {warning ? (
         <div
           role="alert"
-          className="border-amber-500/30 bg-amber-500/10 flex flex-col gap-3 rounded-xl border p-4"
+          className="flex flex-col gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-4"
         >
           <div className="flex items-start gap-2">
             <span className="mt-0.5 inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300">
@@ -319,7 +314,7 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
                     href={`/rezervasyonlarim/${c.bookingCode}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-foreground hover:underline underline-offset-2"
+                    className="text-foreground underline-offset-2 hover:underline"
                   >
                     {c.bookingCode}
                   </a>
@@ -339,8 +334,7 @@ export function BookingForm({ dealId, unitPrice, maxPerUser, validUntilDate }: P
       </Button>
 
       <p className="text-muted-foreground text-center text-xs">
-        Bu sürüm <strong className="text-foreground">mock</strong> rezervasyondur — ödeme alınmaz.
-        Onay kodun e-posta gibi davranır, demoda saklanır.
+        Onay kodun e-posta gibi davranır; rezervasyon detayların hesabında saklanır.
       </p>
     </form>
   );
