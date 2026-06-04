@@ -1,5 +1,4 @@
 import type { ReactNode } from 'react';
-import { AlertTriangle } from 'lucide-react';
 import { Container } from '@/components/ui/container';
 import { formatDate } from '@/lib/utils/format';
 
@@ -7,9 +6,6 @@ interface Props {
   title: string;
   /** ISO date string for the latest revision of this document. */
   lastUpdated: string;
-  /** When true, render the amber "this is a draft" notice. Default true while
-   *  the texts haven't been reviewed by a lawyer. */
-  draft?: boolean;
   children: ReactNode;
 }
 
@@ -18,7 +14,7 @@ interface Props {
  * descendant Tailwind selectors so each page can write plain semantic HTML
  * without per-element className noise.
  */
-export function LegalPage({ title, lastUpdated, draft = true, children }: Props) {
+export function LegalPage({ title, lastUpdated, children }: Props) {
   return (
     <Container className="max-w-3xl py-12 sm:py-16">
       <article>
@@ -30,19 +26,6 @@ export function LegalPage({ title, lastUpdated, draft = true, children }: Props)
           <p className="text-muted-foreground mt-3 text-sm">
             Son güncelleme: {formatDate(lastUpdated)}
           </p>
-
-          {draft ? (
-            <div
-              role="note"
-              className="border-amber-500/30 bg-amber-500/10 mt-5 flex items-start gap-3 rounded-md border p-3 text-amber-700 dark:text-amber-300"
-            >
-              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-              <p className="text-sm">
-                <strong>Taslak metin.</strong> Bu içerik MVP demosu içindir; üretime almadan önce
-                hukuki danışmandan onay al ve şirket bilgilerini doldur.
-              </p>
-            </div>
-          ) : null}
         </header>
 
         <div
