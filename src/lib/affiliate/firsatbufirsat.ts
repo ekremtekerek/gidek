@@ -228,6 +228,80 @@ export async function* browseAllByCity(opts: { maxPagesPerCity?: number } = {}) 
 }
 
 /**
+ * Keyword sweep için tohum sözlük — 13 ana kategori + yaygın tag/eş anlamlılar.
+ * keyword araması (browse) tüm katalogda (1581) çalışır ve 200 cap'ine takılmaz
+ * gibi davranır (keyword başına ~200, ama çok sayıda spesifik kelime union'lanır).
+ * browseAllByKeywordSweep bunları gezer, sonra bulunan deal'ların tag'leriyle
+ * frontier'ı genişletir → ~%97 kapsama (global 200 / il filtresi 633 yerine).
+ */
+const KEYWORD_SEED = [
+  'masaj','spa','hamam','kese','sauna','güzellik','cilt','manikür','kuaför','lazer','epilasyon','makyaj','protez','dolgu',
+  'kahvaltı','brunch','serpme','yemek','restoran','menü','pizza','burger','kafe','steak','sushi','meyhane','döner','balık','kebap','tatlı','pasta','nargile','kahve',
+  'tur','gezi','tekne','rehberli','günübirlik','konaklama','otel','resort','tatil','bungalov','villa','pansiyon','suit','termal',
+  'konser','müzik','festival','tiyatro','sahne','stand up','stand-up','komedi','gösteri','bilet','etkinlik',
+  'kurs','eğitim','atölye','workshop','sertifika',
+  'aktivite','macera','paintball','go kart','park','müze','akvaryum','lunapark','jet ski','dalış','atv','yamaç',
+  'çocuk','aile','romantik','çift','sevgili','gece','bira','pub','kokteyl','içecek',
+  'fotoğraf','diş','sağlık','check up','psikolog','dövme','saç',
+];
+
+const KW_PAGE_DELAY_MS = 150;
+/** keyword araması keyword başına ~200 (20×10) döndürür; ötesi tekrar. */
+const KW_MAX_PAGES = 20;
+
+/**
+ * Katalog kapsamını maksimize eden keyword sweep'i. Global browse 200'de,
+ * il filtresi de eksik subset (~633) döndürdüğü için tek güvenilir tam-katalog
+ * yolu: keyword full-text araması. Önce tohum sözlük gezilir; sonra toplanan
+ * deal'ların en sık tag'leriyle `expansionRounds` tur frontier genişletilir.
+ * Her deal yalnızca bir kez yield edilir (id bazlı dedup içeride).
+ */
+export async function* browseAllByKeywordSweep(
+  opts: { expansionRounds?: number; frontierSize?: number; maxPagesPerKeyword?: number } = {},
+) {
+  const { expansionRounds = 2, frontierSize = 120, maxPagesPerKeyword = KW_MAX_PAGES } = opts;
+  const seen = new Set<string>();
+  const tried = new Set<string>();
+  const tagFreq = new Map<string, number>();
+
+  async function* sweepKeyword(keyword: string): AsyncGenerator<BrowseDeal> {
+    const key = keyword.trim().toLowerCase();
+    if (!key || tried.has(key)) return;
+    tried.add(key);
+    let page = 1;
+    while (page <= maxPagesPerKeyword) {
+      const res = await fetchBrowsePage(page, { keyword });
+      if (res.deals.length === 0) break;
+      let fresh = 0;
+      for (const deal of res.deals) {
+        if (seen.has(deal.id)) continue;
+        seen.add(deal.id);
+        fresh += 1;
+        for (const t of (deal.tags ?? '').split(',').map((s) => s.trim().toLowerCase()).filter(Boolean)) {
+          if (!tried.has(t)) tagFreq.set(t, (tagFreq.get(t) ?? 0) + 1);
+        }
+        yield deal;
+      }
+      if (fresh === 0) break; // bu keyword tekrar etmeye başladı
+      page += 1;
+      await sleep(KW_PAGE_DELAY_MS);
+    }
+  }
+
+  for (const kw of KEYWORD_SEED) yield* sweepKeyword(kw);
+
+  for (let round = 0; round < expansionRounds; round++) {
+    const frontier = [...tagFreq.entries()]
+      .filter(([t]) => !tried.has(t))
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, frontierSize)
+      .map(([t]) => t);
+    if (frontier.length === 0) break;
+    for (const kw of frontier) yield* sweepKeyword(kw);
+  }
+}
+
+/**
  * Tüm etkinlik seanslarını sayfa sayfa döndürür (50/sayfa).
  */
 export async function* eventsAll(opts: { maxPages?: number } = {}) {

@@ -160,7 +160,9 @@ const CATEGORY_RULES: { slug: CategorySlug; keywords?: string[]; tokens?: string
   { slug: 'kahvalti', keywords: ['kahvalt', 'brunch', 'serpme'] },
   { slug: 'kurs', keywords: ['kurs', 'egitim', 'atolye', 'workshop', 'sertifika'] },
   { slug: 'stand-up', keywords: ['stand up', 'standup'], tokens: ['standup'] },
-  { slug: 'konser', keywords: ['konser', 'muzik', 'festival', 'akustik'] },
+  // 'muzik' SUBSTRING değil TOKEN: "müzikli yemek" (pub/restoran tag'i) konsere
+  // düşmesin; ama "müzik"/"canlı müzik" tam kelimesi yine konseri tetikler.
+  { slug: 'konser', keywords: ['konser', 'festival', 'akustik'], tokens: ['muzik'] },
   { slug: 'tiyatro', keywords: ['tiyatro', 'sahne', 'muzikal'] },
   {
     slug: 'yemek',

@@ -17,7 +17,7 @@
 import { createClient } from '@supabase/supabase-js';
 import {
   browseAll,
-  browseAllByCity,
+  browseAllByKeywordSweep,
   eventsAll,
   type EventDeal,
 } from '../src/lib/affiliate/firsatbufirsat';
@@ -101,10 +101,12 @@ async function collectDeals(): Promise<MappedDeal[]> {
     };
 
     if (maxPages === Infinity) {
-      // Tam senkron: il bazlı tarama (eksiksiz katalog) + global feed (şehirsiz
-      // deal'leri de yakala). Dedup external_id ile birleştirir.
-      for await (const d of browseAllByCity()) onDeal(d);
-      console.log(`  browse (il taraması): ${n} satır`);
+      // Tam senkron: keyword sweep (full-text → ~%97 katalog kapsama) + global
+      // feed (ilk 200, hızlı tamamlayıcı). API'nin global browse'u 200'de,
+      // il (cityId) filtresi de eksik subset (~633) döndürdüğü için tek
+      // güvenilir tam-katalog yolu keyword araması. Dedup external_id ile.
+      for await (const d of browseAllByKeywordSweep()) onDeal(d);
+      console.log(`  browse (keyword sweep): ${n} satır`);
       for await (const d of browseAll({ maxPages: 20 })) onDeal(d);
     } else {
       // Kısmi/duman testi: hızlı global feed.
@@ -465,7 +467,16 @@ async function upsertDeals(
   }
   console.log(`  deals: ${rows.length} upsert`);
 
-  // Kategori junction'ları
+  // Kategori junction'ları — RECONCILE: önce bu senkronda görülen deal'ların
+  // mevcut junction'larını sil, sonra yeniden ekle. Insert-only upsert eski
+  // (yanlış) kategori bağını bırakırdı; kategori mapping'i değişince deal iki
+  // kategoride kalırdı. Delete+insert ile kategori daima güncel/tekil olur.
+  const syncedDealIds = [...dealUuidByExt.values()];
+  for (const part of chunk(syncedDealIds, 200)) {
+    const { error } = await supabase.from('deal_categories').delete().in('deal_id', part);
+    if (error) throw error;
+  }
+
   const junctions = deals
     .map((d) => {
       const dealId = dealUuidByExt.get(d.external_id);
@@ -481,7 +492,7 @@ async function upsertDeals(
       .upsert(part, { onConflict: 'deal_id,category_id' });
     if (error) throw error;
   }
-  console.log(`  junctions: ${junctions.length}`);
+  console.log(`  junctions: ${junctions.length} (reconcile: ${syncedDealIds.length} deal temizlendi)`);
 
   return seenExternalIds;
 }
