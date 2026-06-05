@@ -131,12 +131,23 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
   const ratingCount = deal.rating_count ?? 0;
   const hasRating = ratingAvg !== null && ratingCount > 0;
 
+  // Rating — Offer'a DEĞİL, üst entity'ye (Product/Event) bağlanır. Google
+  // review snippet'i Offer'ı geçerli üst tip kabul etmez ("<parent_node> alanı
+  // için geçersiz nesne türü" hatası); geçerli tipler Product, Event, vb.
+  const aggregateRating = hasRating
+    ? {
+        '@type': 'AggregateRating',
+        ratingValue: ratingAvg,
+        reviewCount: ratingCount,
+        bestRating: 5,
+        worstRating: 1,
+      }
+    : undefined;
+
+  // Paylaşılan Offer (fiyat/stok/satıcı) — Product ya da Event altına `offers`
+  // olarak gömülür; tek başına basılmaz.
   const offerLd: Record<string, unknown> = {
-    '@context': 'https://schema.org',
     '@type': 'Offer',
-    name: deal.title,
-    description: deal.description,
-    image: deal.cover_image,
     url: `${SITE.url}/f/${deal.slug}`,
     priceCurrency: deal.currency,
     price: deal.discounted_price,
@@ -153,19 +164,11 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
         }
       : undefined,
   };
-  if (hasRating) {
-    offerLd.aggregateRating = {
-      '@type': 'AggregateRating',
-      ratingValue: ratingAvg,
-      reviewCount: ratingCount,
-      bestRating: 5,
-      worstRating: 1,
-    };
-  }
 
-  // Event JSON-LD — sahne/etkinlik tipi fırsatlarda Google'da rich snippet
-  // (tarih, yer, fiyat doğrudan SERP'te) gözüksün diye. Sadece event-benzeri
-  // kategorilerde basıyoruz; spa/yemek/otel için Offer yeterli.
+  // Sahne/etkinlik kategorileri → Event (SERP'te tarih/yer rich snippet);
+  // diğerleri → Product. Sayfa başına TEK ana entity basılır; offer ve rating
+  // ona gömülür. (Önceden standalone Offer + ona iliştirilen aggregateRating
+  // Google'da geçersizdi.)
   const eventTypeMap: Record<string, string> = {
     tiyatro: 'TheaterEvent',
     konser: 'MusicEvent',
@@ -173,7 +176,8 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
     aktivite: 'Event',
   };
   const eventType = primaryCategory ? eventTypeMap[primaryCategory.slug] : undefined;
-  const eventLd: Record<string, unknown> | null = eventType
+
+  const primaryLd: Record<string, unknown> = eventType
     ? {
         '@context': 'https://schema.org',
         '@type': eventType,
@@ -194,16 +198,7 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
             addressCountry: 'TR',
           },
         },
-        offers: {
-          '@type': 'Offer',
-          url: `${SITE.url}/f/${deal.slug}`,
-          price: deal.discounted_price,
-          priceCurrency: deal.currency,
-          availability: expired
-            ? 'https://schema.org/SoldOut'
-            : 'https://schema.org/InStock',
-          validFrom: deal.valid_from,
-        },
+        offers: offerLd,
         organizer: deal.merchant
           ? {
               '@type': 'Organization',
@@ -211,8 +206,18 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
               url: `${SITE.url}/m/${deal.merchant.slug}`,
             }
           : undefined,
+        ...(aggregateRating ? { aggregateRating } : {}),
       }
-    : null;
+    : {
+        '@context': 'https://schema.org',
+        '@type': 'Product',
+        name: deal.title,
+        description: deal.description,
+        image: deal.cover_image,
+        url: `${SITE.url}/f/${deal.slug}`,
+        offers: offerLd,
+        ...(aggregateRating ? { aggregateRating } : {}),
+      };
 
   return (
     <>
@@ -608,8 +613,7 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
       </Container>
 
       <JsonLd data={breadcrumbLd} />
-      <JsonLd data={offerLd} />
-      {eventLd ? <JsonLd data={eventLd} /> : null}
+      <JsonLd data={primaryLd} />
 
       <StickyCta
         dealSlug={deal.slug}
