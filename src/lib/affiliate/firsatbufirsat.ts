@@ -259,7 +259,11 @@ const KW_MAX_PAGES = 20;
 export async function* browseAllByKeywordSweep(
   opts: { expansionRounds?: number; frontierSize?: number; maxPagesPerKeyword?: number } = {},
 ) {
-  const { expansionRounds = 2, frontierSize = 120, maxPagesPerKeyword = KW_MAX_PAGES } = opts;
+  // 4 tur / 250 frontier ölçümle ~%98.7 kapsama verir (2 tur ~%97.1). Kalan
+  // ~%1.3 (~20 deal) API sınırı: ne global feed'de ne şehir filtresinde ne de
+  // başka deal'ın tag'iyle keyword-genişletmede yakalanıyor (tedarikçi tam
+  // katalog endpoint'i vermiyor).
+  const { expansionRounds = 4, frontierSize = 250, maxPagesPerKeyword = KW_MAX_PAGES } = opts;
   const seen = new Set<string>();
   const tried = new Set<string>();
   const tagFreq = new Map<string, number>();
