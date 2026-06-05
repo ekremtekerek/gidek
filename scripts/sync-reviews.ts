@@ -43,14 +43,24 @@ async function fetchReviews(url: string): Promise<ReturnType<typeof parseDealRev
 
 async function main() {
   const t0 = Date.now();
-  const { data: deals, error } = await supabase
-    .from('deals')
-    .select('id, slug, external_url')
-    .eq('source', 'firsatbufirsat')
-    .not('external_url', 'is', null);
-  if (error) throw error;
+  // PostgREST tek select'te en fazla 1000 satır döndürür → sayfalayarak TÜM
+  // affiliate deal'ları çek (aksi halde 1000+'ı işlenmeden kalır).
+  type DealRow = { id: string; slug: string; external_url: string | null };
+  const deals: DealRow[] = [];
+  const PAGE = 1000;
+  for (let from = 0; ; from += PAGE) {
+    const { data, error } = await supabase
+      .from('deals')
+      .select('id, slug, external_url')
+      .eq('source', 'firsatbufirsat')
+      .not('external_url', 'is', null)
+      .range(from, from + PAGE - 1);
+    if (error) throw error;
+    deals.push(...((data ?? []) as DealRow[]));
+    if (!data || data.length < PAGE) break;
+  }
 
-  const list = (deals ?? []).filter((d) => d.external_url).slice(0, limit === Infinity ? undefined : limit);
+  const list = deals.filter((d) => d.external_url).slice(0, limit === Infinity ? undefined : limit);
   console.log(`▶ ${list.length} deal için yorum senkronu`);
 
   let next = 0;
