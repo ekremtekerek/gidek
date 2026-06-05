@@ -150,7 +150,9 @@ function asciiLower(s: string): string {
 //    ve "...Hotel" başlıkları yanlış eşleşiyor) — güçlü 'konaklama'/'resort' sinyali.
 const CATEGORY_RULES: { slug: CategorySlug; keywords?: string[]; tokens?: string[] }[] = [
   { slug: 'turlar', tokens: ['tur', 'turu', 'turlar', 'tura', 'gezi', 'rehberli', 'gunubirlik', 'tekne'] },
-  { slug: 'tatil-otelleri', keywords: ['resort', 'tatil koy', 'bungalov', 'her sey dahil', 'pansiyon', 'villa'] },
+  // 'tatil' token: firsatbufirsat ilk tag'i "tatil" → tatil-otelleri (tatil/kaçamak
+  // konaklaması). "konaklama" ilk tag'i ise aşağıda sehir-otelleri'ne düşer.
+  { slug: 'tatil-otelleri', keywords: ['resort', 'tatil koy', 'bungalov', 'her sey dahil', 'pansiyon', 'villa'], tokens: ['tatil'] },
   { slug: 'sehir-otelleri', keywords: ['konaklama', 'suit'] },
   { slug: 'masaj', keywords: ['masaj', 'spa', 'hamam', 'kese', 'sauna'] },
   {
@@ -174,17 +176,86 @@ const CATEGORY_RULES: { slug: CategorySlug; keywords?: string[]; tokens?: string
   },
 ];
 
-/**
- * Tag string'ini (browse) veya başlığı (event) 13 ana kategoriden birine eşler.
- * Açıklama metni KULLANILMAZ — gürültülü ("gezi/kaş" gibi kelimeler yanlış tetikler).
- */
-export function mapCategory(haystack: string, opts: { isEvent?: boolean } = {}): CategorySlug {
-  const h = asciiLower(haystack);
+/** Tek bir metni kurallara göre kategoriye eşler; eşleşme yoksa null. */
+function matchCategoryRules(h: string): CategorySlug | null {
   const tokens = new Set(h.split(' ').filter(Boolean));
   for (const rule of CATEGORY_RULES) {
     if (rule.tokens?.some((t) => tokens.has(t))) return rule.slug;
     if (rule.keywords?.some((kw) => h.includes(kw))) return rule.slug;
   }
+  return null;
+}
+
+// ── Otel alt-ayrımı (şehir vs tatil) ─────────────────────────────────────────
+// firsatbufirsat tüm otelleri ayrımsız "tatil,otel,konaklama" etiketliyor, yani
+// tag bu ayrımı vermiyor. Şehir/konuma göre karar veriyoruz:
+//   1) resort/kaçamak sinyali (yer adı/anahtar kelime) → tatil-otelleri (ili ezer)
+//   2) büyük metropol ili → sehir-otelleri
+//   3) gerisi (küçük il = kaçamak destinasyonu) → tatil-otelleri
+const HOTEL_SLUGS = new Set<CategorySlug>(['sehir-otelleri', 'tatil-otelleri']);
+
+// `city` alanı sık boş veya paketlerde kalkış şehri olduğu için yalnızca ona
+// güvenmiyoruz: başlık + ilçe + tag birleşik metninde TOKEN olarak il/merkez-ilçe
+// ya da resort yer adı arıyoruz (başlık genelde "Mersin…", "Taksim…" içerir).
+const RESORT_TOKENS = new Set([
+  'sapanca', 'abant', 'alacati', 'cesme', 'urla', 'kusadasi', 'didim', 'bodrum', 'marmaris',
+  'fethiye', 'oludeniz', 'kas', 'kalkan', 'datca', 'gocek', 'sile', 'agva', 'riva',
+  'polonezkoy', 'bozcaada', 'gokceada', 'cunda', 'ayvalik', 'avsa', 'erdek', 'mudanya',
+  'yalova', 'termal', 'kaplica', 'kartepe', 'masukiye', 'kartalkaya', 'uludag',
+  'sarikamis', 'ayder', 'pamukkale', 'assos', 'yayla', 'bungalov', 'resort',
+  'safranbolu', 'cinarcik', 'sapanca', 'abant',
+]);
+const RESORT_PHRASES = ['dag evi', 'gol evleri', 'tatil koy', 'her sey dahil', 'hersey dahil'];
+
+const METRO_TOKENS = new Set([
+  // iller
+  'istanbul', 'ankara', 'izmir', 'bursa', 'adana', 'gaziantep', 'konya', 'kayseri',
+  'mersin', 'eskisehir', 'kocaeli', 'izmit', 'diyarbakir', 'samsun', 'sanliurfa', 'urfa', 'malatya',
+  // İstanbul merkez ilçeleri
+  'beyoglu', 'taksim', 'sisli', 'mecidiyekoy', 'nisantasi', 'kagithane', 'besiktas',
+  'levent', 'kadikoy', 'bostanci', 'uskudar', 'atasehir', 'maltepe', 'kartal', 'pendik',
+  'fatih', 'sultanahmet', 'eminonu', 'bakirkoy', 'yesilkoy', 'florya', 'zeytinburnu',
+  'bayrampasa', 'gaziosmanpasa', 'esenler', 'bagcilar', 'basaksehir', 'beylikduzu',
+  'avcilar', 'bahcelievler', 'umraniye', 'tuzla', 'sancaktepe', 'sariyer',
+  // Ankara merkez
+  'cankaya', 'kizilay', 'ulus', 'kecioren', 'yenimahalle', 'etimesgut', 'sincan', 'mamak',
+  // İzmir merkez
+  'konak', 'alsancak', 'bornova', 'karsiyaka', 'bayrakli', 'buca', 'gaziemir', 'balcova',
+  // Bursa merkez
+  'osmangazi', 'nilufer', 'yildirim',
+]);
+
+/** Otel kategorisini şehir/konuma göre şehir- vs tatil-otelleri olarak rafine eder. */
+function refineHotelCategory(haystack: string, city?: string | null, district?: string | null): CategorySlug {
+  const text = asciiLower([haystack, district ?? '', city ?? ''].filter(Boolean).join(' '));
+  if (RESORT_PHRASES.some((p) => text.includes(p))) return 'tatil-otelleri';
+  const tokens = new Set(text.split(' ').filter(Boolean));
+  for (const tk of tokens) if (RESORT_TOKENS.has(tk)) return 'tatil-otelleri';
+  for (const tk of tokens) if (METRO_TOKENS.has(tk)) return 'sehir-otelleri';
+  return 'tatil-otelleri';
+}
+
+/**
+ * 13 ana kategoriden birine eşler. firsatbufirsat tag'leri kategori-ÖNCELİKLİ
+ * sıralı gelir (ilk tag = ana kategori: "yemek,akşam yemeği,…,müzikli yemek"),
+ * bu yüzden önce tag'leri SIRAYLA dener — ilk eşleşen tag kazanır. Böylece
+ * sondaki "müzikli yemek" konseri tetiklemez; "yemek" (ilk) kazanır.
+ * Tag yoksa/hiçbiri eşleşmezse başlık+haystack'e düşer (event'lerde tag yok).
+ * Açıklama metni KULLANILMAZ — gürültülü ("gezi/kaş" yanlış tetikler).
+ */
+export function mapCategory(
+  haystack: string,
+  opts: { isEvent?: boolean; tags?: string[]; city?: string | null; district?: string | null } = {},
+): CategorySlug {
+  const resolve = (slug: CategorySlug): CategorySlug =>
+    HOTEL_SLUGS.has(slug) ? refineHotelCategory(haystack, opts.city, opts.district) : slug;
+
+  for (const tag of opts.tags ?? []) {
+    const hit = matchCategoryRules(asciiLower(tag));
+    if (hit) return resolve(hit);
+  }
+  const hit = matchCategoryRules(asciiLower(haystack));
+  if (hit) return resolve(hit);
   // Etkinlik endpoint'i ağırlıklı sahne sanatları → default tiyatro.
   return opts.isEvent ? 'tiyatro' : 'aktivite';
 }
@@ -377,7 +448,13 @@ export function mapBrowseDeal(deal: BrowseDeal): MappedDeal | null {
     audience: mapAudience(haystack),
     external_url: deal.showDealUrl ?? deal.buyDealUrl ?? null,
     affiliate_options,
-    categorySlug: mapCategory(categoryHay),
+    // externalTags sıralı (firsatbufirsat kategori-öncelikli) → ilk eşleşen kazanır.
+    // city/district otel alt-ayrımı (şehir vs tatil) için geçilir.
+    categorySlug: mapCategory(categoryHay, {
+      tags: externalTags,
+      city,
+      district: deal.town,
+    }),
     merchant,
   };
 }
