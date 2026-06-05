@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Toaster } from 'sonner';
+import { GoogleAnalytics } from '@/components/analytics/google-analytics';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { Footer } from '@/components/layout/footer';
 import { Header } from '@/components/layout/header';
@@ -160,6 +161,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <JsonLd data={orgJsonLd} />
         <JsonLd data={websiteJsonLd} />
         <SpeedInsights />
+        <GoogleAnalytics />
       </body>
     </html>
   );
