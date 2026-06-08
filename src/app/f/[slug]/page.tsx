@@ -215,6 +215,12 @@ export default async function DealDetailPage({ params }: { params: Promise<Param
         description: deal.description,
         image: deal.cover_image,
         url: `${SITE.url}/f/${deal.slug}`,
+        // GSC "genel tanımlayıcı eksik" uyarısı için brand = işletme adı.
+        // shippingDetails/hasMerchantReturnPolicy bilinçli eklenmedi: bunlar
+        // fiziksel/kargolu ürün alanları; deal'larımız yerel deneyim/voucher,
+        // gerçek iade-kargo politikasını biz belirlemiyoruz (uydurmak yanıltıcı
+        // olur). Bu ikisi GSC'de non-critical "öneri" olarak kalır.
+        ...(deal.merchant ? { brand: { '@type': 'Brand', name: deal.merchant.name } } : {}),
         offers: offerLd,
         ...(aggregateRating ? { aggregateRating } : {}),
       };

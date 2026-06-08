@@ -449,10 +449,12 @@ async function upsertDeals(
     })
     .filter((r): r is NonNullable<typeof r> => r !== null);
 
-  // external_id → deal uuid + categorySlug eşleştirme
+  // external_id → deal uuid + categorySlug eşleştirme.
+  // Chunk küçük (100): her satır ~1536-dim embedding taşıyor → büyük payload +
+  // ağır vector-index yazımı. 500'lük chunk statement_timeout'a takılıyordu (57014).
   const seenExternalIds: string[] = [];
   const dealUuidByExt = new Map<string, string>();
-  for (const part of chunk(rows, 500)) {
+  for (const part of chunk(rows, 100)) {
     const { data, error } = await supabase
       .from('deals')
       .upsert(part, { onConflict: 'source,external_id' })
